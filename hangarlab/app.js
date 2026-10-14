@@ -530,7 +530,7 @@
         ${sel('fw.drag.mode', 'Parasite drag', [['buildup', 'Build up from geometry'], ['cd0', 'Fixed CD0']], { wide: true, rebuild: true })}
         ${(p.fw.drag || {}).mode === 'buildup' ? `
           ${sel('fw.drag.finish', 'Construction / surface', Object.entries(U.FINISH).map(([k, v]) => [k, v.label]), { wide: true })}
-          ${sel('fw.drag.mount', 'Cruise motor placement', [['auto', 'Auto (2+ motors on wing, 1 in nose)'], ['wing', 'Tractor on wing'], ['nose', 'Tractor in nose'], ['pusher', 'Pusher']], { wide: true })}
+          ${sel('fw.drag.mount', `Cruise motor placement ${tip('Sets which drag the motors add. On the wing: each motor gets a pod (sized from the motor in Motor pods), and the wing behind each prop sits in faster prop wash, adding friction drag. In the nose or as a pusher: no pods, and only part of the fuselage is in the wash. Auto picks on the wing for 2 or more cruise motors, nose for 1.')}`, [['auto', 'Auto (2+ motors on wing, 1 in nose)'], ['wing', 'Tractor on wing'], ['nose', 'Tractor in nose'], ['pusher', 'Pusher']], { wide: true })}
           ${sel('fw.drag.pods.mode', 'Motor pods', [['auto', 'Auto from motor size'], ['manual', 'Enter size'], ['none', 'None']], { rebuild: true })}
           ${((p.fw.drag.pods || {}).mode === 'manual') ? `${num('fw.drag.pods.n', 'Pods', { step: 1, min: 0 })}${num('fw.drag.pods.d', 'Pod diameter', { unit: 'm', imp: 'in', step: 0.001 })}${num('fw.drag.pods.L', 'Pod length', { unit: 'm', imp: 'in', step: 0.005 })}` : '<span></span>'}
           ${num('fw.drag.fusL', 'Fuselage length', { unit: 'm', imp: 'in', step: 0.01 })}${num('fw.drag.fusD', 'Fuselage width', { unit: 'm', imp: 'in', step: 0.005 })}
