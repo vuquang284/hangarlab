@@ -418,7 +418,7 @@
   function renderHeader() {
     $('#projSel').innerHTML = S.projects.map((p) => `<option value="${p.id}"${p.id === S.active ? ' selected' : ''}>${esc(p.name)}</option>`).join('');
     $('#typePill').textContent = TYPE_LABEL[P().type];
-    document.querySelectorAll('#tabs button').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === S.tab));
+    document.querySelectorAll('#tabs button[data-tab]').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === S.tab));
     const sb = $('#setBtn'); if (sb) sb.setAttribute('aria-pressed', S.tab === 'settings');
     document.documentElement.dataset.theme = S.theme;
     $('#themeBtn').innerHTML = S.theme === 'dark' ? '<svg class="i"><use href="#i-sun"/></svg>' : '<svg class="i"><use href="#i-moon"/></svg>';

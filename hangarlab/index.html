@@ -350,6 +350,10 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
 :root[data-theme="light"] .logo-ondark { display: none !important; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
+.units-seg { margin: auto 4px auto auto; flex: none; }
+.tabs .units-seg button { padding: 4px 9px; font: 600 11.5px/1.2 var(--body); border-bottom: 0; color: var(--muted); }
+.tabs .units-seg button[aria-pressed="true"] { color: var(--accent); }
+
 /* phone */
 @media (max-width: 600px) {
   .bar { gap: 8px; padding: 8px 12px; }
@@ -361,6 +365,7 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
   .actions .btn { padding-inline: 10px; }
   .tabs { padding: 0 6px; flex-wrap: wrap; overflow: visible; row-gap: 0; } /* all tabs visible: two rows instead of a hidden scroll */
   .tabs button { padding: 8px 7px 7px; font-size: 14px; gap: 4px; }
+  .units-seg { margin: 4px 0 6px auto; }
   main { padding: 12px 12px 32px; }
   .bench > .stack { order: -1; }          /* results first, inputs below */
   .readouts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
@@ -433,8 +438,6 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
       <button class="btn" data-act="new" title="New design">New</button>
       <button class="btn" data-act="dup" title="Duplicate this design">Duplicate</button>
       <button class="btn ghost danger icon" data-act="del" title="Delete this design" aria-label="Delete this design"><svg class="i"><use href="#i-trash"/></svg></button>
-      <div class="seg" role="group" aria-label="Units"><button data-units="metric" aria-pressed="true" title="Metric units">Metric</button><button data-units="imperial" aria-pressed="false" title="Imperial units">Imperial</button></div>
-      <span class="sep"></span>
       <button class="btn ghost icon" data-act="undo" title="Undo (Ctrl/⌘+Z)" aria-label="Undo"><svg class="i"><use href="#i-undo"/></svg></button>
       <button class="btn ghost" data-act="import" title="Import a workspace backup (.json)">Import</button>
       <button class="btn primary" data-act="export" title="Export (Ctrl/⌘+E)">Export</button>
@@ -452,6 +455,7 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
     <button data-tab="materials" role="tab">3D Printing</button>
     <button data-tab="library" role="tab">Parts Library</button>
     <button data-tab="logs" role="tab">Flight Logs</button>
+    <div class="seg units-seg" role="group" aria-label="Units" title="Display units (stored in metric)"><button data-units="metric" aria-pressed="true">Metric</button><button data-units="imperial" aria-pressed="false">Imperial</button></div>
   </nav>
 </header>
 
