@@ -447,6 +447,13 @@
     return 1;
   }
 
+  // ponytail: typical figures from small-UAS VTOL papers; editable per design (vtol.hoverPen %, vtol.accel m/s²)
+  const VTOL_DEF = {
+    quadplane: { pen: 3, acc: 1.0, tw: 1.5, note: 'booms and fuselage under the lift props' },
+    tiltrotor: { pen: 8, acc: 1.5, tw: 1.5, note: 'wing under the rotors pushes down in hover' },
+    tailsitter: { pen: 6, acc: 2.5, tw: 1.8, note: 'prop wash scrubs along the wing; needs extra thrust for control' },
+  };
+
   // ---------- main compute ----------
   function hover(set, n, coax, Wg, sigma, V) {
     if (!set || !n || !set.rows.length) return null;
@@ -492,7 +499,10 @@
     if (p.type === 'multirotor' || p.type === 'vtol') {
       const L = LAYOUTS[p.mr.layout] || LAYOUTS.quadx;
       const lift = combo(lib, p.mr.motor, p.mr.prop, bat.V);
-      const h = hover(lift, p.mr.n, L.coax, Wg, sigma, bat.V);
+      const vd = p.type === 'vtol' ? VTOL_DEF[p.vtol.kind] || VTOL_DEF.quadplane : null;
+      const kH = vd ? 1 + (p.vtol.hoverPen != null && p.vtol.hoverPen !== '' ? +p.vtol.hoverPen : vd.pen) / 100 : 1;
+      R.kHover = kH;
+      const h = hover(lift, p.mr.n, L.coax, Wg * kH, sigma, bat.V);
       R.h = h;
       if (lift && lift.physics) chk(lift.rows.length ? (lift.drive.propData && lift.drive.motorModel ? 'info' : 'warn') : 'crit', lift.rows.length ? `${lift.name}: ${lift.source.toLowerCase()} (no bench data). Add thrust data, prop data or motor Rm/I0 in Library for better numbers.` : `${lift.name}: set the motor kV and prop size, or add bench data.`);
       if (h) {
@@ -502,12 +512,12 @@
         R.hoverMin = (bat.usableWh / P) * 60;
         R.maxI = p.mr.n * h.iMaxMotor + pAv / bat.V;
         const thrustAtLimit = p.mr.n * h.c.thrustAtThrottle(p.mr.maxThr) * sigma * (L.coax ? COAX_THRUST : 1);
-        R.payloadG = thrustAtLimit - Wg;
+        R.payloadG = thrustAtLimit / kH - Wg;
         R.diskLoad = h.diskM2 ? Wg / 1000 / h.diskM2 : null;
         if (h.c.estimated && !lift.physics) chk('warn', `${h.set.name}: only one data point, curve is estimated. Add bench rows in Library.`);
         if (!lift.physics && Math.abs(bat.V - h.c.vt) / h.c.vt > 0.1) chk('warn', `Battery ${bat.V.toFixed(1)} V vs bench test ${h.c.vt.toFixed(1)} V for ${h.set.name}: thrust scaled by (V/Vtest)², verify with a test at your voltage.`);
         if (h.overRange) chk('crit', 'Required thrust per motor is above the 100% bench point. It cannot hover.');
-        const twWarn = p.type === 'vtol' ? 1.5 : 2;
+        const twWarn = vd ? vd.tw : 2;
         if (h.tw < 1.4) chk('crit', `Thrust-to-weight ${h.tw.toFixed(2)} is too low for control authority (aim ≥ ${twWarn}).`);
         else if (h.tw < twWarn) chk('warn', `Thrust-to-weight ${h.tw.toFixed(2)} is marginal (aim ≥ ${twWarn}).`);
         if (h.thr > 80) chk('crit', `Hover throttle ${h.thr.toFixed(0)}% leaves no margin.`);
@@ -653,16 +663,35 @@
       const v = p.vtol;
       const eAvail = bat.usableWh * (1 - v.reserve / 100);
       const eHover = (R.hoverP * v.hoverS) / 3600;
-      const eCruise = eAvail - eHover;
+      // transitions: speed up from hover to 1.2 × stall (forward) and back (slowing down, wing carrying more of the load)
+      const vd2 = VTOL_DEF[v.kind] || VTOL_DEF.quadplane, acc = +v.accel > 0 ? +v.accel : vd2.acc;
+      const vtr = 1.2 * R.vs, tTr = vtr / acc;
+      const pCr = isFinite(R.cruise.P) ? R.cruise.P : R.hoverP;
+      const pFwd = v.kind === 'quadplane' ? 0.75 * R.hoverP + pCr : 0.5 * (R.hoverP + pCr); // quadplane: lift props still carrying most of it while the pusher accelerates
+      const ke = (0.5 * (Wg / 1000) * vtr * vtr) / 0.5 / 3600; // kinetic energy at ~50 % prop efficiency, Wh
+      const eFwd = (pFwd * tTr) / 3600 + ke, eBack = (0.8 * pFwd * tTr) / 3600;
+      const nTr = v.transitions != null && v.transitions !== '' ? Math.max(0, +v.transitions) : 2;
+      const eTrans = (nTr / 2) * (eFwd + eBack);
+      R.trans = { v: vtr, t: tTr, acc, eFwd, eBack, e: eTrans, n: nTr, pFwd };
+      const eCruise = eAvail - eHover - eTrans;
       const consCruiseP = R.cruise.consP || R.cruise.P;
       R.mission = {
-        eAvail, eHover, eCruise,
-        consKm: Math.max(0, ((eAvail - eHover) / consCruiseP) * 3600 * p.fw.vc / 1000),
-        consMinutes: Math.max(0, ((eAvail - eHover) / consCruiseP) * 60),
+        eAvail, eHover, eTrans, eCruise,
+        consKm: Math.max(0, (eCruise / consCruiseP) * 3600 * p.fw.vc / 1000),
+        consMinutes: Math.max(0, (eCruise / consCruiseP) * 60),
         minutes: Math.max(0, (eCruise / R.cruise.P) * 60),
         km: Math.max(0, (eCruise / R.cruise.P) * 3600 * p.fw.vc / 1000),
       };
-      if (eCruise <= 0) chk('crit', 'Hover segments use all available energy; nothing left for cruise.');
+      if (eCruise <= 0) chk('crit', 'Hover and transitions use all available energy; nothing left for cruise.');
+      else if (eTrans > 0.15 * eAvail) chk('warn', `Transitions take ${Math.round((eTrans / eAvail) * 100)} % of the usable energy. A faster transition (more cruise thrust) or a lower stall speed helps.`);
+      if (v.kind === 'tailsitter' && R.h) {
+        // standing on its tail the wing is a sail: the most wind it can hold position in with full thrust tilted into it
+        const tmax = (R.h.tmaxTot / 1000) * g0, W = WN * (R.kHover || 1), side = Math.sqrt(Math.max(0, tmax * tmax - W * W));
+        R.hoverWind = Math.sqrt((2 * side) / (rho * p.fw.area * 1.2));
+        const w = p.mission ? +p.mission.wind || 0 : 0;
+        if (w > R.hoverWind) chk('crit', `Tailsitter hover: wind ${w} m/s is above the ${R.hoverWind.toFixed(1)} m/s it can hold against (wing side area). Take off and land into lighter wind.`);
+        else if (w > 0.7 * R.hoverWind) chk('warn', `Tailsitter hover: wind ${w} m/s is close to the ${R.hoverWind.toFixed(1)} m/s limit; little control margin left.`);
+      }
       R.maxI = R.h.iMaxMotor * p.mr.n + pAv / bat.V;
       battChk(R.maxI, Math.max(R.hoverI || 0, R.cruise.I || 0), 'hover');
     }
@@ -741,7 +770,7 @@
 
   // mission profile: energy per segment from the computed power curves (R must be a full compute, not lite)
   // ponytail: climb adds W·rate/0.7 (mr) or /0.6 (fw) on top of hover / best-endurance power; descent costs 85 % hover (mr) or avionics only (fw). Good to ~10 %; a flight log beats it.
-  const SEG = { hover: ['Hover', 's'], climb: ['Climb', 'm'], cruise: ['Cruise', 'km'], loiter: ['Loiter', 'min'], descend: ['Descend', 'm'] };
+  const SEG = { hover: ['Hover', 's'], transition: ['Transition', '×'], climb: ['Climb', 'm'], cruise: ['Cruise', 'km'], loiter: ['Loiter', 'min'], descend: ['Descend', 'm'] };
   function missionPlan(p, lib, R) {
     const M = p.mission;
     if (!M || !(M.segs || []).length) return null;
@@ -760,7 +789,10 @@
     const rows = [];
     for (const sg of M.segs) {
       const v = +sg.v || 0, r = { type: sg.type, label: SEG[sg.type] ? SEG[sg.type][0] : sg.type, v, unit: SEG[sg.type] ? SEG[sg.type][1] : '', t: 0, P: null, err: '' };
-      if (sg.type === 'hover') { r.t = v; r.P = R.hoverP; if (!R.hoverP) r.err = 'No lift motors: this aircraft cannot hover.'; }
+      if (sg.type === 'transition') {
+        if (!R.trans) r.err = 'Only hybrid VTOL designs transition.';
+        else { r.t = v * R.trans.t; r.P = r.t ? ((v * (R.trans.eFwd + R.trans.eBack)) / 2) * 3600 / r.t : 0; }
+      } else if (sg.type === 'hover') { r.t = v; r.P = R.hoverP; if (!R.hoverP) r.err = 'No lift motors: this aircraft cannot hover.'; }
       else if (sg.type === 'climb') {
         r.t = v / rate;
         r.P = !fw ? R.hoverP + (W * rate) / 0.7 : R.bestEnd ? R.bestEnd.P + (W * rate) / 0.6 : null;
@@ -1441,6 +1473,6 @@
     rhoAt, battery, packOf, curve, dragBuildup, oswald, FINISH, CONSERVATIVE, DEFAULT_K, motorCanMm, combo, parseAPC, parsePropTable, propCoef, drive, drivePower, sizeOf, splitSets, propulsion, payloadSweep, fullBom, consolidate, costOf, cgOf, missionPlan, SEG, enduranceOf, fwDrag, mrForward, massOf, autoRows, avionicsPower, compute, batterySweep,
     powerPlan, pickWire, pickConn, CONNECTORS, WIRE, link, fspl, radioHorizonKm, rfConflicts,
     rankMaterials, partMass, partShell, parseSTL, stlStats,
-    parseBin, parseText, parseCSV, logModes, logSummary, modeCruise, missionFromLog, coldFactor, gpsTrack, sampleLog, findMsg, interp, logEvents, logParams, logTrack, evalExpr, idxAt, ERR_SUBSYS, EV_IDS,
+    parseBin, parseText, parseCSV, logModes, logSummary, modeCruise, VTOL_DEF, missionFromLog, coldFactor, gpsTrack, sampleLog, findMsg, interp, logEvents, logParams, logTrack, evalExpr, idxAt, ERR_SUBSYS, EV_IDS,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

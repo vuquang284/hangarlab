@@ -47,12 +47,13 @@ let S;
 const MISSION_DEF = {
   multirotor: [['climb', 60], ['cruise', 2, 'head'], ['loiter', 10], ['cruise', 2, 'tail'], ['descend', 60]],
   fixedwing: [['climb', 120], ['cruise', 10, 'head'], ['loiter', 15], ['cruise', 10, 'tail'], ['descend', 120]],
-  vtol: [['hover', 30], ['climb', 100], ['cruise', 8, 'head'], ['loiter', 10], ['cruise', 8, 'tail'], ['descend', 100], ['hover', 30]],
+  vtol: [['hover', 30], ['transition', 1], ['climb', 100], ['cruise', 8, 'head'], ['loiter', 10], ['cruise', 8, 'tail'], ['descend', 100], ['transition', 1], ['hover', 30]],
 };
 function fixDesign(p) {
   if (!p.mission) p.mission = { wind: 0, reserve: 0, climb: 2, vMr: 0, segs: (MISSION_DEF[p.type] || MISSION_DEF.fixedwing).map(([type, v, dir]) => ({ type, v, dir: dir || 'none' })) };
   if (!p.cg) p.cg = { le: 0, mac: 0, pos: {} };
   if (p.mr && p.mr.lean == null) p.mr.lean = 30;
+  if (p.vtol) { const vd = U.VTOL_DEF[p.vtol.kind] || U.VTOL_DEF.quadplane; if (p.vtol.accel == null) p.vtol.accel = vd.acc; if (p.vtol.hoverPen == null) p.vtol.hoverPen = vd.pen; if (p.vtol.transitions == null) p.vtol.transitions = 2; }
   if (!p.resFix) { if (p.mission.reserve === 20) p.mission.reserve = 0; if (p.vtol && p.vtol.reserve === 20) p.vtol.reserve = 0; p.resFix = 1; }
   return p;
 }

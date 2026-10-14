@@ -227,6 +227,7 @@ document.addEventListener('input', (e) => {
     if (bt && P().batt.ref && BAT_LINKED.includes(bt[1])) { const x = S.lib.batteries.find((y) => y.id === P().batt.ref); if (x) x[bt[1]] = P().batt[bt[1]]; }
     if (k === 'mat.area' || k === 'mat.vol') { delete P().mat.areaSide; delete P().mat.areaTB; delete P().mat.stlName; delete P().mat.stlSize; stlMesh = null; }
     if (k === 'mr.layout') P().mr.n = U.LAYOUTS[el.value].n;
+    if (k === 'vtol.kind') { const vd = U.VTOL_DEF[el.value]; if (vd) Object.assign(P().vtol, { accel: vd.acc, hoverPen: vd.pen }); } // switch to that type's typical values
     if (k === 'name') renderHeader();
   } else {
     setPath(S.lib, lk, readVal(el));

@@ -91,7 +91,7 @@ function calcRows(p) {
   if (R.mission) {
     const s = 'VTOL mission';
     add(s, 'Hover time per sortie', p.vtol.hoverS, 's'); add(s, 'Extra reserve', p.vtol.reserve, '%'); add(s, 'Energy available', R.mission.eAvail, 'Wh');
-    add(s, 'Hover energy', R.mission.eHover, 'Wh'); add(s, 'Cruise energy', R.mission.eCruise, 'Wh'); add(s, 'Cruise time', R.mission.minutes, 'min'); add(s, 'Mission range', R.mission.km, 'km');
+    add(s, 'Hover energy', R.mission.eHover, 'Wh'); if (R.trans) { add(s, 'Transitions', R.trans.n); add(s, 'Transition time (each)', R.trans.t, 's'); add(s, 'Transition energy (all)', R.mission.eTrans, 'Wh'); add(s, 'Hover thrust penalty', (R.kHover - 1) * 100, '%'); } if (fin(R.hoverWind)) add(s, 'Tailsitter hover wind limit', R.hoverWind, 'm/s'); add(s, 'Cruise energy', R.mission.eCruise, 'Wh'); add(s, 'Cruise time', R.mission.minutes, 'min'); add(s, 'Mission range', R.mission.km, 'km');
   }
   const mp = U.missionPlan(p, S.lib, R);
   if (mp) {

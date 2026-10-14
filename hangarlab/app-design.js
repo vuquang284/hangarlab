@@ -93,10 +93,13 @@ function designInputs() {
   }
   if (t === 'vtol') {
     h += group('VTOL mission', `
-      ${num('vtol.hoverS', 'Hover time per sortie', { unit: 's' })}
+      ${num('vtol.hoverS', `Hover time per sortie ${tip('Vertical take-off, landing and any hovering. Transitions are counted separately below.')}`, { unit: 's' })}
+      ${num('vtol.transitions', `Transitions per sortie ${tip('Usually 2: one to forward flight after take-off and one back before landing.')}`, { step: 1, min: 0 })}
+      ${num('vtol.accel', `Transition acceleration ${tip('How fast it speeds up from hover to flying speed. Typical: quadplane 1 m/s², tilt-rotor 1.5, tailsitter 2.5. Faster = less energy spent half-hovering.')}`, { unit: 'm/s²', min: 0.1, step: 0.1 })}
+      ${num('vtol.hoverPen', `Hover thrust penalty ${tip('Extra thrust needed in hover because the airframe sits in the prop wash. Typical: quadplane 3 % (booms), tilt-rotor 8 % (wing under the rotors), tailsitter 6 % (wash along the wing).')}`, { unit: '%', min: 0, step: 1 })}
       ${num('vtol.reserve', `Extra reserve ${tip('On top of the battery usable capacity, which already keeps a landing reserve. Usually 0.')}`, { unit: '%', min: 0 })}
       ${p.vtol.kind === 'quadplane' ? num('vtol.dcd0', 'Stopped-rotor ΔCD0', { step: 0.001 }) : ''}
-      <p class="hint">Hover time covers takeoff, transitions and landing.</p>`);
+      <p class="hint" id="vtolHint"></p>`);
   }
   {
     const M = p.mission, mu = (u) => (u === 'm' ? 'm>ft' : u === 'km' ? 'km>mi' : '');
@@ -158,6 +161,8 @@ function designReadouts(p, R) {
     h += ro('Mission range', fin(R.mission.consKm) && !R.calK ? `${fmt(R.mission.consKm, 0)}–${fmt(R.mission.km, 0)}` : fmt(R.mission.km, 1), 'km', `${p.vtol.hoverS} s hover${+p.vtol.reserve ? `, +${p.vtol.reserve}% extra reserve` : ''}`, R.mission.km > 0 ? 'good' : 'crit', true);
     h += ro('Cruise time', fmt(R.mission.minutes, 1), 'min', `at ${p.fw.vc} m/s`, '', true);
     h += ro('Hover energy', fmt(R.mission.eHover, 0), 'Wh', `of ${fmt(R.mission.eAvail, 0)} Wh available`);
+    if (R.trans) h += ro('Transitions', fmt(R.mission.eTrans, 0), 'Wh', `${R.trans.n}× · ${fmt(R.trans.t, 1)} s each to ${fmt(R.trans.v, 1)} m/s`, R.mission.eTrans > 0.15 * R.mission.eAvail ? 'warn' : '');
+    if (fin(R.hoverWind)) h += ro('Hover wind limit', fmt(R.hoverWind, 1), 'm/s', 'tailsitter standing on its tail', (+p.mission.wind || 0) > R.hoverWind ? 'crit' : (+p.mission.wind || 0) > 0.7 * R.hoverWind ? 'warn' : '');
   }
   return h;
 }
