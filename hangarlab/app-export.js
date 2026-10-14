@@ -245,7 +245,7 @@ function renderSettings(el) {
 
       <div class="card"><h2>Flight log viewer</h2><div class="fields" style="padding:10px 0 0">
         ${sel('settings.logs.speed', 'Default playback speed', [1, 2, 5, 10, 20, 50].map((x) => [x, x + '×']), { st: true, isNum: true })}
-        ${sel('settings.logs.view', 'Open in', [['3d', '3D view'], ['map', 'Map']], { st: true })}
+        ${sel('settings.logs.view', 'Open in', [['3d', '3D view'], ['map', 'Map'], ['map3d', '3D map (satellite)']], { st: true })}
         <p class="hint">Map tiles load from OpenStreetMap in the downloaded app; the shared viewer blocks them.</p></div></div>
 
       <div class="card"><h2>Advanced mode</h2><div class="fields" style="padding:10px 0 0">

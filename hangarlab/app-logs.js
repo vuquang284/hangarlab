@@ -75,8 +75,8 @@ function renderLogs(el) {
       <section class="lv-main">
         <div class="lv-top">
           <div class="card lv-viewcard">
-            <div class="card-h"><div class="seg">${[['3d', '3D'], ['map', 'Map']].map(([k, l]) => `<button data-lvview="${k}" aria-pressed="${lvs.view === k}">${l}</button>`).join('')}</div><p id="lvViewNote">${LV.track ? `${esc(LV.track.src)} · drag to rotate · scroll to zoom` : 'No position data in this log'}</p></div>
-            <div class="lv-view"><canvas id="lv3d"${lvs.view === '3d' ? '' : ' hidden'}></canvas><div id="lvMap"${lvs.view === 'map' ? '' : ' hidden'}></div></div>
+            <div class="card-h"><div class="seg">${[['3d', '3D'], ['map', 'Map'], ['map3d', '3D map']].map(([k, l]) => `<button data-lvview="${k}" aria-pressed="${lvs.view === k}">${l}</button>`).join('')}</div><p id="lvViewNote">${LV.track ? `${esc(LV.track.src)} · drag to rotate · scroll to zoom` : 'No position data in this log'}</p></div>
+            <div class="lv-view"><canvas id="lv3d"${lvs.view === '3d' ? '' : ' hidden'}></canvas><div id="lvMap"${lvs.view === 'map' ? '' : ' hidden'}></div><div id="lv3dMap"${lvs.view === 'map3d' ? '' : ' hidden'}></div></div>
             ${lvModeTable()}
           </div>
           <div class="card lv-hud"><canvas id="lvHorizon" width="200" height="200"></canvas><dl class="kv" id="lvData"></dl></div>
@@ -370,7 +370,7 @@ async function lvMap() {
   lmMarker.setLatLng([tr.lat[k], tr.lng[k]]);
 }
 
-function lvDraw() { if (!LV || S.tab !== 'logs') return; lv3d(); lvHud(); convertDom($('#lvData')); if (lvs.view === 'map') lvMap(); const c = $('#lvClock'); if (c) c.textContent = `${fmtT(lvs.cursor - LV.t0)} / ${fmtT(LV.t1 - LV.t0)}`; }
+function lvDraw() { if (!LV || S.tab !== 'logs') return; lv3d(); lvHud(); convertDom($('#lvData')); if (lvs.view === 'map') lvMap(); if (lvs.view === 'map3d') m3Draw(); const c = $('#lvClock'); if (c) c.textContent = `${fmtT(lvs.cursor - LV.t0)} / ${fmtT(LV.t1 - LV.t0)}`; }
 
 let lvLast = 0;
 function lvTick(ts) {
@@ -406,7 +406,7 @@ document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-lv],[data-lvside],[data-lvview],[data-lvpreset],[data-lvjump]');
   if (!b) return;
   if (b.dataset.lvside) { lvs.side = b.dataset.lvside; document.querySelectorAll('[data-lvside]').forEach((x) => x.setAttribute('aria-pressed', x === b)); lvSide(); return; }
-  if (b.dataset.lvview) { lvs.view = b.dataset.lvview; document.querySelectorAll('[data-lvview]').forEach((x) => x.setAttribute('aria-pressed', x === b)); $('#lv3d').hidden = lvs.view !== '3d'; $('#lvMap').hidden = lvs.view !== 'map'; $('#lvViewNote').textContent = LV.track ? `${LV.track.src} · ${lvs.view === 'map' ? 'drag to pan · scroll to zoom' : 'drag to rotate · scroll to zoom'}` : 'No position data in this log'; lvDraw(); if (lmap) setTimeout(() => lmap.invalidateSize(), 50); return; }
+  if (b.dataset.lvview) { lvs.view = b.dataset.lvview; document.querySelectorAll('[data-lvview]').forEach((x) => x.setAttribute('aria-pressed', x === b)); $('#lv3d').hidden = lvs.view !== '3d'; $('#lvMap').hidden = lvs.view !== 'map'; $('#lv3dMap').hidden = lvs.view !== 'map3d'; $('#lvViewNote').textContent = LV.track ? `${LV.track.src} · ${lvs.view === 'map' ? 'drag to pan · scroll to zoom' : lvs.view === 'map3d' ? 'drag to orbit · scroll to zoom · double-click: follow / home' : 'drag to rotate · scroll to zoom'}` : 'No position data in this log'; lvDraw(); if (lmap) setTimeout(() => lmap.invalidateSize(), 50); return; }
   if (b.dataset.lvpreset) { applyPreset(JSON.parse(b.dataset.lvpreset)); lvSide(); logChart(); return; }
   if (b.dataset.lvjump) { lvSetTime(+b.dataset.lvjump); return; }
   const a = b.dataset.lv;
