@@ -360,7 +360,7 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
   .actions > * { flex: none; }
   .actions .btn { padding-inline: 10px; }
   .tabs { padding: 0 6px; flex-wrap: wrap; overflow: visible; row-gap: 0; } /* all tabs visible: two rows instead of a hidden scroll */
-  .tabs button { padding: 8px 9px 7px; font-size: 15px; }
+  .tabs button { padding: 8px 7px 7px; font-size: 14px; gap: 4px; }
   main { padding: 12px 12px 32px; }
   .bench > .stack { order: -1; }          /* results first, inputs below */
   .readouts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
@@ -444,14 +444,14 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
     </div>
   </div>
   <nav class="tabs" role="tablist" id="tabs">
-    <button data-tab="design" role="tab">Design</button>
+    <button data-tab="design" role="tab">Performance</button>
     <button data-tab="compare" role="tab">Compare</button>
-    <button data-tab="mass" role="tab">Mass &amp; BOM</button>
-    <button data-tab="power" role="tab">Power</button>
-    <button data-tab="rf" role="tab">RF link</button>
-    <button data-tab="materials" role="tab">Print materials</button>
-    <button data-tab="library" role="tab">Library</button>
-    <button data-tab="logs" role="tab">Flight logs</button>
+    <button data-tab="mass" role="tab">Parts &amp; Weight</button>
+    <button data-tab="power" role="tab">Electrical</button>
+    <button data-tab="rf" role="tab">Radio Link</button>
+    <button data-tab="materials" role="tab">3D Printing</button>
+    <button data-tab="library" role="tab">Parts Library</button>
+    <button data-tab="logs" role="tab">Flight Logs</button>
   </nav>
 </header>
 

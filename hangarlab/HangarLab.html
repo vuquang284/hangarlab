@@ -363,7 +363,7 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
   .actions > * { flex: none; }
   .actions .btn { padding-inline: 10px; }
   .tabs { padding: 0 6px; flex-wrap: wrap; overflow: visible; row-gap: 0; } /* all tabs visible: two rows instead of a hidden scroll */
-  .tabs button { padding: 8px 9px 7px; font-size: 15px; }
+  .tabs button { padding: 8px 7px 7px; font-size: 14px; gap: 4px; }
   main { padding: 12px 12px 32px; }
   .bench > .stack { order: -1; }          /* results first, inputs below */
   .readouts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
@@ -447,14 +447,14 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
     </div>
   </div>
   <nav class="tabs" role="tablist" id="tabs">
-    <button data-tab="design" role="tab">Design</button>
+    <button data-tab="design" role="tab">Performance</button>
     <button data-tab="compare" role="tab">Compare</button>
-    <button data-tab="mass" role="tab">Mass &amp; BOM</button>
-    <button data-tab="power" role="tab">Power</button>
-    <button data-tab="rf" role="tab">RF link</button>
-    <button data-tab="materials" role="tab">Print materials</button>
-    <button data-tab="library" role="tab">Library</button>
-    <button data-tab="logs" role="tab">Flight logs</button>
+    <button data-tab="mass" role="tab">Parts &amp; Weight</button>
+    <button data-tab="power" role="tab">Electrical</button>
+    <button data-tab="rf" role="tab">Radio Link</button>
+    <button data-tab="materials" role="tab">3D Printing</button>
+    <button data-tab="library" role="tab">Parts Library</button>
+    <button data-tab="logs" role="tab">Flight Logs</button>
   </nav>
 </header>
 
@@ -2900,14 +2900,14 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
     const view = S.massView;
     el.innerHTML = `<div class="stack">
       <div class="readouts" id="massRo"></div>
-      <div class="card"><div class="card-h"><h2>Mass by subsystem</h2><p>Motors, props, pack and payload come from the Design tab</p></div><div id="massBar"></div></div>
+      <div class="card"><div class="card-h"><h2>Mass by subsystem</h2><p>Motors, props, pack and payload come from the Performance tab</p></div><div id="massBar"></div></div>
       <div class="card"><div class="card-h"><h2>Balance</h2><p>Fill the X column: distance aft of a datum (${p.type === 'multirotor' ? 'frame centre, forward is negative' : 'the nose'}), in ${imperial() ? 'inches' : 'mm'}</p></div>
         ${p.type === 'multirotor' ? '' : `<div class="fields" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:8px">${num('cg.le', 'Wing leading edge (at root)', { unit: 'mm', imp: 'in' })}${num('cg.mac', `Mean chord ${tip('0 = wing area ÷ span. For a tapered or swept wing enter the MAC and the leading edge where the MAC sits.')}`, { unit: 'mm', imp: 'in', min: 0 })}</div>`}
         <div id="cgOut"></div></div>
       <div class="row"><div class="seg" role="group" aria-label="BOM view">
         <button data-massview="edit" aria-pressed="${view === 'edit'}">Edit BOM</button>
         <button data-massview="report" aria-pressed="${view === 'report'}">Full BOM report</button></div>
-        <span class="note">${view === 'edit' ? 'Rails feed the Power tab; RF bands feed the RF link tab.' : 'Tick several designs for one combined purchase list.'}</span></div>
+        <span class="note">${view === 'edit' ? 'Rails feed the Electrical tab; RF bands feed the Radio Link tab.' : 'Tick several designs for one combined purchase list.'}</span></div>
       <div id="bomArea"></div></div>`;
     if (view === 'edit') {
       $('#bomArea').innerHTML = `<div class="card">
@@ -2931,10 +2931,10 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
   function bomRows(p) {
     const xIn = (k, v) => `<input type="number" data-k="${k}" data-u="mm>in" value="${v === '' || v == null ? '' : toDisp(v, 'mm>in')}" step="any" placeholder="—" style="width:64px" aria-label="X position">`;
     const a = (u, label) => (u ? `<a href="${esc(u)}" target="_blank" rel="noopener">${label}</a>` : '');
-    const auto = U.autoRows(p, S.lib).map((r) => `<tr class="auto" style="--sc:${subColor(r.sub)}"><td>${esc(r.name)}</td><td>${subTag(r.sub)}</td><td class="n">${r.qty}</td><td class="n">${fmt(toDisp(r.g, 'g>oz'), 1)}</td><td class="n">${fmt(toDisp(r.qty * r.g, 'g>oz'), 1)}</td><td colspan="4" class="faint">set on the Design tab</td><td class="n">${xIn(`cg.pos.${r.key}`, (p.cg.pos || {})[r.key])}</td><td class="n">${r.auto === 'payload' ? '' : money(r.cost)}</td><td>${a(r.link, 'open')}</td><td>${a(r.buy, 'buy')}</td><td></td></tr>`).join('');
+    const auto = U.autoRows(p, S.lib).map((r) => `<tr class="auto" style="--sc:${subColor(r.sub)}"><td>${esc(r.name)}</td><td>${subTag(r.sub)}</td><td class="n">${r.qty}</td><td class="n">${fmt(toDisp(r.g, 'g>oz'), 1)}</td><td class="n">${fmt(toDisp(r.qty * r.g, 'g>oz'), 1)}</td><td colspan="4" class="faint">set on the Performance tab</td><td class="n">${xIn(`cg.pos.${r.key}`, (p.cg.pos || {})[r.key])}</td><td class="n">${r.auto === 'payload' ? '' : money(r.cost)}</td><td>${a(r.link, 'open')}</td><td>${a(r.buy, 'buy')}</td><td></td></tr>`).join('');
     const opt = (list, v) => list.map(([x, y]) => `<option value="${x}"${x === (v || '') ? ' selected' : ''}>${y}</option>`).join('');
     const rows = p.bom.map((r, i) => {
-      const pr = splitRef(r.ref)[0] === 'printed', roA = pr ? ' readonly title="Set by the printed part in Library"' : '';
+      const pr = splitRef(r.ref)[0] === 'printed', roA = pr ? ' readonly title="Set by the printed part in Parts Library"' : '';
       return `<tr style="--sc:${subColor(r.sub)}" id="br${i}">
       <td><div class="row" style="flex-wrap:nowrap;gap:6px">${r.ref ? libPill(i) : ''}<input type="text" data-k="bom.${i}.name" value="${esc(r.name)}" aria-label="Item" style="min-width:190px"${roA}></div></td>
       <td>${subTag(r.sub)}</td>
@@ -2984,7 +2984,7 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
         ${S.projects.map((p) => `<label class="f check" style="grid-column:auto"><input type="checkbox" data-bomsel="${p.id}"${ps.includes(p) ? ' checked' : ''}> ${esc(p.name)}</label>`).join('')}
         <button class="btn sm" data-act="bom-copy">Copy for Excel</button><button class="btn sm" data-act="bom-csv">Download CSV</button></div></div>
       <div class="tbl-wrap"><table class="bom"><thead>${head}</thead><tbody>${body}</tbody></table></div>
-      ${noBuy ? `<p class="hint" style="margin-top:8px">${noBuy} item${noBuy > 1 ? 's have' : ' has'} no purchase link. Add them in Library (Buy link column) or in the BOM.</p>` : ''}</div>`;
+      ${noBuy ? `<p class="hint" style="margin-top:8px">${noBuy} item${noBuy > 1 ? 's have' : ' has'} no purchase link. Add them in Parts Library (Buy link column) or in the BOM.</p>` : ''}</div>`;
   }
   function bomTableRows() {
     const ps = bomSelection(), rows = U.consolidate(ps, S.lib);
@@ -3015,7 +3015,7 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
       + ro('Payload', fmt(payload, 0), 'g', `${fmt((payload / m.total) * 100, 0)} % of AUW`)
       + ro('Battery fraction', fmt((R.bat.g / m.total) * 100, 0), '%', 'multirotors 25–40 %, planes 30–45 %')
       + ro('Empty weight', fmt((m.total - payload - R.bat.g) / 1000, 2), 'kg', 'no payload, no pack')
-      + ro('Parts cost', cost ? `${esc(S.settings.currency || '$')}${fmt(cost, 0)}` : '—', '', cost ? `${U.fullBom(p, S.lib).filter((r) => !r.cost && r.auto !== 'payload').length} items without a price` : 'add costs in Library or the BOM')
+      + ro('Parts cost', cost ? `${esc(S.settings.currency || '$')}${fmt(cost, 0)}` : '—', '', cost ? `${U.fullBom(p, S.lib).filter((r) => !r.cost && r.auto !== 'payload').length} items without a price` : 'add costs in Parts Library or the BOM')
       + ro('Balance', cg.x == null ? '—' : fwCg ? fmt(cg.pct, 0) : fmt(cg.x, 0), cg.x == null ? '' : fwCg ? '% MAC' : 'mm', cg.x == null ? 'enter X positions' : fwCg ? 'aim 25–33 %' : 'from frame centre', cgState)
       + ro('Items', String(p.bom.length + m.auto.length), '', `${subs.length} subsystems`);
     $('#massBar').innerHTML = `<div class="massbar">${subs.map(([s, g]) => `<span title="${esc(subName(s))}: ${fmt(g, 0)} g" style="width:${(g / m.total) * 100}%;background:${subColor(s)}"></span>`).join('')}</div>
@@ -3076,8 +3076,8 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
       ${S.lib.pwr ? `<div class="card"><div class="card-h"><h2>Advanced: main connector &amp; leads</h2><p>Auto picks the smallest rated for ${fmt(pl.totalPk, 0)} A peak</p></div><div class="fields" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
         ${sel('power.conn', 'Main connector', [['', 'Auto']].concat(pl.conns.map((c) => [c[0], `${c[0]} · ${c[1]} A`])), { rebuild: true })}
         ${sel('power.awg', 'Main leads', [['', 'Auto']].concat(pl.wires.map((w) => [String(w[0]), `${w[0]} AWG · ${w[1]} A`])), { rebuild: true })}</div></div>` : ''}
-      <div class="card"><div class="card-h"><h2>Power tree</h2><p>Set each item's rail on the Mass &amp; BOM tab</p></div>${tree}</div>
-      <div><h3 style="margin:0 0 10px">Rails &amp; regulators</h3><div class="rails">${railCards || '<p class="faint">No powered items yet. Assign rails on the Mass &amp; BOM tab.</p>'}</div></div>
+      <div class="card"><div class="card-h"><h2>Power tree</h2><p>Set each item's rail on the Parts &amp; Weight tab</p></div>${tree}</div>
+      <div><h3 style="margin:0 0 10px">Rails &amp; regulators</h3><div class="rails">${railCards || '<p class="faint">No powered items yet. Assign rails on the Parts &amp; Weight tab.</p>'}</div></div>
       <p class="note">Regulators: peak load × 1.25, next stock size. Wire and connectors assume short silicone runs with airflow.</p>
     </div>`;
   }
@@ -3126,7 +3126,7 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
       <section class="stack">
         <div class="card"><div class="card-h"><h2>Link margin vs distance</h2><p>Dashed line is your required fade margin</p></div><div class="chart" id="chRF"></div></div>
         ${conf.length ? `<div class="card"><h2 style="margin-bottom:8px">Interference checks</h2><div class="checks">${conf.map((c) => `<div class="chk"><span class="pill warn">Check</span><span>${esc(c)}</span></div>`).join('')}</div></div>` : ''}
-        ${links.length ? links.map(linkCard).join('') : '<div class="card empty">No radios yet. Set an RF band on BOM items (Mass &amp; BOM tab) or add a link manually.</div>'}
+        ${links.length ? links.map(linkCard).join('') : '<div class="card empty">No radios yet. Set an RF band on BOM items (Parts &amp; Weight tab) or add a link manually.</div>'}
       </section></div>`;
     liveRF();
   }
@@ -3440,7 +3440,7 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
         ${t === 'printed' ? `<span class="note">Printer settings:</span>
           <label class="f" style="width:110px"><span>Line width mm</span><input type="number" data-lib="printer.lineW" value="${PRN().lineW}" step="0.01"></label>
           <label class="f" style="width:110px"><span>Layer height mm</span><input type="number" data-lib="printer.layerH" value="${PRN().layerH}" step="0.01"></label>` : ''}
-        ${t === 'batteries' ? '<span class="note">One row per pack. Set the pack count on the Design tab.</span>' : ''}
+        ${t === 'batteries' ? '<span class="note">One row per pack. Set the pack count on the Performance tab.</span>' : ''}
         ${t === 'motors' ? `<button class="btn" data-act="spec-import" data-kind="motors">Import / paste motor specs</button><button class="btn" data-act="bulk-import">Import thrust spreadsheet (all sheets)</button><button class="btn ghost" data-act="mt-all">${mtOpen.size ? 'Collapse' : 'Expand'} all thrust data</button><span class="note">Rm and I0 enable the motor model ${tip('Rm: winding resistance in ohms (values over 1.5 are read as mΩ). I0: no-load current in amps.')}</span>` : ''}
         ${t === 'props' ? `<button class="btn" data-act="apc-import">Import APC .dat / .zip</button><button class="btn" data-act="spec-import" data-kind="props">Import / paste prop list</button><span class="note">Prop data drives cruise efficiency ${tip('Ct and Cp versus advance ratio at each RPM, e.g. APC PER3 files. Also used for motor + prop pairs without a thrust test.')}</span>` : ''}</div>`;
     }
@@ -4558,7 +4558,7 @@ ${Object.entries(sections).map(([s, rs]) => `<h2>${esc(s)}</h2><table>${rs.map((
     openDlg('Export', `
       <p class="note">Exports <b>${esc(p.name)}</b> as it stands now. Excel and CSV values are plain numbers, ready for your own formulas.</p>
       <div class="exp-grid">
-        <button class="exp" data-act="tpl-download"><b>Component template</b><span>.xlsx · blank workbook for components, motors, props, batteries, airframes and thrust tests; import it in Library</span></button>
+        <button class="exp" data-act="tpl-download"><b>Component template</b><span>.xlsx · blank workbook for components, motors, props, batteries, airframes and thrust tests; import it in Parts Library</span></button>
         <button class="exp" data-act="ex-xlsx"><b>Excel workbook</b><span>.xlsx · calculations, BOM, power rails, RF links, speed-power, battery and payload trades, motor curve</span></button>
         <button class="exp" data-act="ex-html"><b>Design report</b><span>.html · one printable page; print to PDF from your browser</span></button>
         <button class="exp" data-act="ex-csv"><b>Calculations</b><span>.csv · every number with section and unit</span></button>
@@ -4616,7 +4616,7 @@ ${Object.entries(sections).map(([s, rs]) => `<h2>${esc(s)}</h2><table>${rs.map((
 
         <div class="card"><h2>Advanced mode</h2><div class="fields" style="padding:10px 0 0">
           ${chk('settings.adv.on', 'Turn on advanced mode', { st: true, rebuild: true })}
-          <p class="hint">Edit the connector and wire tables the Power tab picks from, and choose the main connector and leads per design. Off = the built-in tables.</p>
+          <p class="hint">Edit the connector and wire tables the Electrical tab picks from, and choose the main connector and leads per design. Off = the built-in tables.</p>
           ${S.settings.adv && S.settings.adv.on ? `
           <label class="f"><span>Connectors: name, continuous A (one per line)</span><textarea data-s="settings.adv.conns" rows="8" spellcheck="false">${esc(S.settings.adv.conns)}</textarea></label>
           <label class="f"><span>Wire: AWG, continuous A (one per line)</span><textarea data-s="settings.adv.wire" rows="8" spellcheck="false">${esc(S.settings.adv.wire)}</textarea></label>
@@ -4650,11 +4650,12 @@ ${Object.entries(sections).map(([s, rs]) => `<h2>${esc(s)}</h2><table>${rs.map((
     { title: 'Welcome to HangarLab', tab: null, body: `
       <p>Size a multirotor, fixed-wing or VTOL drone, check its power and radio links, and compare the plan with real flight logs.</p>
       <ol class="qs-list">
-        <li><b>Design</b> — pick the configuration, motor, prop, battery and payload. Results update as you type.</li>
-        <li><b>Mass &amp; BOM</b> — every part with weight, supply rail and radio band.</li>
-        <li><b>Power · RF link · Print materials</b> — regulators and wiring, link budgets, filament choice and printed-part mass.</li>
-        <li><b>Library</b> — the motors, props, packs and parts every design draws from.</li>
-        <li><b>Flight logs</b> — open an ArduPilot log and compare it with the design.</li>
+        <li><b>Performance</b> — pick the configuration, motor, prop, battery and payload. Results update as you type.</li>
+        <li><b>Compare</b> — designs side by side.</li>
+        <li><b>Parts &amp; Weight</b> — every part with weight, cost, balance, supply rail and radio band.</li>
+        <li><b>Electrical · Radio Link · 3D Printing</b> — regulators and wiring, link budgets, filament choice and printed-part mass.</li>
+        <li><b>Parts Library</b> — the motors, props, packs and parts every design draws from.</li>
+        <li><b>Flight Logs</b> — open an ArduPilot log and compare it with the design.</li>
       </ol>
       <p class="hint">The example designs are loaded so every number has something to show. Change them freely; Undo is always one keystroke away.</p>` },
     { title: '1 · Set up a design', tab: 'design', body: `
@@ -4666,25 +4667,25 @@ ${Object.entries(sections).map(([s, rs]) => `<h2>${esc(s)}</h2><table>${rs.map((
         <li><b>Propulsion</b>: motor and prop. The green or amber note tells you whether thrust comes from bench data or an estimate.</li>
         <li>Fixed-wing / VTOL: <b>wing area, span</b> and the drag inputs (fuselage size, add-ons such as a gimbal).</li>
       </ol>
-      <p>The cards on the right show weight, thrust-to-weight, endurance and range. <b>Checks</b> lists anything to fix, and the red badge on the Design tab counts them.</p>` },
+      <p>The cards on the right show weight, thrust-to-weight, endurance and range. <b>Checks</b> lists anything to fix, and the red badge on the Performance tab counts them.</p>` },
     { title: '2 · Fill the library', tab: 'library', body: `
-      <p>Better data gives better numbers. In <b>Library</b>:</p>
+      <p>Better data gives better numbers. In <b>Parts Library</b>:</p>
       <ul class="qs-list">
         <li><b>Download template</b> → fill in components, motors, props, packs, airframes and thrust tests in Excel → <b>Import workbook</b>.</li>
         <li><b>Props → Import APC .dat / .zip</b> for real propeller performance.</li>
-        <li><b>Thrust data</b>: paste or load a thrust-stand sheet for each motor + prop pair.</li>
+        <li><b>Motors &amp; thrust data</b>: paste or load a thrust-stand sheet for each motor + prop pair.</li>
         <li>Motor <b>Rm and I0</b> from the datasheet turn on the motor model.</li>
       </ul>
-      <p class="hint">Without flight data, range and endurance include a ×1.25 drag correction and a conservative case. Calibrate from a real flight on the Design tab when you have one.</p>` },
+      <p class="hint">Without flight data, range and endurance include a ×1.25 drag correction and a conservative case. Calibrate from a real flight on the Performance tab when you have one.</p>` },
     { title: '3 · Parts, power and radios', tab: 'mass', body: `
       <ul class="qs-list">
-        <li><b>Mass &amp; BOM</b>: add parts from the library or paste rows from a spreadsheet. Set each part’s rail (5 V, 12 V, VBAT…) and RF band. <b>Full BOM report</b> combines several designs into one purchase list.</li>
-        <li><b>Power</b>: regulator sizes, PDB rating, connector and wire gauge from those rails.</li>
-        <li><b>RF link</b>: margin and maximum range for each radio, Fresnel clearance and antenna suggestions.</li>
-        <li><b>Print materials</b>: rank filaments for heat, UV and impacts; load an STL to estimate the printed part’s mass.</li>
+        <li><b>Parts &amp; Weight</b>: add parts from the library or paste rows from a spreadsheet. Set each part’s rail (5 V, 12 V, VBAT…) and RF band. <b>Full BOM report</b> combines several designs into one purchase list.</li>
+        <li><b>Electrical</b>: regulator sizes, PDB rating, connector and wire gauge from those rails.</li>
+        <li><b>Radio Link</b>: margin and maximum range for each radio, Fresnel clearance and antenna suggestions.</li>
+        <li><b>3D Printing</b>: rank filaments for heat, UV and impacts; load an STL to estimate the printed part’s mass.</li>
       </ul>` },
     { title: '4 · Check against a real flight', tab: 'logs', body: `
-      <p>In <b>Flight logs</b>, drop an ArduPilot <b>.bin</b> or <b>.log</b>.</p>
+      <p>In <b>Flight Logs</b>, drop an ArduPilot <b>.bin</b> or <b>.log</b>.</p>
       <ul class="qs-list">
         <li>Plot presets, any field, or expressions such as <code>BAT.Volt * BAT.Curr</code>.</li>
         <li>3D path or map coloured by flight mode, with play/pause.</li>
