@@ -126,7 +126,10 @@ main { padding: 16px; padding-block: 16px 40px; max-width: 1600px; margin: 0 aut
 .f.check { display: flex; align-items: center; gap: 8px; grid-column: 1 / -1; font-size: 13px; }
 .hint { grid-column: 1 / -1; font-size: 13px; color: var(--faint); margin: 0; }
 .hint b { color: var(--muted); font-weight: 500; }
-.tip { display: inline-grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--line-2); color: var(--faint); font: 600 9.5px var(--body); cursor: help; vertical-align: 1px; margin-left: 4px; text-transform: none; letter-spacing: 0; }
+.tip { display: inline-grid; place-items: center; width: 16px; height: 16px; padding: 0; border-radius: 50%; border: 1px solid var(--line-2); background: none; color: var(--muted); font: 600 10px/1 var(--body); cursor: pointer; vertical-align: 1px; margin-left: 4px; text-transform: none; letter-spacing: 0; }
+.tip:hover, .tip:focus-visible { border-color: var(--accent); color: var(--accent); }
+#tipPop { position: fixed; z-index: 1000; background: var(--panel-2); color: var(--fg); border: 1px solid var(--line-2); border-radius: 6px; padding: 8px 10px; font: 400 12.5px/1.45 var(--body); box-shadow: 0 6px 20px rgba(0,0,0,.35); pointer-events: auto; }
+#tipPop[hidden] { display: none; }
 
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; min-width: 0; box-shadow: inset 0 1px 0 color-mix(in srgb, var(--fg) 4%, transparent); }
 .card-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
@@ -2415,7 +2418,30 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
   function chk(k, label, o = {}) {
     return `<label class="f check"><input type="checkbox" id="i-${k}" ${bindAttr(k, o)}${valOf(k, o) ? ' checked' : ''}${o.rebuild ? ' data-rebuild' : ''}> ${label}</label>`;
   }
-  const tip = (t) => `<span class="tip" title="${esc(t)}" aria-label="${esc(t)}">i</span>`;
+  // info icon: hover or tap shows the explanation in a small bubble
+  const tip = (t) => `<button type="button" class="tip" data-tip="${esc(t)}" aria-label="More info: ${esc(t)}">i</button>`;
+  function tipShow(b, pin) {
+    let pop = $('#tipPop');
+    if (!pop) { pop = document.createElement('div'); pop.id = 'tipPop'; pop.setAttribute('role', 'tooltip'); }
+    const host = b.closest('dialog') || document.body; // inside a modal the bubble must live in the dialog to show above it
+    if (pop.parentNode !== host) host.appendChild(pop);
+    pop.textContent = b.dataset.tip; pop.hidden = false; pop.dataset.pinned = pin ? '1' : '';
+    const r = b.getBoundingClientRect(), w = Math.min(280, innerWidth - 24);
+    pop.style.width = w + 'px';
+    pop.style.left = Math.max(12, Math.min(innerWidth - w - 12, r.left + r.width / 2 - w / 2)) + 'px';
+    const below = r.bottom + 8, ph = pop.offsetHeight;
+    pop.style.top = (below + ph > innerHeight - 8 ? r.top - ph - 8 : below) + 'px';
+  }
+  const tipHide = (force) => { const pop = $('#tipPop'); if (pop && (force || !pop.dataset.pinned)) pop.hidden = true; };
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('.tip');
+    if (b) { e.preventDefault(); e.stopPropagation(); const pop = $('#tipPop'); if (pop && !pop.hidden && pop.dataset.pinned && pop.textContent === b.dataset.tip) tipHide(true); else tipShow(b, true); return; }
+    if (!e.target.closest('#tipPop')) tipHide(true);
+  }, true);
+  document.addEventListener('mouseover', (e) => { const b = e.target.closest && e.target.closest('.tip'); if (b) tipShow(b, false); });
+  document.addEventListener('mouseout', (e) => { if (e.target.closest && e.target.closest('.tip')) tipHide(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') tipHide(true); });
+  window.addEventListener('scroll', () => tipHide(true), true);
   const gKey = (title) => `${S.tab}:${String(title).replace(/<[^>]+>/g, '').trim()}`;
   const group = (title, body, open = true) => {
     const k = gKey(title), st = (S.ui && S.ui.groups && S.ui.groups[k]);

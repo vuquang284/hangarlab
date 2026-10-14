@@ -297,7 +297,30 @@
   function chk(k, label, o = {}) {
     return `<label class="f check"><input type="checkbox" id="i-${k}" ${bindAttr(k, o)}${valOf(k, o) ? ' checked' : ''}${o.rebuild ? ' data-rebuild' : ''}> ${label}</label>`;
   }
-  const tip = (t) => `<span class="tip" title="${esc(t)}" aria-label="${esc(t)}">i</span>`;
+  // info icon: hover or tap shows the explanation in a small bubble
+  const tip = (t) => `<button type="button" class="tip" data-tip="${esc(t)}" aria-label="More info: ${esc(t)}">i</button>`;
+  function tipShow(b, pin) {
+    let pop = $('#tipPop');
+    if (!pop) { pop = document.createElement('div'); pop.id = 'tipPop'; pop.setAttribute('role', 'tooltip'); }
+    const host = b.closest('dialog') || document.body; // inside a modal the bubble must live in the dialog to show above it
+    if (pop.parentNode !== host) host.appendChild(pop);
+    pop.textContent = b.dataset.tip; pop.hidden = false; pop.dataset.pinned = pin ? '1' : '';
+    const r = b.getBoundingClientRect(), w = Math.min(280, innerWidth - 24);
+    pop.style.width = w + 'px';
+    pop.style.left = Math.max(12, Math.min(innerWidth - w - 12, r.left + r.width / 2 - w / 2)) + 'px';
+    const below = r.bottom + 8, ph = pop.offsetHeight;
+    pop.style.top = (below + ph > innerHeight - 8 ? r.top - ph - 8 : below) + 'px';
+  }
+  const tipHide = (force) => { const pop = $('#tipPop'); if (pop && (force || !pop.dataset.pinned)) pop.hidden = true; };
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('.tip');
+    if (b) { e.preventDefault(); e.stopPropagation(); const pop = $('#tipPop'); if (pop && !pop.hidden && pop.dataset.pinned && pop.textContent === b.dataset.tip) tipHide(true); else tipShow(b, true); return; }
+    if (!e.target.closest('#tipPop')) tipHide(true);
+  }, true);
+  document.addEventListener('mouseover', (e) => { const b = e.target.closest && e.target.closest('.tip'); if (b) tipShow(b, false); });
+  document.addEventListener('mouseout', (e) => { if (e.target.closest && e.target.closest('.tip')) tipHide(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') tipHide(true); });
+  window.addEventListener('scroll', () => tipHide(true), true);
   const gKey = (title) => `${S.tab}:${String(title).replace(/<[^>]+>/g, '').trim()}`;
   const group = (title, body, open = true) => {
     const k = gKey(title), st = (S.ui && S.ui.groups && S.ui.groups[k]);
