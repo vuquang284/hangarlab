@@ -123,6 +123,7 @@
       const used = (s.lib.parts || []).map((x) => x.sub).concat(...s.projects.map((p) => (p.bom || []).map((r) => r.sub))).filter(Boolean);
       s.lib.subs = [...new Set(SUBS.concat(used))].map((k) => ({ key: k, name: k, color: defaultSubColor(k) }));
     }
+    for (const p of s.projects) delete p.servos; // servo sizing was removed
     s.massView = s.massView || 'edit';
     s.bomSel = s.bomSel || [];
     return s;
@@ -541,21 +542,6 @@
           <button class="btn sm" data-act="seg-add" style="margin-top:6px">+ Add segment</button></div>
         <p class="hint">Climb and descend are in metres of height. Energy available = battery usable capacity (its unused part is the landing reserve), minus any extra reserve.</p>`, false);
     }
-    if (t !== 'multirotor') {
-      if (p.servos && p.servos[0] && p.servos[0].len === Math.round(p.fw.span * 350)) p.servos[0].len = Math.round(p.fw.span * 250); // first default was oversized
-      if (!p.servos) { const c = Math.round((p.fw.area / p.fw.span) * 1000); p.servos = [{ name: 'Aileron', n: 2, chord: Math.round(c * 0.25), len: Math.round(p.fw.span * 250), throw: 20, rating: 0 }, { name: 'Elevator', n: 1, chord: Math.round(c * 0.3), len: Math.round(p.fw.span * 250), throw: 25, rating: 0 }]; }
-      h += group('Servo sizing', `
-        <div class="f wide"><span>Control surfaces: count, chord mm, length mm, max throw °, servo rating kg·cm</span>
-        ${p.servos.map((s, j) => `<div class="in segrow" style="margin-top:4px"><input type="text" data-k="servos.${j}.name" value="${esc(s.name)}" style="min-width:70px" aria-label="Surface">
-          <input type="number" data-k="servos.${j}.n" value="${s.n}" step="1" style="width:42px" aria-label="Count" title="Count">
-          <input type="number" data-k="servos.${j}.chord" value="${s.chord}" step="any" style="width:56px" aria-label="Chord mm" title="Chord mm">
-          <input type="number" data-k="servos.${j}.len" value="${s.len}" step="any" style="width:60px" aria-label="Length mm" title="Length mm">
-          <input type="number" data-k="servos.${j}.throw" value="${s.throw}" step="any" style="width:46px" aria-label="Throw °" title="Throw °">
-          <input type="number" data-k="servos.${j}.rating" value="${s.rating || ''}" placeholder="kg·cm" step="any" style="width:60px" aria-label="Servo rating kg·cm" title="Servo rating kg·cm">
-          <button class="btn ghost sm danger" data-act="servo-del" data-i="${j}" aria-label="Remove">×</button></div>`).join('')}
-        <button class="btn sm" data-act="servo-add" style="margin-top:6px">+ Add surface</button></div>
-        <p class="hint wide" id="servoHint"></p>`, false);
-    }
     h += group('Electronics', `${num('becEff', 'BEC / regulator efficiency', { unit: '%' })}<p class="hint" id="avHint"></p>`, false);
     return h;
   }
@@ -605,14 +591,6 @@
   const SEG_HUE = { hover: 352, climb: 24, cruise: 212, loiter: 140, descend: 172 };
   // straight-line range and out-and-back radius in wind, from the endurance at the cruise speed
   // strongest wind the aircraft can work in: multirotor = top speed at 85 % thrust; plane = top level speed
-  function servoText(p, R) {
-    const v = p.fw.vc * 1.25;
-    return `At ${fmt(v, 0)} m/s (cruise + 25 %), full throw, with ×1.5 margin: ` + (p.servos || []).map((s) => {
-      const need = U.servoTorque(+s.chord, +s.len, +s.throw, v) * 1.5;
-      const st = !(+s.rating > 0) ? '' : +s.rating >= need ? ' <span class="pill good">OK</span>' : ' <span class="pill crit">too weak</span>';
-      return `<b>${esc(s.name)}</b> ${fmt(need, 1)} kg·cm${st}`;
-    }).join(' · ') + '. Rule-of-thumb formula for a 1:1 linkage; a longer servo horn than control horn needs more.';
-  }
   function windReadout(p, R) {
     const lim = p.type === 'multirotor' ? R.vmax : R.vmaxLevel;
     if (!fin(lim)) return '';
@@ -781,7 +759,6 @@
     const rh = $('#rhoHint'); if (rh) rh.innerHTML = `Air density <b>${fmt(R.rho, 3)} kg/m³</b> (σ = ${fmt(R.sigma, 3)}).`;
     const bh = $('#batHint'); if (bh) bh.innerHTML = `Each pack ${p.batt.s}S${p.batt.p || 1}P, ${fmt(R.bat.packMah, 0)} mAh. On board: <b>${R.bat.S}S${R.bat.P}P · ${fmt(R.bat.mah, 0)} mAh · ${fmt(R.bat.V, 1)} V</b> (${fmt(R.bat.vMin, 1)}–${fmt(R.bat.vMax, 1)} V), <b>${fmt(R.bat.Wh, 0)} Wh</b>, ${fmt(R.bat.g, 0)} g, ${fmt(R.bat.iMaxCont, 0)} A continuous${R.bat.peakSet ? `, ${fmt(R.bat.iMaxPeak, 0)} A peak` : ''}. A ${R.bat.chem.label} pack this size typically weighs ~${fmt(R.bat.estG, 0)} g.`;
     const bh2 = $('#batHint'); if (bh2 && R.bat.coldF) bh2.innerHTML += ` <b style="color:var(--warn)">Cold: ${fmt(p.env.temp, 0)} °C leaves ${fmt(R.bat.coldF * 100, 0)} % of the usable energy.</b>`;
-    const sh = $('#servoHint'); if (sh) sh.innerHTML = servoText(p, R);
     const ah = $('#avHint'); if (ah) ah.innerHTML = `Electronics draw <b>${fmt(R.pAv, 1)} W</b> from the flight pack (from BOM rails).`;
     const ch = $('#calHint'); if (ch) ch.innerHTML = R.calK ? `Model scaled by <b>×${fmt(R.calK, 2)}</b> to match the measured point.` : 'Fill all three values.';
     const dh = $('#dragHint');
@@ -3034,8 +3011,6 @@ ${sec('After landing', ['Disarm, then unplug the battery', 'Note pack voltage an
         });
         break;
       }
-      case 'servo-add': p.servos.push({ name: 'Rudder', n: 1, chord: 40, len: 150, throw: 25, rating: 0 }); save(); render(); break;
-      case 'servo-del': withUndo('Surface removed', () => p.servos.splice(i, 1)); break;
       case 'ver-save': {
         const snap = clone(p); delete snap.versions; delete snap.flights;
         p.versions = p.versions || [];

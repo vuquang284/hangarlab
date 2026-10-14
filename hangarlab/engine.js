@@ -438,8 +438,6 @@
     for (let i = 1; i < pts.length; i++) if (t <= pts[i][0]) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i]; return y0 + ((t - x0) / (x1 - x0)) * (y1 - y0); }
     return 1;
   }
-  // control-surface servo torque (kg·cm), common RC formula: 8.5e-6 · C² · V² · L · sin(θ), C and L in cm, V in km/h, 1:1 linkage
-  const servoTorque = (chordMm, lenMm, throwDeg, vMs) => 8.5e-6 * Math.pow(chordMm / 10, 2) * Math.pow(vMs * 3.6, 2) * (lenMm / 10) * Math.sin((throwDeg * Math.PI) / 180);
 
   // ---------- main compute ----------
   function hover(set, n, coax, Wg, sigma, V) {
@@ -1430,6 +1428,6 @@
     rhoAt, battery, packOf, curve, dragBuildup, oswald, FINISH, CONSERVATIVE, DEFAULT_K, motorCanMm, combo, parseAPC, parsePropTable, propCoef, drive, drivePower, sizeOf, splitSets, propulsion, payloadSweep, fullBom, consolidate, costOf, cgOf, missionPlan, SEG, enduranceOf, fwDrag, mrForward, massOf, autoRows, avionicsPower, compute, batterySweep,
     powerPlan, pickWire, pickConn, CONNECTORS, WIRE, link, fspl, radioHorizonKm, rfConflicts,
     rankMaterials, partMass, partShell, parseSTL, stlStats,
-    parseBin, parseText, parseCSV, logModes, logSummary, modeCruise, missionFromLog, coldFactor, servoTorque, gpsTrack, sampleLog, findMsg, interp, logEvents, logParams, logTrack, evalExpr, idxAt, ERR_SUBSYS, EV_IDS,
+    parseBin, parseText, parseCSV, logModes, logSummary, modeCruise, missionFromLog, coldFactor, gpsTrack, sampleLog, findMsg, interp, logEvents, logParams, logTrack, evalExpr, idxAt, ERR_SUBSYS, EV_IDS,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
