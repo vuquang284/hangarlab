@@ -2812,11 +2812,24 @@ ${Object.entries(sections).map(([s, rs]) => `<h2>${esc(s)}</h2><table>${rs.map((
         S.projects.push(base); S.active = base.id; closeDlg(); save(); render(); break;
       }
       case 'dup': { const c = clone(p); c.id = 'p-' + uid(); c.name = p.name + ' (copy)'; S.projects.push(c); S.active = c.id; save(); render(); toast('Duplicated'); break; }
-      case 'del':
-        if (S.projects.length < 2) { toast('Keep at least one design.'); break; }
-        openDlg('Delete design', `<p>Delete <b>${esc(p.name)}</b>? This cannot be undone unless you exported it.</p>`, `<button class="btn" data-act="dlg-close">Cancel</button><button class="btn primary" data-act="del-go">Delete</button>`);
+      case 'del': {
+        if (S.projects.length < 2) { toast('Keep at least one design. Create a new one first, then delete this one.'); break; }
+        const R = U.compute(p, S.lib, { lite: true });
+        openDlg('Delete this design?', `<p style="margin-top:0">You are about to delete <b>${esc(p.name)}</b>.</p>
+          <dl class="kv" style="margin:8px 0 12px"><dt>Configuration</dt><dd>${TYPE_LABEL[p.type]}</dd><dt>All-up weight</dt><dd>${fmt(R.Wg / 1000, 2)} kg</dd><dt>BOM rows</dt><dd>${p.bom.length}</dd>${p.fw && p.fw.cal && p.fw.cal.on ? '<dt>Flight calibration</dt><dd>yes</dd>' : ''}</dl>
+          <label class="f check"><input type="checkbox" id="delSave" checked> Download a copy of this design first (.json, opens again with Import)</label>
+          <p class="hint">A backup of the whole workspace is also saved in Settings → Saving &amp; backups, and Undo (Ctrl/⌘ + Z) brings it back until you close the app. Library parts are not deleted.</p>`,
+          `<button class="btn" data-act="dlg-close">Keep it</button><button class="btn danger" data-act="del-go">Delete ${esc(p.name)}</button>`);
         break;
-      case 'del-go': closeDlg(); withUndo(`Deleted ${p.name}`, () => { S.projects = S.projects.filter((x) => x.id !== p.id); S.active = S.projects[0].id; }); break;
+      }
+      case 'del-go': {
+        const save1 = $('#delSave') && $('#delSave').checked;
+        if (save1) download(`hangarlab-${fileBase(p)}.json`, JSON.stringify({ app: 'hangarlab', v: 5, projects: [p], lib: S.lib }, (k, v) => (['fleetK', 'fleetFrom', 'cfg', 'pwr', 'knownDefaults'].includes(k) ? undefined : v), 1), 'application/json');
+        backup(JSON.stringify(S), `before deleting ${p.name}`);
+        closeDlg();
+        withUndo(`Deleted ${p.name}${save1 ? ' (copy downloaded)' : ''}`, () => { S.projects = S.projects.filter((x) => x.id !== p.id); S.active = S.projects[0].id; });
+        break;
+      }
       case 'export': exportDialog(); break;
       case 'ex-xlsx': exportXlsx(p); break;
       case 'ex-html': download(`${fileBase(p)}-report.html`, reportHtml(p), 'text/html'); break;
