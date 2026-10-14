@@ -1,6 +1,6 @@
 // Make an exported workspace backup the app's built-in library (and optionally its example designs), then rebuild.
-//   node make_defaults.js <uas-workbench-backup.json> [--designs]
-// Writes library.js and rebuilds "UAS Workbench.html". Republish the app afterwards.
+//   node make_defaults.js <hangarlab-backup.json> [--designs]
+// Writes library.js and rebuilds "HangarLab.html". Republish the app afterwards.
 // Existing users get the new items the next time they open the app (merged; their own data is kept).
 // Run `node make_defaults.js --reset` to go back to the library built into data.js.
 const fs = require('fs');
@@ -18,7 +18,7 @@ if (args[0] === '--reset') {
   const file = args.find((a) => !a.startsWith('--'));
   if (!file) { console.error('usage: node make_defaults.js <workspace-backup.json> [--designs] | --reset'); process.exit(1); }
   const ws = JSON.parse(fs.readFileSync(file, 'utf8'));
-  if (!ws.lib || !ws.projects) { console.error('Not a UAS Workbench workspace backup (Export → Workspace backup).'); process.exit(1); }
+  if (!ws.lib || !ws.projects) { console.error('Not a HangarLab workspace backup (Export → Workspace backup).'); process.exit(1); }
   if (ws.v !== 5 || !ws.lib.motors) { console.error('This backup is from an older version. Import it into the app, then export it again.'); process.exit(1); }
   const KINDS = ['motors', 'props', 'tests', 'batteries', 'parts', 'airframes', 'printed'];
   const lib = { printer: ws.lib.printer || { lineW: 0.45, layerH: 0.2 } };

@@ -1,8 +1,8 @@
-// UAS Workbench UI. State lives in S; inputs bind with data-k (design path) or data-lib (library path).
+// HangarLab UI. State lives in S; inputs bind with data-k (design path) or data-lib (library path).
 (function () {
   'use strict';
   const U = window.UAS;
-  const KEY = 'uas-workbench.v1';
+  const KEY = 'uas-workbench.v1'; // storage key kept from the old name so saved work still loads
   const $ = (s, el = document) => el.querySelector(s);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const clone = (o) => JSON.parse(JSON.stringify(o));
@@ -1353,7 +1353,7 @@
     if (!b64) return toast('Template not bundled in this build.');
     const bin = atob(b64), u8 = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
-    download('UAS Workbench template.xlsx', new Blob([u8], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+    download('HangarLab template.xlsx', new Blob([u8], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
   }
   // header row → objects, using a regex per field
   function sheetObjects(rows, fields) {
@@ -2439,11 +2439,11 @@
     const subs = [...new Set(bom.map((r) => r[0]))];
     const light = (s) => { const t = S.theme; S.theme = 'light'; const c = subColor(s); S.theme = t; return c; };
     const bomHtml = subs.map((s) => { const rs = bom.filter((r) => r[0] === s); return `<tr class="g"><td colspan="5"><i style="background:${light(s)}"></i>${esc(s)} · ${rs.reduce((a, r) => a + r[4], 0).toFixed(1)} g</td></tr>` + rs.map((r) => `<tr><td>${esc(r[1])}</td><td class="n">${r[2]}</td><td class="n">${r[3]}</td><td class="n">${r[4]}</td><td>${r[5]}${r[6] ? ` · ${r[6]} W` : ''}</td></tr>`).join(''); }).join('');
-    return `<!doctype html><html lang="en"><meta charset="utf-8"><title>${esc(p.name)} — UAS Workbench report</title>
+    return `<!doctype html><html lang="en"><meta charset="utf-8"><title>${esc(p.name)} — HangarLab report</title>
 <style>body{font:13px/1.45 "Segoe UI",system-ui,sans-serif;color:#15212b;max-width:900px;margin:32px auto;padding:0 20px}h1{font-size:22px;margin:0}h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#546472;border-bottom:1px solid #d6dde3;padding-bottom:4px;margin:26px 0 8px}
 table{border-collapse:collapse;width:100%}td{padding:3px 6px;border-bottom:1px solid #eef1f4;vertical-align:top}td.n{text-align:right;font-variant-numeric:tabular-nums}.k{color:#546472;width:45%}tr.g td{font-weight:600;background:#f4f6f8}tr.g i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
 .sub{color:#8794a0}@media print{body{margin:0}h2{break-after:avoid}}</style>
-<h1>${esc(p.name)}</h1><p class="sub">${TYPE_LABEL[p.type]} · exported ${new Date().toLocaleString()} from UAS Workbench</p>
+<h1>${esc(p.name)}</h1><p class="sub">${TYPE_LABEL[p.type]} · exported ${new Date().toLocaleString()} from HangarLab</p>
 ${Object.entries(sections).map(([s, rs]) => `<h2>${esc(s)}</h2><table>${rs.map((r) => `<tr><td class="k">${esc(r[1])}</td><td>${fmtv(r[2])} ${esc(r[3])}</td></tr>`).join('')}</table>`).join('')}
 <h2>Bill of materials</h2><table><tr><td class="k"><b>Item</b></td><td class="n"><b>Qty</b></td><td class="n"><b>Unit g</b></td><td class="n"><b>Total g</b></td><td><b>Rail</b></td></tr>${bomHtml}</table>
 </html>`;
@@ -2544,7 +2544,7 @@ ${Object.entries(sections).map(([s, rs]) => `<h2>${esc(s)}</h2><table>${rs.map((
 
   // ---------- quick start (shown on open until dismissed; reopen with ? or Settings) ----------
   const QS_STEPS = [
-    { title: 'Welcome to UAS Workbench', tab: null, body: `
+    { title: 'Welcome to HangarLab', tab: null, body: `
       <p>Size a multirotor, fixed-wing or VTOL drone, check its power and radio links, and compare the plan with real flight logs.</p>
       <ol class="qs-list">
         <li><b>Design</b> — pick the configuration, motor, prop, battery and payload. Results update as you type.</li>
@@ -2822,7 +2822,7 @@ ${Object.entries(sections).map(([s, rs]) => `<h2>${esc(s)}</h2><table>${rs.map((
       case 'ex-csv': download(`${fileBase(p)}-calculations.csv`, '﻿' + csvOf(calcRows(p).rows), 'text/csv'); break;
       case 'ex-bom': download(`${fileBase(p)}-bom.csv`, '﻿' + csvOf(bomRowsFor(p)), 'text/csv'); break;
       case 'ex-copy': copyText(tsvOf(calcRows(p).rows), 'Calculations'); break;
-      case 'ex-json': download(`uas-workbench-${stamp()}.json`, JSON.stringify({ app: 'uas-workbench', v: 5, projects: S.projects, lib: S.lib }, (k, v) => (['fleetK', 'fleetFrom', 'cfg', 'pwr', 'knownDefaults'].includes(k) ? undefined : v), 1), 'application/json'); break;
+      case 'ex-json': download(`hangarlab-${stamp()}.json`, JSON.stringify({ app: 'hangarlab', v: 5, projects: S.projects, lib: S.lib }, (k, v) => (['fleetK', 'fleetFrom', 'cfg', 'pwr', 'knownDefaults'].includes(k) ? undefined : v), 1), 'application/json'); break;
       case 'bom-copy': copyText(tsvOf(bomTableRows()), 'BOM'); break;
       case 'bom-csv': download(`bom-${stamp()}.csv`, '﻿' + csvOf(bomTableRows()), 'text/csv'); break;
       case 'bom-sort': p.bom.sort((x, y) => subOrder(x.sub) - subOrder(y.sub) || String(x.sub).localeCompare(y.sub)); save(); render(); break;

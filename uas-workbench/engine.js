@@ -1,4 +1,4 @@
-// UAS Workbench engine: physics, power, RF, materials, and log parsing.
+// HangarLab engine: physics, power, RF, materials, and log parsing.
 // Pure functions only (no DOM) so it can be tested in Node: `node test.js`.
 (function (G) {
   'use strict';

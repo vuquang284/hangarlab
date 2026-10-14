@@ -1,4 +1,4 @@
-"""Builds 'UAS Workbench template.xlsx' and template.js (base64 copy the app offers for download).
+"""Builds 'HangarLab template.xlsx' and template.js (base64 copy the app offers for download).
 Run: python make_template.py   (needs openpyxl)"""
 import base64, colorsys, os
 from openpyxl import Workbook
@@ -8,7 +8,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(HERE, 'UAS Workbench template.xlsx')
+OUT = os.path.join(HERE, 'HangarLab template.xlsx')
 
 # same order and hues as the app (app.js SUB_HUE)
 SUBS = [('Structures', 212), ('3D printed', 84), ('Propulsion', 24), ('Power', 352), ('Avionics', 268), ('Sensors', 172),
@@ -61,7 +61,7 @@ rd = wb.active
 rd.title = 'Read me'
 rd.column_dimensions['A'].width = 110
 lines = [
-    ('UAS Workbench component template', Font(bold=True, size=16, color=ORANGE)),
+    ('HangarLab component template', Font(bold=True, size=16, color=ORANGE)),
     ('Fill in the sheets, save, then in the app open Library → Import workbook. Rows are matched by Name: new names are added, existing ones updated.', None),
     ('', None),
     ('Sheets', Font(bold=True, size=12)),

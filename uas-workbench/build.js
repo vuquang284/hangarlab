@@ -8,5 +8,5 @@ for (const f of ['engine.js', 'apc.js', 'library.js', 'data.js', 'template.js', 
   html = html.replace(`<script src="${f}"></script>`, () => `<script>\n${js}\n</script>`);
 }
 const out = `<!doctype html>\n<html lang="en">\n<meta charset="utf-8">\n${html}\n</html>\n`;
-fs.writeFileSync(path.join(dir, 'UAS Workbench.html'), out);
-console.log('wrote UAS Workbench.html', (out.length / 1024).toFixed(0) + ' KB');
+fs.writeFileSync(path.join(dir, 'HangarLab.html'), out);
+console.log('wrote HangarLab.html', (out.length / 1024).toFixed(0) + ' KB');
