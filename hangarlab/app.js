@@ -2296,7 +2296,7 @@
   // ---------- dialogs ----------
   function openDlg(title, body, foot) {
     const d = $('#dlg');
-    d.innerHTML = `<div class="dlg-h"><h2>${title}</h2><button class="btn ghost sm" data-act="dlg-close" aria-label="Close">×</button></div><div class="dlg-b">${body}</div><div class="dlg-f">${foot}</div>`;
+    d.innerHTML = `<div class="dlg-h"><h2>${title}</h2><button class="btn ghost icon dlg-x" data-act="dlg-close" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button></div><div class="dlg-b">${body}</div><div class="dlg-f">${foot}</div>`;
     if (!d.open) d.showModal();
   }
   function closeDlg() { const d = $('#dlg'); if (d.open) d.close(); }
