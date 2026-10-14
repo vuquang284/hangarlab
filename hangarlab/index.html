@@ -233,7 +233,8 @@ canvas.track { width: 100%; height: 300px; display: block; border-radius: 4px; b
 .toast { position: fixed; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 14px; border-radius: var(--r); font-size: 13px; z-index: 50; }
 
 dialog { background: var(--panel); color: var(--fg); border: 1px solid var(--line-2); border-radius: 8px; padding: 0; width: min(680px, calc(100vw - 32px)); max-height: calc(100vh - 40px); }
-dialog::backdrop { background: rgba(0, 0, 0, 0.55); }
+dialog::backdrop { background: rgba(0, 0, 0, 0.62); backdrop-filter: blur(3px); }
+.dlg-h [data-act="dlg-close"] { font-size: 20px; line-height: 1; width: 32px; height: 32px; padding: 0; color: var(--fg); }
 .dlg-h { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line); }
 .dlg-b { padding: 14px 16px; display: grid; gap: 10px; }
 .dlg-f { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--line); }

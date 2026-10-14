@@ -236,7 +236,8 @@ canvas.track { width: 100%; height: 300px; display: block; border-radius: 4px; b
 .toast { position: fixed; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 14px; border-radius: var(--r); font-size: 13px; z-index: 50; }
 
 dialog { background: var(--panel); color: var(--fg); border: 1px solid var(--line-2); border-radius: 8px; padding: 0; width: min(680px, calc(100vw - 32px)); max-height: calc(100vh - 40px); }
-dialog::backdrop { background: rgba(0, 0, 0, 0.55); }
+dialog::backdrop { background: rgba(0, 0, 0, 0.62); backdrop-filter: blur(3px); }
+.dlg-h [data-act="dlg-close"] { font-size: 20px; line-height: 1; width: 32px; height: 32px; padding: 0; color: var(--fg); }
 .dlg-h { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line); }
 .dlg-b { padding: 14px 16px; display: grid; gap: 10px; }
 .dlg-f { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--line); }
@@ -4637,7 +4638,7 @@ ${Object.entries(sections).map(([s, rs]) => `<h2>${esc(s)}</h2><table>${rs.map((
           <div class="row"><button class="btn sm danger" data-act="clear-propdata"${propData ? '' : ' disabled'}>Remove all prop performance data</button><button class="btn sm danger" data-act="reset-examples">Replace everything with the example data</button></div></div>
 
         <div class="card"><h2>Keyboard shortcuts</h2><dl class="kv" style="margin-top:8px"><dt>Switch tab</dt><dd>1 – 9</dd><dt>Undo</dt><dd>Ctrl/⌘ + Z</dd><dt>Export</dt><dd>Ctrl/⌘ + E</dd><dt>Quick start guide</dt><dd>?</dd></dl>
-          <div class="row" style="margin-top:12px"><button class="btn sm" data-act="shortcuts">Open quick start</button>${chk('settings.quickstart', 'Show the quick start when the app opens', { st: true })}</div></div>
+          <div class="row" style="margin-top:12px"><button class="btn sm" data-act="shortcuts">Open quick start</button>${chk('settings.quickstart', 'Show the quick start again when it changes', { st: true })}</div></div>
 
         <div class="card"><h2>About</h2><p class="note" style="margin:8px 0 0">Libraries: uPlot (MIT), Leaflet (BSD-2), SheetJS (Apache-2.0), LZMA-JS (MIT). Prop data: APC Propellers PER3 files. Fonts: Barlow, Barlow Condensed, Roboto Mono (OFL / Apache-2.0). The flight log viewer follows the layout of ArduPilot UAV Log Viewer but shares no code with it.</p></div>
       </div></div>`;
@@ -4683,7 +4684,7 @@ ${Object.entries(sections).map(([s, rs]) => `<h2>${esc(s)}</h2><table>${rs.map((
       <p class="hint">Without flight data, range and endurance include a ×1.25 drag correction and a conservative case. Calibrate from a real flight on the Performance tab when you have one.</p>` },
     { title: '3 · Parts, power and radios', tab: 'mass', body: `
       <ul class="qs-list">
-        <li><b>Parts &amp; Weight</b>: add parts from the library or paste rows from a spreadsheet. Set each part’s rail (5 V, 12 V, VBAT…) and RF band. <b>Full BOM report</b> combines several designs into one purchase list.</li>
+        <li><b>Parts &amp; Weight</b>: add parts from the library or paste rows from a spreadsheet. Set each part’s rail (5 V, 12 V, VBAT…), RF band, cost, buy link and position for the balance (CG). <b>Full BOM report</b> combines several designs into one purchase list.</li>
         <li><b>Electrical</b>: regulator sizes, PDB rating, connector and wire gauge from those rails.</li>
         <li><b>Radio Link</b>: margin and maximum range for each radio, Fresnel clearance and antenna suggestions.</li>
         <li><b>3D Printing</b>: rank filaments for heat, UV and impacts; load an STL to estimate the printed part’s mass.</li>
@@ -4695,22 +4696,25 @@ ${Object.entries(sections).map(([s, rs]) => `<h2>${esc(s)}</h2><table>${rs.map((
         <li>3D path or map coloured by flight mode, with play/pause.</li>
         <li>Parameters and events (modes, errors, arm/disarm).</li>
         <li><b>Design vs log</b> compares the logged power with your design’s prediction.</li>
+        <li>The flight-mode table shows cruise speed and current per mode: <b>Calibrate</b> a design from it, or <b>build its mission profile</b> from the flight.</li>
       </ul>` },
     { title: '5 · Saving, sharing and shortcuts', tab: null, body: `
       <ul class="qs-list">
         <li><b>Autosave</b>: every change is kept in this browser. Automatic backups are in <b>Settings</b>.</li>
         <li><b>Export</b>: Excel workbook, report, CSV, or a workspace backup to move your work to another computer (<b>Import</b> in the top bar reads it).</li>
-        <li><b>Metric / Imperial</b> in the top bar; theme and estimate settings under <b>Settings</b>.</li>
+        <li><b>Metric / Imperial</b> at the right of the tab bar; theme, estimates and advanced mode under <b>Settings</b> (gear icon).</li>
       </ul>
       <dl class="kv" style="margin-top:10px"><dt>Switch tab</dt><dd>1 – 9</dd><dt>Undo</dt><dd>Ctrl/⌘ + Z</dd><dt>Export</dt><dd>Ctrl/⌘ + E</dd><dt>This guide</dt><dd>?</dd></dl>` },
   ];
   let qsStep = 0;
+  const QS_VER = 2; // bump when the guide changes so everyone sees it once more
   function quickStart(step = 0) {
+    if (S.settings.qsSeen !== QS_VER) { S.settings.qsSeen = QS_VER; save(); }
     qsStep = Math.max(0, Math.min(QS_STEPS.length - 1, step));
     const st = QS_STEPS[qsStep], last = qsStep === QS_STEPS.length - 1;
     openDlg(`<span class="qs-title">${st.title}</span>`, `<div class="qs">${st.body}</div>
       <div class="qs-dots" role="tablist">${QS_STEPS.map((x, i) => `<button data-qs="${i}" aria-label="Step ${i + 1}" aria-current="${i === qsStep}"></button>`).join('')}</div>`,
-      `<label class="f check" style="margin-right:auto;grid-column:auto;font-size:13px"><input type="checkbox" id="qsHide"${S.settings.quickstart === false ? ' checked' : ''}> Don’t show on start</label>
+      `<label class="f check" style="margin-right:auto;grid-column:auto;font-size:13px"><input type="checkbox" id="qsHide"${S.settings.quickstart === false ? ' checked' : ''}> Don’t show again after updates</label>
        ${st.tab ? `<button class="btn ghost" data-qs-go="${st.tab}">Show me</button>` : ''}
        ${qsStep ? '<button class="btn" data-qs="prev">Back</button>' : ''}
        <button class="btn primary" data-qs="${last ? 'done' : 'next'}">${last ? 'Get started' : 'Next'}</button>`);
@@ -5148,7 +5152,7 @@ ${Object.entries(sections).map(([s, rs]) => `<h2>${esc(s)}</h2><table>${rs.map((
   S = load();
   render();
   if (mergedNote) { save(); toast(mergedNote, { label: 'Undo', fn: undo }); }
-  if (S.settings.quickstart !== false) setTimeout(() => quickStart(0), 250);
+  if (S.settings.quickstart !== false && S.settings.qsSeen !== QS_VER) setTimeout(() => quickStart(0), 250);
 })();
 
 </script>
