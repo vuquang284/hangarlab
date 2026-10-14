@@ -124,6 +124,8 @@
       s.lib.subs = [...new Set(SUBS.concat(used))].map((k) => ({ key: k, name: k, color: defaultSubColor(k) }));
     }
     for (const p of s.projects) delete p.servos; // servo sizing was removed
+    // the built-in example packs were trimmed to three; drop the retired ones once (designs keep their own pack values)
+    if (!s.lib.batPruned) { const old = ['6s5000', '4s5000', '6s4000', 'p45b-6s2p', 'p45b-6s4p']; s.lib.batteries = (s.lib.batteries || []).filter((x) => !old.includes(x.id)); s.lib.batPruned = 1; }
     s.massView = s.massView || 'edit';
     s.bomSel = s.bomSel || [];
     return s;

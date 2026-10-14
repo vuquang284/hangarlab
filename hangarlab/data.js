@@ -40,12 +40,8 @@
   // one entry = one pack: s cells in series × p in parallel, cellMah per cell, g per pack
   const batteries = [
     { id: 'tattu-6s7000', name: 'Tattu 6S 7000 25C', chem: 'lipo', s: 6, p: 1, cellMah: 7000, g: 870, c: 25, cPeak: 50 },
-    { id: '6s5000', name: '6S 5000 25C', chem: 'lipo', s: 6, p: 1, cellMah: 5000, g: 451, c: 25, cPeak: 50 },
-    { id: '4s5000', name: '4S 5000 25C', chem: 'lipo', s: 4, p: 1, cellMah: 5000, g: 292, c: 25, cPeak: 50 },
-    { id: '6s4000', name: '6S 4000 25C', chem: 'lipo', s: 6, p: 1, cellMah: 4000, g: 305, c: 25, cPeak: 50 },
     { id: 'tattu-4s550', name: 'Tattu 4S 550 95C', chem: 'lipo', s: 4, p: 1, cellMah: 550, g: 60, c: 95, cPeak: 190 },
-    { id: 'p45b-6s2p', name: '6S2P Molicel P45B 21700 (example)', chem: 'liion', s: 6, p: 2, cellMah: 4500, g: 880, c: 10 },
-    { id: 'p45b-6s4p', name: '6S4P Molicel P45B 21700 (example)', chem: 'liion', s: 6, p: 4, cellMah: 4500, g: 1750, c: 10 },
+    { id: 'ba-6iu82vu', name: 'Upgrade Energy GREEN V2 6S1P 4Ah AMPRIUS SA10', chem: 'liion', s: 6, p: 1, cellMah: 4000, g: 305, c: 1.5, cPeak: 4, link: 'https://www.upgradeenergytech.com/' },
   ];
 
 
