@@ -4638,7 +4638,7 @@ ${Object.entries(sections).map(([s, rs]) => `<h2>${esc(s)}</h2><table>${rs.map((
           <div class="row"><button class="btn sm danger" data-act="clear-propdata"${propData ? '' : ' disabled'}>Remove all prop performance data</button><button class="btn sm danger" data-act="reset-examples">Replace everything with the example data</button></div></div>
 
         <div class="card"><h2>Keyboard shortcuts</h2><dl class="kv" style="margin-top:8px"><dt>Switch tab</dt><dd>1 – 9</dd><dt>Undo</dt><dd>Ctrl/⌘ + Z</dd><dt>Export</dt><dd>Ctrl/⌘ + E</dd><dt>Quick start guide</dt><dd>?</dd></dl>
-          <div class="row" style="margin-top:12px"><button class="btn sm" data-act="shortcuts">Open quick start</button>${chk('settings.quickstart', 'Show the quick start again when it changes', { st: true })}</div></div>
+          <div class="row" style="margin-top:12px"><button class="btn sm" data-act="shortcuts">Open quick start</button>${chk('settings.quickstart', 'Show the quick start when the app opens', { st: true })}</div></div>
 
         <div class="card"><h2>About</h2><p class="note" style="margin:8px 0 0">Libraries: uPlot (MIT), Leaflet (BSD-2), SheetJS (Apache-2.0), LZMA-JS (MIT). Prop data: APC Propellers PER3 files. Fonts: Barlow, Barlow Condensed, Roboto Mono (OFL / Apache-2.0). The flight log viewer follows the layout of ArduPilot UAV Log Viewer but shares no code with it.</p></div>
       </div></div>`;
@@ -4707,14 +4707,12 @@ ${Object.entries(sections).map(([s, rs]) => `<h2>${esc(s)}</h2><table>${rs.map((
       <dl class="kv" style="margin-top:10px"><dt>Switch tab</dt><dd>1 – 9</dd><dt>Undo</dt><dd>Ctrl/⌘ + Z</dd><dt>Export</dt><dd>Ctrl/⌘ + E</dd><dt>This guide</dt><dd>?</dd></dl>` },
   ];
   let qsStep = 0;
-  const QS_VER = 2; // bump when the guide changes so everyone sees it once more
   function quickStart(step = 0) {
-    if (S.settings.qsSeen !== QS_VER) { S.settings.qsSeen = QS_VER; save(); }
     qsStep = Math.max(0, Math.min(QS_STEPS.length - 1, step));
     const st = QS_STEPS[qsStep], last = qsStep === QS_STEPS.length - 1;
     openDlg(`<span class="qs-title">${st.title}</span>`, `<div class="qs">${st.body}</div>
       <div class="qs-dots" role="tablist">${QS_STEPS.map((x, i) => `<button data-qs="${i}" aria-label="Step ${i + 1}" aria-current="${i === qsStep}"></button>`).join('')}</div>`,
-      `<label class="f check" style="margin-right:auto;grid-column:auto;font-size:13px"><input type="checkbox" id="qsHide"${S.settings.quickstart === false ? ' checked' : ''}> Don’t show again after updates</label>
+      `<label class="f check" style="margin-right:auto;grid-column:auto;font-size:13px"><input type="checkbox" id="qsHide"${S.settings.quickstart === false ? ' checked' : ''}> Don’t show on start</label>
        ${st.tab ? `<button class="btn ghost" data-qs-go="${st.tab}">Show me</button>` : ''}
        ${qsStep ? '<button class="btn" data-qs="prev">Back</button>' : ''}
        <button class="btn primary" data-qs="${last ? 'done' : 'next'}">${last ? 'Get started' : 'Next'}</button>`);
@@ -5152,7 +5150,7 @@ ${Object.entries(sections).map(([s, rs]) => `<h2>${esc(s)}</h2><table>${rs.map((
   S = load();
   render();
   if (mergedNote) { save(); toast(mergedNote, { label: 'Undo', fn: undo }); }
-  if (S.settings.quickstart !== false && S.settings.qsSeen !== QS_VER) setTimeout(() => quickStart(0), 250);
+  if (S.settings.quickstart !== false) setTimeout(() => quickStart(0), 250);
 })();
 
 </script>
