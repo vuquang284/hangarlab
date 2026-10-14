@@ -1274,6 +1274,128 @@
     }
     return { segs: out, wh };
   }
+  // which ArduPilot firmware wrote the log: from the version message, else from tell-tale parameters
+  function logFirmware(log, params) {
+    const m = findMsg(log, 'MSG'), txt = m && m.cols.includes('Message') ? Array.from(m.col('Message')).slice(0, 40).join(' ') : '';
+    const hit = /Ardu(Plane|Copter|Rover|Sub)|AntennaTracker|Blimp/.exec(txt);
+    if (hit) return hit[0] === 'AntennaTracker' ? 'AntennaTracker' : hit[0];
+    const has = (n) => params.some((p) => p.name === n);
+    return has('Q_ENABLE') || has('TRIM_ARSPD_CM') || has('AIRSPEED_CRUISE') ? 'ArduPlane' : has('ATC_ANG_RLL_P') ? 'ArduCopter' : has('CRUISE_SPEED') ? 'Rover' : 'ArduCopter';
+  }
+
+  // automatic health check, after the checks in ArduPilot's Tools/LogAnalyzer (re-implemented, not copied)
+  function logHealth(log, params, vehicle) {
+    const out = [], add = (level, title, detail) => out.push({ level, title, detail });
+    const col = (name, c) => { const m = findMsg(log, name); return m && m.cols.includes(c) ? { t: m.time(), y: Array.from(m.col(c)) } : null; };
+    const max = (a) => a.reduce((x, y) => (y > x ? y : x), -Infinity), min = (a) => a.reduce((x, y) => (y < x ? y : x), Infinity);
+    const prm = (n) => { const p = params.find((x) => x.name === n); return p ? p.value : null; };
+    // board power
+    const vcc = col('POWR', 'Vcc');
+    if (vcc && vcc.y.length) {
+      const lo = min(vcc.y), sw = max(vcc.y) - lo;
+      add(lo < 4.5 ? 'crit' : lo < 4.8 || sw > 0.3 ? 'warn' : 'good', 'Board power (Vcc)', `${lo.toFixed(2)}–${max(vcc.y).toFixed(2)} V${lo < 4.5 ? ': brownout risk, check the power module/BEC' : sw > 0.3 ? ': swings more than 0.3 V, check the 5 V supply under load' : ''}`);
+    }
+    // vibration and clipping
+    const vx = col('VIBE', 'VibeX'), vy = col('VIBE', 'VibeY'), vz = col('VIBE', 'VibeZ');
+    if (vx && vy && vz) {
+      const pk = Math.max(max(vx.y), max(vy.y), max(vz.y));
+      const clips = ['Clip', 'Clip0', 'Clip1', 'Clip2'].map((c) => col('VIBE', c)).filter(Boolean).reduce((a, c) => a + (max(c.y) - min(c.y)), 0);
+      add(pk > 60 || clips > 100 ? 'crit' : pk > 30 || clips > 0 ? 'warn' : 'good', 'Vibration', `peak ${pk.toFixed(0)} m/s²${clips ? `, ${clips} accelerometer clips` : ''}${pk > 30 ? ': soft-mount the flight controller, balance props' : ' (under 30 is good)'}`);
+    }
+    // GPS
+    const ns = col('GPS', 'NSats'), hd = col('GPS', 'HDop');
+    if (ns) {
+      const lo = min(ns.y.filter((x) => x > 0)), hp = hd ? max(hd.y) : null;
+      add(lo < 6 || hp > 2.5 ? 'crit' : lo < 10 || hp > 1.5 ? 'warn' : 'good', 'GPS', `min ${isFinite(lo) ? lo : 0} satellites${hp != null ? `, worst HDop ${hp.toFixed(2)}` : ''}`);
+    }
+    // compass interference: field strength change with throttle
+    const mx = col('MAG', 'MagX'), my = col('MAG', 'MagY'), mz = col('MAG', 'MagZ'), thr = col('CTUN', 'ThO') || col('CTUN', 'ThI');
+    if (mx && my && mz && thr) {
+      const f = mx.y.map((x, i) => Math.hypot(x, my.y[i], mz.y[i]));
+      const at = (s, t) => { const k = idxAt(s.t, t); return k < 0 ? null : s.y[k]; };
+      const lo = [], hi = [];
+      const tMax = max(thr.y), scale = tMax > 1.5 ? 100 : 1; // copter ThO is 0..1, plane ThO is %
+      mx.t.forEach((t, i) => { const th = at(thr, t); if (th == null) return; const r = th / scale; if (r < 0.1) lo.push(f[i]); else if (r > 0.4) hi.push(f[i]); });
+      if (lo.length > 20 && hi.length > 20) {
+        const a = lo.reduce((x, y) => x + y, 0) / lo.length, b = hi.reduce((x, y) => x + y, 0) / hi.length, pct = Math.abs(b - a) / a * 100;
+        add(pct > 30 ? 'crit' : pct > 15 ? 'warn' : 'good', 'Compass interference', `field changes ${pct.toFixed(0)} % with throttle${pct > 15 ? ': move the compass away from power wires, or run compass-motor calibration' : ''}`);
+      }
+    }
+    // motor balance (multirotor hover)
+    if (vehicle === 'ArduCopter') {
+      const ch = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => ({ n, s: col('RCOU', `C${n}`) })).filter((c) => c.s && max(c.s.y) > 1300);
+      if (ch.length >= 3) {
+        const avg = ch.map((c) => { const v = c.s.y.filter((x) => x > 1150); return { n: c.n, a: v.reduce((x, y) => x + y, 0) / (v.length || 1) }; });
+        const hiM = avg.reduce((x, y) => (y.a > x.a ? y : x)), loM = avg.reduce((x, y) => (y.a < x.a ? y : x)), spread = hiM.a - loM.a;
+        add(spread > 200 ? 'crit' : spread > 100 ? 'warn' : 'good', 'Motor balance', `outputs spread ${spread.toFixed(0)} µs${spread > 100 ? `: motor ${hiM.n} works hardest (check its prop, motor, or the CG on that side)` : ''}`);
+      }
+    }
+    // CPU load
+    const ld = col('PM', 'Load');
+    if (ld && ld.y.length) { const pk = max(ld.y) / 10; add(pk > 90 ? 'crit' : pk > 75 ? 'warn' : 'good', 'Processor load', `peak ${pk.toFixed(0)} %`); }
+    // errors and failsafes
+    const ev = logEvents(log), errs = ev.filter((e) => e.kind === 'err' && !e.ok), fs = ev.filter((e) => /failsafe/i.test(e.text));
+    add(errs.length ? 'crit' : 'good', 'Errors', errs.length ? errs.slice(0, 4).map((e) => e.text).join('; ') + (errs.length > 4 ? ` (+${errs.length - 4} more)` : '') : 'none logged');
+    if (fs.length) add('warn', 'Failsafes', fs.slice(0, 3).map((e) => e.text).join('; '));
+    // battery sag per cell (cell count from the full voltage)
+    const bv = col('BAT', 'Volt');
+    if (bv && bv.y.length) {
+      const top = max(bv.y), cells = Math.max(1, Math.round(top / 4.15)), lo = min(bv.y.filter((x) => x > 1)) / cells;
+      add(lo < 3.2 ? 'crit' : lo < 3.4 ? 'warn' : 'good', 'Battery', `${cells}S, lowest ${lo.toFixed(2)} V per cell${prm('BATT_CAPACITY') ? ` · BATT_CAPACITY ${prm('BATT_CAPACITY')} mAh` : ''}`);
+    }
+    // ended in the air
+    const alt = col('CTUN', 'Alt');
+    if (alt && alt.y.length && alt.y[alt.y.length - 1] > 5) add('crit', 'Log end', `log stops ${alt.y[alt.y.length - 1].toFixed(0)} m up: power loss or crash?`);
+    return out;
+  }
+
+  // starting parameters from a design (battery, failsafe, motor and filter values), as ArduPilot .param text
+  // ponytail: filter / expo / accel fits are Mission Planner's initial-tune rules of thumb for multirotors; verify on the aircraft
+  function apParams(p, R) {
+    const b = R.bat, c = b.chem, S = b.S, out = [];
+    const put = (k, v, note) => out.push([k, v, note]);
+    const cellLow = { lipo: 3.5, lihv: 3.5, liion: 3.2, life: 3.0 }[p.batt.chem] || 3.5, cellCrt = { lipo: 3.3, lihv: 3.3, liion: 3.0, life: 2.8 }[p.batt.chem] || 3.3;
+    const usable = +p.batt.usable || 80;
+    put('BATT_CAPACITY', Math.round(b.mah), 'all packs on board, mAh');
+    put('BATT_ARM_VOLT', +(S * (c.nom + 0.15)).toFixed(1), 'refuse to arm on a partly flat pack');
+    put('BATT_LOW_VOLT', +(S * cellLow).toFixed(1), `${cellLow} V per cell`);
+    put('BATT_CRT_VOLT', +(S * cellCrt).toFixed(1), `${cellCrt} V per cell`);
+    put('BATT_LOW_MAH', Math.round(b.mah * (1 - usable / 100)), `land with ${100 - usable} % left (usable ${usable} %)`);
+    put('BATT_CRT_MAH', Math.round(b.mah * (1 - usable / 100) * 0.5), 'half the low reserve');
+    // failsafe action numbers differ per firmware: Copter 2 = RTL, 1 = Land; Plane/QuadPlane 1 = RTL, 2 = Land
+    if (p.type === 'multirotor') { put('BATT_FS_LOW_ACT', 2, 'RTL'); put('BATT_FS_CRT_ACT', 1, 'Land'); }
+    else { put('BATT_FS_LOW_ACT', 1, 'RTL'); put('BATT_FS_CRT_ACT', 2, p.type === 'vtol' ? 'Land (QLand with Q_OPTIONS as set)' : 'Land'); }
+    const mot = p.type === 'vtol' ? 'Q_M_' : 'MOT_';
+    if (p.type !== 'fixedwing') {
+      const prop = (R.h && R.h.set && +R.h.set.diam) || 10;
+      put(`${mot}BAT_VOLT_MAX`, +(S * c.max).toFixed(1), 'thrust scaling with pack voltage');
+      put(`${mot}BAT_VOLT_MIN`, +(S * cellCrt).toFixed(1), '');
+      if (R.h) put(`${mot}THST_HOVER`, +Math.min(0.8, Math.max(0.125, R.h.thr / 100)).toFixed(3), 'from the hover estimate; ArduPilot learns it in flight');
+      put(`${mot}THST_EXPO`, +Math.min(0.8, Math.max(0.2, 0.15686 * Math.log(prop) + 0.23693)).toFixed(2), `${prop}" props`);
+      const gyro = Math.max(20, Math.round(289.22 * Math.pow(prop, -0.838)));
+      if (p.type === 'multirotor') {
+        put('INS_GYRO_FILTER', gyro, `${prop}" props`);
+        put('ATC_RAT_RLL_FLTD', Math.round(gyro / 2), ''); put('ATC_RAT_PIT_FLTD', Math.round(gyro / 2), '');
+        put('ATC_RAT_RLL_FLTT', Math.round(gyro / 2), ''); put('ATC_RAT_PIT_FLTT', Math.round(gyro / 2), '');
+        const acc = Math.max(10000, Math.round((-2.613267 * prop ** 3 + 343.39216 * prop ** 2 - 15083.7121 * prop + 235771) / 100) * 100);
+        put('ATC_ACCEL_P_MAX', acc, 'cdeg/s²'); put('ATC_ACCEL_R_MAX', acc, 'cdeg/s²');
+      }
+    }
+    if (p.type !== 'multirotor' && R.vs) {
+      put('AIRSPEED_MIN', Math.ceil(1.3 * R.vs), 'm/s, 1.3 × stall (4.5+: AIRSPEED_MIN; older: ARSPD_FBW_MIN)');
+      put('AIRSPEED_CRUISE', +p.fw.vc.toFixed(1), 'm/s (older: TRIM_ARSPD_CM in cm/s)');
+      if (R.vmaxLevel) put('AIRSPEED_MAX', Math.floor(Math.min(R.vmaxLevel * 0.9, p.fw.vc * 1.6)), 'm/s (older: ARSPD_FBW_MAX)');
+      if (R.cruise && isFinite(R.cruise.thr)) put('TRIM_THROTTLE', Math.round(R.cruise.thr), '% at cruise');
+    }
+    if (p.type === 'vtol') {
+      put('Q_ENABLE', 1, '');
+      if (R.vs) put('Q_ASSIST_SPEED', Math.ceil(R.vs * 1.1), 'm/s: lift motors help below this');
+      if (R.trans) put('Q_TRANSITION_MS', Math.round(R.trans.t * 1000), 'ms, from the transition estimate');
+      if (p.vtol.kind === 'tailsitter') put('Q_TAILSIT_ENABLE', 1, '');
+      if (p.vtol.kind === 'tiltrotor') put('Q_TILT_ENABLE', 1, '');
+    }
+    return out;
+  }
   function findMsg(log, base) {
     if (log.msgs[base]) return log.msgs[base];
     const k = Object.keys(log.msgs).find((n) => n.startsWith(base + '['));
@@ -1473,6 +1595,6 @@
     rhoAt, battery, packOf, curve, dragBuildup, oswald, FINISH, CONSERVATIVE, DEFAULT_K, motorCanMm, combo, parseAPC, parsePropTable, propCoef, drive, drivePower, sizeOf, splitSets, propulsion, payloadSweep, fullBom, consolidate, costOf, cgOf, missionPlan, SEG, enduranceOf, fwDrag, mrForward, massOf, autoRows, avionicsPower, compute, batterySweep,
     powerPlan, pickWire, pickConn, CONNECTORS, WIRE, link, fspl, radioHorizonKm, rfConflicts,
     rankMaterials, partMass, partShell, parseSTL, stlStats,
-    parseBin, parseText, parseCSV, logModes, logSummary, modeCruise, VTOL_DEF, missionFromLog, coldFactor, gpsTrack, sampleLog, findMsg, interp, logEvents, logParams, logTrack, evalExpr, idxAt, ERR_SUBSYS, EV_IDS,
+    parseBin, parseText, parseCSV, logModes, logSummary, logFirmware, logHealth, apParams, modeCruise, VTOL_DEF, missionFromLog, coldFactor, gpsTrack, sampleLog, findMsg, interp, logEvents, logParams, logTrack, evalExpr, idxAt, ERR_SUBSYS, EV_IDS,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

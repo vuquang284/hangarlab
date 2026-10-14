@@ -36,7 +36,7 @@ function lvPrepare() {
   for (const m of Object.values(LOG.msgs)) { if (!m.count || !m.cols.some((c) => /^Time(US|MS)$|^time$/.test(c))) continue; const t = m.time(); if (t.length) { t0 = Math.min(t0, t[0]); t1 = Math.max(t1, t[t.length - 1]); } }
   if (!isFinite(t0)) { t0 = 0; t1 = 1; }
   const segs = modes.map((m, i) => ({ name: m.name, a: m.t, b: i + 1 < modes.length ? modes[i + 1].t : t1 }));
-  LV = { modes, segs, ev, track, params, t0, t1, att: U.findMsg(LOG, 'ATT') };
+  LV = { vehicle: null, modes, segs, ev, track, params, t0, t1, att: U.findMsg(LOG, 'ATT') };
   lvs.cursor = t0;
 }
 function lvModeTable() {
@@ -66,6 +66,7 @@ function renderLogs(el) {
       <label class="btn primary">Open log<input type="file" id="logFile" accept=".bin,.BIN,.log,.LOG,.csv,.txt" hidden></label></div>
     </div>
     <div class="readouts" id="logRo"></div>
+    <div class="card" id="lvHealth"></div>
     <div class="lv">
       <aside class="card lv-side">
         <div class="seg" role="tablist" style="width:100%;margin-bottom:10px">${[['plot', 'Plot'], ['params', `Params ${LV.params.length || ''}`], ['events', `Events ${LV.ev.length || ''}`]].map(([k, l]) => `<button data-lvside="${k}" aria-pressed="${lvs.side === k}" style="flex:1">${l}</button>`).join('')}</div>
@@ -122,9 +123,14 @@ function lvSide() {
       <input type="search" id="logSearch" placeholder="Filter messages / fields" value="${esc(lvs.filter)}">
       <div class="tree-msgs" style="margin-top:6px">${tree || '<p class="faint">No matches.</p>'}</div>`;
   } else if (lvs.side === 'params') {
-    const q = lvs.paramQ.toLowerCase(), rows = LV.params.filter((p) => !q || p.name.toLowerCase().includes(q));
+    const vehicle = LV.vehicle || (LV.vehicle = U.logFirmware(LOG, LV.params)), meta = LV.pdef;
+    if (meta === undefined) { LV.pdef = null; pdefLoad(vehicle).then((m) => { LV.pdef = m || false; if (lvs.side === 'params') lvSide(); }); }
+    const info = (n) => (meta && meta.get(n)) || null;
+    const q = lvs.paramQ.toLowerCase(), rows = LV.params.filter((p) => !q || p.name.toLowerCase().includes(q) || ((info(p.name) || {}).DisplayName || '').toLowerCase().includes(q));
+    const nBad = meta ? LV.params.filter((p) => paramIssue(info(p.name), p.value)).length : 0;
     box.innerHTML = LV.params.length ? `<div class="row" style="margin-bottom:8px"><input type="search" id="lvParamQ" placeholder="Search parameters" value="${esc(lvs.paramQ)}" style="flex:1"><button class="btn sm" data-lv="params">Save .param</button></div>
-      <div class="tree-msgs"><table class="lv-params"><tbody>${rows.map((p) => `<tr><td>${esc(p.name)}${p.changes ? ' <span class="pill warn" title="Changed during the log">±' + p.changes + '</span>' : ''}</td><td class="n">${fmt(p.value, Number.isInteger(p.value) ? 0 : 4)}</td></tr>`).join('')}</tbody></table></div>
+      ${meta === null ? '<p class="hint">Loading parameter descriptions from ArduPilot…</p>' : meta === false ? '<p class="hint">Parameter descriptions could not be loaded here (offline or blocked).</p>' : `<p class="hint">${esc(vehicle)} descriptions loaded.${nBad ? ` <b style="color:var(--warn)">${nBad} value${nBad > 1 ? 's' : ''} outside the documented range.</b>` : ''} Hover a name for its description.</p>`}
+      <div class="tree-msgs"><table class="lv-params"><tbody>${rows.map((p) => { const inf = info(p.name), bad = paramIssue(inf, p.value); return `<tr${bad ? ' style="color:var(--warn)"' : ''}><td title="${inf ? esc(`${inf.DisplayName || ''}: ${inf.Description || ''}${inf.Units ? ` (${inf.Units})` : ''}${inf.Range ? ` Range ${inf.Range.low}–${inf.Range.high}` : ''}`) : ''}">${esc(p.name)}${bad ? ` <span class="pill warn">${esc(bad)}</span>` : ''}${inf && inf.DisplayName ? `<div class="faint" style="font-size:11px">${esc(inf.DisplayName)}${inf.Units ? ` · ${esc(inf.Units)}` : ''}</div>` : ''}${p.changes ? ' <span class="pill warn" title="Changed during the log">±' + p.changes + '</span>' : ''}</td><td class="n">${fmt(p.value, Number.isInteger(p.value) ? 0 : 4)}</td></tr>`; }).join('')}</tbody></table></div>
       <p class="hint">${rows.length} of ${LV.params.length}. ± marks parameters changed during the log.</p>` : '<p class="faint">No PARM records in this log.</p>';
   } else {
     const K = { mode: 'Modes', msg: 'Messages', err: 'Errors', ev: 'Events' };
@@ -135,7 +141,37 @@ function lvSide() {
 }
 const fmtT = (s) => `${s < 0 ? '-' : ''}${Math.floor(Math.abs(s) / 60)}:${String(Math.floor(Math.abs(s) % 60)).padStart(2, '0')}`;
 
+// ---- ArduPilot parameter descriptions (autotest.ardupilot.org, loaded once per vehicle) ----
+const pdefCache = {};
+function pdefLoad(vehicle) {
+  if (pdefCache[vehicle]) return pdefCache[vehicle];
+  pdefCache[vehicle] = fetch(`https://autotest.ardupilot.org/Parameters/${vehicle}/apm.pdef.json`).then((r) => (r.ok ? r.json() : null)).then((j) => {
+    if (!j) return null;
+    const m = new Map();
+    for (const g of Object.values(j)) for (const [k, v] of Object.entries(g)) m.set(k, v);
+    return m;
+  }).catch(() => null);
+  return pdefCache[vehicle];
+}
+// out of the documented range, or not one of the listed values
+function paramIssue(info, v) {
+  if (!info) return '';
+  if (info.Range && isFinite(+info.Range.low) && isFinite(+info.Range.high) && (v < +info.Range.low || v > +info.Range.high)) return `outside ${info.Range.low}–${info.Range.high}`;
+  if (info.Values && !info.Bitmask && !(String(v) in info.Values) && !(String(Math.round(v)) in info.Values)) return 'not a listed value';
+  return '';
+}
+function lvHealthCard() {
+  const el = $('#lvHealth');
+  if (!el || !LV) return;
+  const vehicle = LV.vehicle || (LV.vehicle = U.logFirmware(LOG, LV.params));
+  const rows = U.logHealth(LOG, LV.params, vehicle);
+  const nBad = rows.filter((r) => r.level === 'crit').length, nWarn = rows.filter((r) => r.level === 'warn').length;
+  el.innerHTML = `<div class="card-h"><h2>Health check</h2><p>${esc(vehicle)} log · ${nBad ? `${nBad} to fix · ` : ''}${nWarn ? `${nWarn} to check` : nBad ? '' : 'nothing flagged'}</p></div>
+    <div class="checks">${rows.map((r) => `<div class="chk"><span class="pill ${r.level}">${{ good: 'OK', warn: 'Check', crit: 'Fix' }[r.level]}</span><span><b>${esc(r.title)}</b> · ${esc(r.detail)}</span></div>`).join('') || '<p class="faint">Not enough data in this log.</p>'}</div>
+    <p class="hint">Checks follow ArduPilot's log analyzer: board power, vibration, GPS, compass interference, motor balance, processor load, errors, failsafes and battery.</p>`;
+}
 function logSummary() {
+  lvHealthCard();
   const s = U.logSummary(LOG), p = P(), R = U.compute(p, S.lib, { lite: true });
   const proj = s.avgP ? (R.bat.usableWh / s.avgP) * 60 : null;
   const pred = U.enduranceOf(p, R);

@@ -365,6 +365,13 @@ document.addEventListener('click', (e) => {
     case 'fl-del': withUndo('Flight removed from history', () => p.flights.splice(i, 1)); break;
     case 'print-report': printHtml(reportHtml(p)); break;
     case 'checklist': printHtml(checklistHtml(p)); break;
+    case 'ex-param': {
+      const R = U.compute(p, S.lib), rows = U.apParams(p, R);
+      const txt = [`# ${p.name}: starting parameters from HangarLab (${new Date().toISOString().slice(0, 10)})`, '# Check each value against your hardware before flying. Rule-of-thumb values are marked in the comments.']
+        .concat(rows.map(([k, v, n]) => `${k},${v}${n ? `\t# ${n}` : ''}`)).join('\n') + '\n';
+      download(`${fileBase(p)}.param`, txt, 'text/plain');
+      break;
+    }
     case 'checklist-dl': download(`${fileBase(p)}-preflight.html`, checklistHtml(p), 'text/html'); break;
     case 'bom-unlink': { const r = p.bom[i]; delete r.ref; r.unlinked = true; save(); render(); toast(`${r.name} is now a custom row; library changes no longer reach it.`); break; }
     case 'bat-unlink': delete p.batt.ref; p.batt.unlinked = true; save(); render(); toast('Pack unlinked from the library'); break;

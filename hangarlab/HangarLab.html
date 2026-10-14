@@ -1782,6 +1782,128 @@ var uPlot=function(){"use strict";const l="u-off",e="u-label",t="width",n="heigh
     }
     return { segs: out, wh };
   }
+  // which ArduPilot firmware wrote the log: from the version message, else from tell-tale parameters
+  function logFirmware(log, params) {
+    const m = findMsg(log, 'MSG'), txt = m && m.cols.includes('Message') ? Array.from(m.col('Message')).slice(0, 40).join(' ') : '';
+    const hit = /Ardu(Plane|Copter|Rover|Sub)|AntennaTracker|Blimp/.exec(txt);
+    if (hit) return hit[0] === 'AntennaTracker' ? 'AntennaTracker' : hit[0];
+    const has = (n) => params.some((p) => p.name === n);
+    return has('Q_ENABLE') || has('TRIM_ARSPD_CM') || has('AIRSPEED_CRUISE') ? 'ArduPlane' : has('ATC_ANG_RLL_P') ? 'ArduCopter' : has('CRUISE_SPEED') ? 'Rover' : 'ArduCopter';
+  }
+
+  // automatic health check, after the checks in ArduPilot's Tools/LogAnalyzer (re-implemented, not copied)
+  function logHealth(log, params, vehicle) {
+    const out = [], add = (level, title, detail) => out.push({ level, title, detail });
+    const col = (name, c) => { const m = findMsg(log, name); return m && m.cols.includes(c) ? { t: m.time(), y: Array.from(m.col(c)) } : null; };
+    const max = (a) => a.reduce((x, y) => (y > x ? y : x), -Infinity), min = (a) => a.reduce((x, y) => (y < x ? y : x), Infinity);
+    const prm = (n) => { const p = params.find((x) => x.name === n); return p ? p.value : null; };
+    // board power
+    const vcc = col('POWR', 'Vcc');
+    if (vcc && vcc.y.length) {
+      const lo = min(vcc.y), sw = max(vcc.y) - lo;
+      add(lo < 4.5 ? 'crit' : lo < 4.8 || sw > 0.3 ? 'warn' : 'good', 'Board power (Vcc)', `${lo.toFixed(2)}–${max(vcc.y).toFixed(2)} V${lo < 4.5 ? ': brownout risk, check the power module/BEC' : sw > 0.3 ? ': swings more than 0.3 V, check the 5 V supply under load' : ''}`);
+    }
+    // vibration and clipping
+    const vx = col('VIBE', 'VibeX'), vy = col('VIBE', 'VibeY'), vz = col('VIBE', 'VibeZ');
+    if (vx && vy && vz) {
+      const pk = Math.max(max(vx.y), max(vy.y), max(vz.y));
+      const clips = ['Clip', 'Clip0', 'Clip1', 'Clip2'].map((c) => col('VIBE', c)).filter(Boolean).reduce((a, c) => a + (max(c.y) - min(c.y)), 0);
+      add(pk > 60 || clips > 100 ? 'crit' : pk > 30 || clips > 0 ? 'warn' : 'good', 'Vibration', `peak ${pk.toFixed(0)} m/s²${clips ? `, ${clips} accelerometer clips` : ''}${pk > 30 ? ': soft-mount the flight controller, balance props' : ' (under 30 is good)'}`);
+    }
+    // GPS
+    const ns = col('GPS', 'NSats'), hd = col('GPS', 'HDop');
+    if (ns) {
+      const lo = min(ns.y.filter((x) => x > 0)), hp = hd ? max(hd.y) : null;
+      add(lo < 6 || hp > 2.5 ? 'crit' : lo < 10 || hp > 1.5 ? 'warn' : 'good', 'GPS', `min ${isFinite(lo) ? lo : 0} satellites${hp != null ? `, worst HDop ${hp.toFixed(2)}` : ''}`);
+    }
+    // compass interference: field strength change with throttle
+    const mx = col('MAG', 'MagX'), my = col('MAG', 'MagY'), mz = col('MAG', 'MagZ'), thr = col('CTUN', 'ThO') || col('CTUN', 'ThI');
+    if (mx && my && mz && thr) {
+      const f = mx.y.map((x, i) => Math.hypot(x, my.y[i], mz.y[i]));
+      const at = (s, t) => { const k = idxAt(s.t, t); return k < 0 ? null : s.y[k]; };
+      const lo = [], hi = [];
+      const tMax = max(thr.y), scale = tMax > 1.5 ? 100 : 1; // copter ThO is 0..1, plane ThO is %
+      mx.t.forEach((t, i) => { const th = at(thr, t); if (th == null) return; const r = th / scale; if (r < 0.1) lo.push(f[i]); else if (r > 0.4) hi.push(f[i]); });
+      if (lo.length > 20 && hi.length > 20) {
+        const a = lo.reduce((x, y) => x + y, 0) / lo.length, b = hi.reduce((x, y) => x + y, 0) / hi.length, pct = Math.abs(b - a) / a * 100;
+        add(pct > 30 ? 'crit' : pct > 15 ? 'warn' : 'good', 'Compass interference', `field changes ${pct.toFixed(0)} % with throttle${pct > 15 ? ': move the compass away from power wires, or run compass-motor calibration' : ''}`);
+      }
+    }
+    // motor balance (multirotor hover)
+    if (vehicle === 'ArduCopter') {
+      const ch = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => ({ n, s: col('RCOU', `C${n}`) })).filter((c) => c.s && max(c.s.y) > 1300);
+      if (ch.length >= 3) {
+        const avg = ch.map((c) => { const v = c.s.y.filter((x) => x > 1150); return { n: c.n, a: v.reduce((x, y) => x + y, 0) / (v.length || 1) }; });
+        const hiM = avg.reduce((x, y) => (y.a > x.a ? y : x)), loM = avg.reduce((x, y) => (y.a < x.a ? y : x)), spread = hiM.a - loM.a;
+        add(spread > 200 ? 'crit' : spread > 100 ? 'warn' : 'good', 'Motor balance', `outputs spread ${spread.toFixed(0)} µs${spread > 100 ? `: motor ${hiM.n} works hardest (check its prop, motor, or the CG on that side)` : ''}`);
+      }
+    }
+    // CPU load
+    const ld = col('PM', 'Load');
+    if (ld && ld.y.length) { const pk = max(ld.y) / 10; add(pk > 90 ? 'crit' : pk > 75 ? 'warn' : 'good', 'Processor load', `peak ${pk.toFixed(0)} %`); }
+    // errors and failsafes
+    const ev = logEvents(log), errs = ev.filter((e) => e.kind === 'err' && !e.ok), fs = ev.filter((e) => /failsafe/i.test(e.text));
+    add(errs.length ? 'crit' : 'good', 'Errors', errs.length ? errs.slice(0, 4).map((e) => e.text).join('; ') + (errs.length > 4 ? ` (+${errs.length - 4} more)` : '') : 'none logged');
+    if (fs.length) add('warn', 'Failsafes', fs.slice(0, 3).map((e) => e.text).join('; '));
+    // battery sag per cell (cell count from the full voltage)
+    const bv = col('BAT', 'Volt');
+    if (bv && bv.y.length) {
+      const top = max(bv.y), cells = Math.max(1, Math.round(top / 4.15)), lo = min(bv.y.filter((x) => x > 1)) / cells;
+      add(lo < 3.2 ? 'crit' : lo < 3.4 ? 'warn' : 'good', 'Battery', `${cells}S, lowest ${lo.toFixed(2)} V per cell${prm('BATT_CAPACITY') ? ` · BATT_CAPACITY ${prm('BATT_CAPACITY')} mAh` : ''}`);
+    }
+    // ended in the air
+    const alt = col('CTUN', 'Alt');
+    if (alt && alt.y.length && alt.y[alt.y.length - 1] > 5) add('crit', 'Log end', `log stops ${alt.y[alt.y.length - 1].toFixed(0)} m up: power loss or crash?`);
+    return out;
+  }
+
+  // starting parameters from a design (battery, failsafe, motor and filter values), as ArduPilot .param text
+  // ponytail: filter / expo / accel fits are Mission Planner's initial-tune rules of thumb for multirotors; verify on the aircraft
+  function apParams(p, R) {
+    const b = R.bat, c = b.chem, S = b.S, out = [];
+    const put = (k, v, note) => out.push([k, v, note]);
+    const cellLow = { lipo: 3.5, lihv: 3.5, liion: 3.2, life: 3.0 }[p.batt.chem] || 3.5, cellCrt = { lipo: 3.3, lihv: 3.3, liion: 3.0, life: 2.8 }[p.batt.chem] || 3.3;
+    const usable = +p.batt.usable || 80;
+    put('BATT_CAPACITY', Math.round(b.mah), 'all packs on board, mAh');
+    put('BATT_ARM_VOLT', +(S * (c.nom + 0.15)).toFixed(1), 'refuse to arm on a partly flat pack');
+    put('BATT_LOW_VOLT', +(S * cellLow).toFixed(1), `${cellLow} V per cell`);
+    put('BATT_CRT_VOLT', +(S * cellCrt).toFixed(1), `${cellCrt} V per cell`);
+    put('BATT_LOW_MAH', Math.round(b.mah * (1 - usable / 100)), `land with ${100 - usable} % left (usable ${usable} %)`);
+    put('BATT_CRT_MAH', Math.round(b.mah * (1 - usable / 100) * 0.5), 'half the low reserve');
+    // failsafe action numbers differ per firmware: Copter 2 = RTL, 1 = Land; Plane/QuadPlane 1 = RTL, 2 = Land
+    if (p.type === 'multirotor') { put('BATT_FS_LOW_ACT', 2, 'RTL'); put('BATT_FS_CRT_ACT', 1, 'Land'); }
+    else { put('BATT_FS_LOW_ACT', 1, 'RTL'); put('BATT_FS_CRT_ACT', 2, p.type === 'vtol' ? 'Land (QLand with Q_OPTIONS as set)' : 'Land'); }
+    const mot = p.type === 'vtol' ? 'Q_M_' : 'MOT_';
+    if (p.type !== 'fixedwing') {
+      const prop = (R.h && R.h.set && +R.h.set.diam) || 10;
+      put(`${mot}BAT_VOLT_MAX`, +(S * c.max).toFixed(1), 'thrust scaling with pack voltage');
+      put(`${mot}BAT_VOLT_MIN`, +(S * cellCrt).toFixed(1), '');
+      if (R.h) put(`${mot}THST_HOVER`, +Math.min(0.8, Math.max(0.125, R.h.thr / 100)).toFixed(3), 'from the hover estimate; ArduPilot learns it in flight');
+      put(`${mot}THST_EXPO`, +Math.min(0.8, Math.max(0.2, 0.15686 * Math.log(prop) + 0.23693)).toFixed(2), `${prop}" props`);
+      const gyro = Math.max(20, Math.round(289.22 * Math.pow(prop, -0.838)));
+      if (p.type === 'multirotor') {
+        put('INS_GYRO_FILTER', gyro, `${prop}" props`);
+        put('ATC_RAT_RLL_FLTD', Math.round(gyro / 2), ''); put('ATC_RAT_PIT_FLTD', Math.round(gyro / 2), '');
+        put('ATC_RAT_RLL_FLTT', Math.round(gyro / 2), ''); put('ATC_RAT_PIT_FLTT', Math.round(gyro / 2), '');
+        const acc = Math.max(10000, Math.round((-2.613267 * prop ** 3 + 343.39216 * prop ** 2 - 15083.7121 * prop + 235771) / 100) * 100);
+        put('ATC_ACCEL_P_MAX', acc, 'cdeg/s²'); put('ATC_ACCEL_R_MAX', acc, 'cdeg/s²');
+      }
+    }
+    if (p.type !== 'multirotor' && R.vs) {
+      put('AIRSPEED_MIN', Math.ceil(1.3 * R.vs), 'm/s, 1.3 × stall (4.5+: AIRSPEED_MIN; older: ARSPD_FBW_MIN)');
+      put('AIRSPEED_CRUISE', +p.fw.vc.toFixed(1), 'm/s (older: TRIM_ARSPD_CM in cm/s)');
+      if (R.vmaxLevel) put('AIRSPEED_MAX', Math.floor(Math.min(R.vmaxLevel * 0.9, p.fw.vc * 1.6)), 'm/s (older: ARSPD_FBW_MAX)');
+      if (R.cruise && isFinite(R.cruise.thr)) put('TRIM_THROTTLE', Math.round(R.cruise.thr), '% at cruise');
+    }
+    if (p.type === 'vtol') {
+      put('Q_ENABLE', 1, '');
+      if (R.vs) put('Q_ASSIST_SPEED', Math.ceil(R.vs * 1.1), 'm/s: lift motors help below this');
+      if (R.trans) put('Q_TRANSITION_MS', Math.round(R.trans.t * 1000), 'ms, from the transition estimate');
+      if (p.vtol.kind === 'tailsitter') put('Q_TAILSIT_ENABLE', 1, '');
+      if (p.vtol.kind === 'tiltrotor') put('Q_TILT_ENABLE', 1, '');
+    }
+    return out;
+  }
   function findMsg(log, base) {
     if (log.msgs[base]) return log.msgs[base];
     const k = Object.keys(log.msgs).find((n) => n.startsWith(base + '['));
@@ -1981,7 +2103,7 @@ var uPlot=function(){"use strict";const l="u-off",e="u-label",t="width",n="heigh
     rhoAt, battery, packOf, curve, dragBuildup, oswald, FINISH, CONSERVATIVE, DEFAULT_K, motorCanMm, combo, parseAPC, parsePropTable, propCoef, drive, drivePower, sizeOf, splitSets, propulsion, payloadSweep, fullBom, consolidate, costOf, cgOf, missionPlan, SEG, enduranceOf, fwDrag, mrForward, massOf, autoRows, avionicsPower, compute, batterySweep,
     powerPlan, pickWire, pickConn, CONNECTORS, WIRE, link, fspl, radioHorizonKm, rfConflicts,
     rankMaterials, partMass, partShell, parseSTL, stlStats,
-    parseBin, parseText, parseCSV, logModes, logSummary, modeCruise, VTOL_DEF, missionFromLog, coldFactor, gpsTrack, sampleLog, findMsg, interp, logEvents, logParams, logTrack, evalExpr, idxAt, ERR_SUBSYS, EV_IDS,
+    parseBin, parseText, parseCSV, logModes, logSummary, logFirmware, logHealth, apParams, modeCruise, VTOL_DEF, missionFromLog, coldFactor, gpsTrack, sampleLog, findMsg, interp, logEvents, logParams, logTrack, evalExpr, idxAt, ERR_SUBSYS, EV_IDS,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
 
@@ -4327,7 +4449,7 @@ function lvPrepare() {
   for (const m of Object.values(LOG.msgs)) { if (!m.count || !m.cols.some((c) => /^Time(US|MS)$|^time$/.test(c))) continue; const t = m.time(); if (t.length) { t0 = Math.min(t0, t[0]); t1 = Math.max(t1, t[t.length - 1]); } }
   if (!isFinite(t0)) { t0 = 0; t1 = 1; }
   const segs = modes.map((m, i) => ({ name: m.name, a: m.t, b: i + 1 < modes.length ? modes[i + 1].t : t1 }));
-  LV = { modes, segs, ev, track, params, t0, t1, att: U.findMsg(LOG, 'ATT') };
+  LV = { vehicle: null, modes, segs, ev, track, params, t0, t1, att: U.findMsg(LOG, 'ATT') };
   lvs.cursor = t0;
 }
 function lvModeTable() {
@@ -4357,6 +4479,7 @@ function renderLogs(el) {
       <label class="btn primary">Open log<input type="file" id="logFile" accept=".bin,.BIN,.log,.LOG,.csv,.txt" hidden></label></div>
     </div>
     <div class="readouts" id="logRo"></div>
+    <div class="card" id="lvHealth"></div>
     <div class="lv">
       <aside class="card lv-side">
         <div class="seg" role="tablist" style="width:100%;margin-bottom:10px">${[['plot', 'Plot'], ['params', `Params ${LV.params.length || ''}`], ['events', `Events ${LV.ev.length || ''}`]].map(([k, l]) => `<button data-lvside="${k}" aria-pressed="${lvs.side === k}" style="flex:1">${l}</button>`).join('')}</div>
@@ -4413,9 +4536,14 @@ function lvSide() {
       <input type="search" id="logSearch" placeholder="Filter messages / fields" value="${esc(lvs.filter)}">
       <div class="tree-msgs" style="margin-top:6px">${tree || '<p class="faint">No matches.</p>'}</div>`;
   } else if (lvs.side === 'params') {
-    const q = lvs.paramQ.toLowerCase(), rows = LV.params.filter((p) => !q || p.name.toLowerCase().includes(q));
+    const vehicle = LV.vehicle || (LV.vehicle = U.logFirmware(LOG, LV.params)), meta = LV.pdef;
+    if (meta === undefined) { LV.pdef = null; pdefLoad(vehicle).then((m) => { LV.pdef = m || false; if (lvs.side === 'params') lvSide(); }); }
+    const info = (n) => (meta && meta.get(n)) || null;
+    const q = lvs.paramQ.toLowerCase(), rows = LV.params.filter((p) => !q || p.name.toLowerCase().includes(q) || ((info(p.name) || {}).DisplayName || '').toLowerCase().includes(q));
+    const nBad = meta ? LV.params.filter((p) => paramIssue(info(p.name), p.value)).length : 0;
     box.innerHTML = LV.params.length ? `<div class="row" style="margin-bottom:8px"><input type="search" id="lvParamQ" placeholder="Search parameters" value="${esc(lvs.paramQ)}" style="flex:1"><button class="btn sm" data-lv="params">Save .param</button></div>
-      <div class="tree-msgs"><table class="lv-params"><tbody>${rows.map((p) => `<tr><td>${esc(p.name)}${p.changes ? ' <span class="pill warn" title="Changed during the log">±' + p.changes + '</span>' : ''}</td><td class="n">${fmt(p.value, Number.isInteger(p.value) ? 0 : 4)}</td></tr>`).join('')}</tbody></table></div>
+      ${meta === null ? '<p class="hint">Loading parameter descriptions from ArduPilot…</p>' : meta === false ? '<p class="hint">Parameter descriptions could not be loaded here (offline or blocked).</p>' : `<p class="hint">${esc(vehicle)} descriptions loaded.${nBad ? ` <b style="color:var(--warn)">${nBad} value${nBad > 1 ? 's' : ''} outside the documented range.</b>` : ''} Hover a name for its description.</p>`}
+      <div class="tree-msgs"><table class="lv-params"><tbody>${rows.map((p) => { const inf = info(p.name), bad = paramIssue(inf, p.value); return `<tr${bad ? ' style="color:var(--warn)"' : ''}><td title="${inf ? esc(`${inf.DisplayName || ''}: ${inf.Description || ''}${inf.Units ? ` (${inf.Units})` : ''}${inf.Range ? ` Range ${inf.Range.low}–${inf.Range.high}` : ''}`) : ''}">${esc(p.name)}${bad ? ` <span class="pill warn">${esc(bad)}</span>` : ''}${inf && inf.DisplayName ? `<div class="faint" style="font-size:11px">${esc(inf.DisplayName)}${inf.Units ? ` · ${esc(inf.Units)}` : ''}</div>` : ''}${p.changes ? ' <span class="pill warn" title="Changed during the log">±' + p.changes + '</span>' : ''}</td><td class="n">${fmt(p.value, Number.isInteger(p.value) ? 0 : 4)}</td></tr>`; }).join('')}</tbody></table></div>
       <p class="hint">${rows.length} of ${LV.params.length}. ± marks parameters changed during the log.</p>` : '<p class="faint">No PARM records in this log.</p>';
   } else {
     const K = { mode: 'Modes', msg: 'Messages', err: 'Errors', ev: 'Events' };
@@ -4426,7 +4554,37 @@ function lvSide() {
 }
 const fmtT = (s) => `${s < 0 ? '-' : ''}${Math.floor(Math.abs(s) / 60)}:${String(Math.floor(Math.abs(s) % 60)).padStart(2, '0')}`;
 
+// ---- ArduPilot parameter descriptions (autotest.ardupilot.org, loaded once per vehicle) ----
+const pdefCache = {};
+function pdefLoad(vehicle) {
+  if (pdefCache[vehicle]) return pdefCache[vehicle];
+  pdefCache[vehicle] = fetch(`https://autotest.ardupilot.org/Parameters/${vehicle}/apm.pdef.json`).then((r) => (r.ok ? r.json() : null)).then((j) => {
+    if (!j) return null;
+    const m = new Map();
+    for (const g of Object.values(j)) for (const [k, v] of Object.entries(g)) m.set(k, v);
+    return m;
+  }).catch(() => null);
+  return pdefCache[vehicle];
+}
+// out of the documented range, or not one of the listed values
+function paramIssue(info, v) {
+  if (!info) return '';
+  if (info.Range && isFinite(+info.Range.low) && isFinite(+info.Range.high) && (v < +info.Range.low || v > +info.Range.high)) return `outside ${info.Range.low}–${info.Range.high}`;
+  if (info.Values && !info.Bitmask && !(String(v) in info.Values) && !(String(Math.round(v)) in info.Values)) return 'not a listed value';
+  return '';
+}
+function lvHealthCard() {
+  const el = $('#lvHealth');
+  if (!el || !LV) return;
+  const vehicle = LV.vehicle || (LV.vehicle = U.logFirmware(LOG, LV.params));
+  const rows = U.logHealth(LOG, LV.params, vehicle);
+  const nBad = rows.filter((r) => r.level === 'crit').length, nWarn = rows.filter((r) => r.level === 'warn').length;
+  el.innerHTML = `<div class="card-h"><h2>Health check</h2><p>${esc(vehicle)} log · ${nBad ? `${nBad} to fix · ` : ''}${nWarn ? `${nWarn} to check` : nBad ? '' : 'nothing flagged'}</p></div>
+    <div class="checks">${rows.map((r) => `<div class="chk"><span class="pill ${r.level}">${{ good: 'OK', warn: 'Check', crit: 'Fix' }[r.level]}</span><span><b>${esc(r.title)}</b> · ${esc(r.detail)}</span></div>`).join('') || '<p class="faint">Not enough data in this log.</p>'}</div>
+    <p class="hint">Checks follow ArduPilot's log analyzer: board power, vibration, GPS, compass interference, motor balance, processor load, errors, failsafes and battery.</p>`;
+}
 function logSummary() {
+  lvHealthCard();
   const s = U.logSummary(LOG), p = P(), R = U.compute(p, S.lib, { lite: true });
   const proj = s.avgP ? (R.bat.usableWh / s.avgP) * 60 : null;
   const pred = U.enduranceOf(p, R);
@@ -4933,6 +5091,7 @@ function exportDialog() {
       <button class="exp" data-act="print-report"><b>Print / save as PDF</b><span>the design report, straight to your printer or a PDF</span></button>
       <button class="exp" data-act="ex-html"><b>Design report</b><span>.html · one printable page</span></button>
       <button class="exp" data-act="checklist"><b>Pre-flight checklist</b><span>printable, built from this design's battery, radios and parts</span></button>
+      <button class="exp" data-act="ex-param"><b>ArduPilot parameters</b><span>.param · battery, failsafe, motor and airspeed starting values for this design; load in Mission Planner / QGC</span></button>
       <button class="exp" data-act="checklist-dl"><b>Checklist file</b><span>.html · keep it on a phone or tablet in the field</span></button>
       <button class="exp" data-act="ex-csv"><b>Calculations</b><span>.csv · every number with section and unit</span></button>
       <button class="exp" data-act="ex-bom"><b>Bill of materials</b><span>.csv · all components incl. motors, props, pack, payload</span></button>
@@ -5387,6 +5546,13 @@ document.addEventListener('click', (e) => {
     case 'fl-del': withUndo('Flight removed from history', () => p.flights.splice(i, 1)); break;
     case 'print-report': printHtml(reportHtml(p)); break;
     case 'checklist': printHtml(checklistHtml(p)); break;
+    case 'ex-param': {
+      const R = U.compute(p, S.lib), rows = U.apParams(p, R);
+      const txt = [`# ${p.name}: starting parameters from HangarLab (${new Date().toISOString().slice(0, 10)})`, '# Check each value against your hardware before flying. Rule-of-thumb values are marked in the comments.']
+        .concat(rows.map(([k, v, n]) => `${k},${v}${n ? `\t# ${n}` : ''}`)).join('\n') + '\n';
+      download(`${fileBase(p)}.param`, txt, 'text/plain');
+      break;
+    }
     case 'checklist-dl': download(`${fileBase(p)}-preflight.html`, checklistHtml(p), 'text/html'); break;
     case 'bom-unlink': { const r = p.bom[i]; delete r.ref; r.unlinked = true; save(); render(); toast(`${r.name} is now a custom row; library changes no longer reach it.`); break; }
     case 'bat-unlink': delete p.batt.ref; p.batt.unlinked = true; save(); render(); toast('Pack unlinked from the library'); break;

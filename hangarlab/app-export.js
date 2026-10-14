@@ -193,6 +193,7 @@ function exportDialog() {
       <button class="exp" data-act="print-report"><b>Print / save as PDF</b><span>the design report, straight to your printer or a PDF</span></button>
       <button class="exp" data-act="ex-html"><b>Design report</b><span>.html · one printable page</span></button>
       <button class="exp" data-act="checklist"><b>Pre-flight checklist</b><span>printable, built from this design's battery, radios and parts</span></button>
+      <button class="exp" data-act="ex-param"><b>ArduPilot parameters</b><span>.param · battery, failsafe, motor and airspeed starting values for this design; load in Mission Planner / QGC</span></button>
       <button class="exp" data-act="checklist-dl"><b>Checklist file</b><span>.html · keep it on a phone or tablet in the field</span></button>
       <button class="exp" data-act="ex-csv"><b>Calculations</b><span>.csv · every number with section and unit</span></button>
       <button class="exp" data-act="ex-bom"><b>Bill of materials</b><span>.csv · all components incl. motors, props, pack, payload</span></button>
