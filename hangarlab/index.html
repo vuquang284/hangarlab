@@ -58,7 +58,11 @@ svg.i { width: 15px; height: 15px; flex: none; stroke: currentColor; fill: none;
 .brand small { display: block; font: 500 12px/1.1 var(--body); color: var(--faint); }
 .proj { display: flex; gap: 8px; align-items: center; flex: 1 1 280px; min-width: 0; }
 .proj select { flex: 1 1 auto; min-width: 0; max-width: 340px; }
-.actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.actions { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; justify-content: flex-end; } /* right edge, also when it wraps under the logo */
+.more { display: contents; } /* inline on wider screens; a menu on phones */
+.actions .more-btn, .more .menu-only { display: none; }
+.actions > [data-act="export"] { order: 1; } /* Import (in .more) stays just before Export */
+.more > :not([data-act="import"]) { order: 2; }
 .tabs { display: flex; flex-wrap: wrap; gap: 2px; padding: 0 12px; } /* wraps to a second row instead of hiding tabs off-screen */
 .tabs button {
   background: none; border: 0; border-bottom: 2px solid transparent; padding: 9px 12px 8px; cursor: pointer;
@@ -172,6 +176,14 @@ th { text-align: left; font: 600 14px/1.2 var(--display); color: var(--muted); p
 td { padding: 4px 6px; border-bottom: 1px solid var(--line); vertical-align: middle; }
 tr:last-child td { border-bottom: 0; }
 td.n, th.n { text-align: right; font-family: var(--mono); }
+th:has(> .th-sort) { padding: 0; }
+.th-sort { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 4px; width: 100%; padding: 8px; cursor: pointer; }
+.th-sort:hover, .th-sort:focus-visible { color: var(--fg); }
+.th-sort:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.sort-ind { font-size: 11px; opacity: .45; }
+th[aria-sort="ascending"] .th-sort, th[aria-sort="descending"] .th-sort { color: var(--accent); }
+th[aria-sort="ascending"] .sort-ind, th[aria-sort="descending"] .sort-ind { opacity: 1; }
+.lib-tools { margin-bottom: 10px; }
 td input, td select { padding: 3px 5px; font-size: 12.5px; }
 td select { min-width: 84px; }
 tr.auto td { color: var(--muted); background: color-mix(in srgb, var(--panel-2) 60%, transparent); }
@@ -365,10 +377,20 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
   .brand small, #typePill, .actions .sep { display: none; }
   .brand .logo { height: 26px; }
   .proj { flex: 1 1 140px; }
-  .actions { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; width: 100%; padding-bottom: 2px; }
+  /* one toolbar row across the width: design buttons left, Export and ⋯ right; Import, theme, guide and settings live in the ⋯ menu */
+  .actions { flex-wrap: nowrap; justify-content: flex-start; width: 100%; margin-left: 0; gap: 4px; position: relative; }
   .actions > * { flex: none; }
-  .actions .btn { padding-inline: 10px; }
-  .tabs { padding: 0 6px; flex-wrap: wrap; overflow: visible; row-gap: 0; } /* all tabs visible: two rows instead of a hidden scroll */
+  .actions .btn { padding-inline: 8px; }
+  .actions > [data-act="export"] { margin-left: auto; }
+  .actions .more-btn { display: inline-flex; order: 3; font-size: 18px; line-height: 1; }
+  .more .menu-only { display: inline-block; }
+  .more { display: none; position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; flex-direction: column; gap: 2px; min-width: 200px; padding: 6px;
+    background: var(--panel); border: 1px solid var(--line-2); border-radius: 10px; box-shadow: 0 8px 24px rgba(0, 0, 0, .28); }
+  .actions.open .more { display: flex; }
+  @media (max-width: 360px) { .actions > .btn { padding-inline: 6px; } } /* 320 px phones: the row still fits */
+  .more > .btn { order: 0; width: 100%; justify-content: flex-start; gap: 10px; padding: 9px 10px; background: none; border-color: transparent; color: var(--fg); }
+  .more > .btn:hover { background: var(--panel-2); }
+  .more > .btn.icon::after { content: attr(aria-label); font: 500 14px var(--body); }  .tabs { padding: 0 6px; flex-wrap: wrap; overflow: visible; row-gap: 0; } /* all tabs visible: two rows instead of a hidden scroll */
   .tabs button { padding: 8px 7px 7px; font-size: 14px; gap: 4px; }
   .units-seg { margin: 4px 0 6px auto; }
   main { padding: 12px 12px 32px; }
@@ -425,6 +447,7 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
   <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
   <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4M7 9l5-5 5 5"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4v16l13-8z" fill="currentColor"/></symbol>
   <symbol id="i-pause" viewBox="0 0 24 24"><path d="M7 4h3v16H7zM14 4h3v16h-3z" fill="currentColor"/></symbol>
 </svg>
@@ -445,11 +468,15 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
       <button class="btn" data-act="dup" title="Duplicate this design">Duplicate</button>
       <button class="btn ghost danger icon" data-act="del" title="Delete this design" aria-label="Delete this design"><svg class="i"><use href="#i-trash"/></svg></button>
       <button class="btn ghost icon" data-act="undo" title="Undo (Ctrl/⌘+Z)" aria-label="Undo"><svg class="i"><use href="#i-undo"/></svg></button>
-      <button class="btn ghost" data-act="import" title="Import a workspace backup (.json)">Import</button>
       <button class="btn primary" data-act="export" title="Export (Ctrl/⌘+E)">Export</button>
-      <button class="btn ghost icon" id="themeBtn" data-act="theme" aria-label="Switch theme"></button>
-      <button class="btn ghost icon" data-act="shortcuts" title="Quick start guide (?)" aria-label="Quick start guide">?</button>
-      <button class="btn ghost icon" id="setBtn" data-tab="settings" title="Settings (9)" aria-label="Settings"><svg class="i"><use href="#i-gear"/></svg></button>
+      <!-- phones: the less-used buttons fold into this menu; wider screens show them inline (display: contents, Import moved before Export with order) -->
+      <button class="btn ghost icon more-btn" id="moreBtn" aria-label="More" aria-expanded="false" aria-controls="moreMenu">⋯</button>
+      <div class="more" id="moreMenu">
+        <button class="btn" data-act="import" title="Import a workspace backup (.json)" aria-label="Import"><svg class="i menu-only" aria-hidden="true"><use href="#i-upload"/></svg>Import</button>
+        <button class="btn ghost icon" id="themeBtn" data-act="theme" aria-label="Switch theme"></button>
+        <button class="btn ghost icon" data-act="shortcuts" title="Quick start guide (?)" aria-label="Quick start guide">?</button>
+        <button class="btn ghost icon" id="setBtn" data-tab="settings" title="Settings (9)" aria-label="Settings"><svg class="i"><use href="#i-gear"/></svg></button>
+      </div>
     </div>
   </div>
   <nav class="tabs" role="tablist" id="tabs">
@@ -470,10 +497,17 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
 <input type="file" id="importFile" accept=".json,application/json" hidden>
 <input type="file" id="tplFile" accept=".xlsx,.xls,.ods,.csv" hidden>
 
-<script src="https://cdn.jsdelivr.net/npm/uplot@1.6.30/dist/uPlot.iife.min.js"></script>
+<script src="uPlot.iife.min.js"></script>
 <script src="engine.js"></script>
 <script src="apc.js"></script>
 <script src="library.js"></script>
 <script src="data.js"></script>
 <script src="template.js"></script>
-<script src="app.js"></script>
+<script src="app-core.js"></script>
+<script src="app-design.js"></script>
+<script src="app-parts.js"></script>
+<script src="app-print.js"></script>
+<script src="app-library.js"></script>
+<script src="app-logs.js"></script>
+<script src="app-export.js"></script>
+<script src="app-main.js"></script>

@@ -1,0 +1,26 @@
+name: check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: hangarlab
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Engine self-check
+        run: node test.js
+      - name: HangarLab.html is rebuilt from the sources
+        run: |
+          node build.js
+          git diff --exit-code --ignore-cr-at-eol -- HangarLab.html || {
+            echo "::error file=hangarlab/HangarLab.html::HangarLab.html is out of date. Run 'node build.js' in hangarlab/ and commit the result."
+            exit 1
+          }

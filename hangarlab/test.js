@@ -15,6 +15,11 @@ near(rq.Wg, 6467.88, 0.01, 'quad AUW');
 near(rq.h.pMotors * Math.sqrt(rq.sigma), 4 * 182.6, 6, 'quad hover power (sea-level equiv)');
 assert(rq.hoverMin > 17 && rq.hoverMin < 22, 'quad hover time ' + rq.hoverMin);
 assert(rq.ff && rq.ff.length > 10 && rq.bestRange.km > 0, 'quad forward flight curve');
+// top speed stops at a real limit (30° lean by default), not at the end of the speed sweep
+assert(rq.vmaxLimit === 'lean' && rq.vmax > 15 && rq.vmax < 30, `quad top speed ${rq.vmax} (${rq.vmaxLimit})`);
+assert(rq.ff[rq.ff.length - 1].tilt <= 30, 'quad tilt within lean limit');
+const steep = U.compute(Object.assign({}, quad, { mr: Object.assign({}, quad.mr, { lean: 45 }) }), lib);
+assert(steep.vmax > rq.vmax, 'more lean, more top speed');
 
 // Dolphin: calibrated so measured 5.25 A @ 22 m/s @ 1.4 kg is reproduced
 const dol = projects[1];
@@ -188,6 +193,11 @@ assert(Math.abs(ex.y[100] - sl.msgs['BAT[0]'].col('Volt')[100] * sl.msgs['BAT[0]
 assert.throws(() => U.evalExpr(sl, 'alert(1)'), /Unknown function/);
 assert.throws(() => U.evalExpr(sl, 'ATT.Roll; x'), /Unexpected/);
 assert(s.duration > 500 && s.mAh > 1000 && s.avgP > 500, 'sample summary');
+// long logs: summary must not pass every sample as a function argument (stack overflow)
+const N = 300000, rows = ['FMT, 128, 89, FMT, BBnNZ, Type,Length,Name,Format,Columns', 'FMT, 2, 23, BAT, Qff, TimeUS,Volt,Curr', 'FMT, 3, 23, VIBE, Qfff, TimeUS,VibeX,VibeY,VibeZ'];
+for (let k = 0; k < N; k++) rows.push(`BAT, ${k * 1000}, ${50 - k / N}, ${k === 7 ? 99 : 10}`, `VIBE, ${k * 1000}, 1, 2, ${k === 9 ? 42 : 3}`);
+const big = U.logSummary(U.parseText(rows.join('\n')));
+assert(big.iMax === 99 && big.vibeMax === 42 && big.vMin > 49 && big.vMin < 49.01, 'long log summary ' + JSON.stringify(big));
 
 console.log('all checks passed');
 console.log({ quadHoverMin: rq.hoverMin.toFixed(1), quadTW: rq.h.tw.toFixed(2), quadThr: rq.h.thr.toFixed(0), dolphinMin: rd.cruise.minutes.toFixed(1), dolphinKm: rd.cruise.km.toFixed(1), vtolKm: rv.mission.km.toFixed(1), vtolHoverThr: rv.h.thr.toFixed(0) });

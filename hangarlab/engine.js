@@ -208,23 +208,31 @@
 
   // ponytail: momentum theory + fixed profile/tip-speed assumptions; calibrate with a flight log for accuracy.
   const MR_KAPPA = 1.15, MR_PROFILE_FRAC = 0.35, MR_TIP_SPEED = 120;
-  function mrForward(W, rho, Adisk, cda, pHoverMotors, tmaxN, vmaxCap) {
+  // speed stops at the first of: 85 % thrust, the lean-angle limit (ArduPilot ANGLE_MAX), or 85 % of full-throttle motor power.
+  // out.limit names which one; 'cap' means the sweep ran out at MR_V_CAP, so the real top speed is higher.
+  const MR_V_CAP = 80;
+  function mrForward(W, rho, Adisk, cda, pHoverMotors, tmaxN, leanDeg, pMaxMotors) {
     const vh = Math.sqrt(W / (2 * rho * Adisk));
     const pInd0 = MR_KAPPA * W * vh;
     const pPro = MR_PROFILE_FRAC * pInd0;
+    const lean = ((leanDeg || 30) * Math.PI) / 180;
     const out = [];
-    for (let V = 0; V <= (vmaxCap || 40); V += 0.5) {
+    out.limit = 'cap';
+    for (let V = 0; V <= MR_V_CAP; V += 0.5) {
       const D = 0.5 * rho * V * V * cda;
       const T = Math.hypot(W, D);
-      if (T > 0.85 * tmaxN) break;
+      if (T > 0.85 * tmaxN) { out.limit = 'thrust'; break; }
       const a = Math.atan2(D, W);
+      if (a > lean) { out.limit = 'lean'; break; }
       let vi = vh;
       for (let k = 0; k < 80; k++) {
         const vn = T / (2 * rho * Adisk * Math.hypot(V * Math.cos(a), V * Math.sin(a) + vi));
         vi = 0.5 * vi + 0.5 * vn;
       }
       const pa = MR_KAPPA * T * vi + D * V + pPro * (1 + 3 * Math.pow(V / MR_TIP_SPEED, 2));
-      out.push({ V, P: pHoverMotors * (pa / (pInd0 + pPro)), tilt: (a * 180) / Math.PI, T });
+      const P = pHoverMotors * (pa / (pInd0 + pPro));
+      if (pMaxMotors && P > 0.85 * pMaxMotors) { out.limit = 'power'; break; }
+      out.push({ V, P, tilt: (a * 180) / Math.PI, T });
     }
     return out;
   }
@@ -508,7 +516,7 @@
         else if (p.mr.escA && h.iMaxMotor > 0.85 * p.mr.escA) chk('warn', `Motor full-throttle current ${h.iMaxMotor.toFixed(1)} A is within 15% of ESC rating.`);
         if (p.type === 'multirotor') battChk(R.maxI, R.hoverI, 'hover');
         if (p.type === 'multirotor' && !o.lite && h.diskM2) {
-          const ff = mrForward(WN, rho, h.diskM2, p.mr.cda, h.pMotors, (h.tmaxTot / 1000) * g0);
+          const ff = mrForward(WN, rho, h.diskM2, p.mr.cda, h.pMotors, (h.tmaxTot / 1000) * g0, p.mr.lean, p.mr.n * h.iMaxMotor * bat.V);
           R.ff = ff.map((pt) => {
             const P2 = pt.P + pAv, t = (bat.usableWh / P2) * 3600;
             return { V: pt.V, P: P2, minutes: t / 60, km: (pt.V * t) / 1000, tilt: pt.tilt };
@@ -517,6 +525,7 @@
             R.bestRange = R.ff.reduce((a, x) => (x.km > a.km ? x : a));
             R.bestEnd = R.ff.reduce((a, x) => (x.minutes > a.minutes ? x : a));
             R.vmax = R.ff[R.ff.length - 1].V;
+            R.vmaxLimit = ff.limit;
           }
         } else if (h.diskM2 === 0) chk('warn', 'Set a prop diameter on the propulsion set to model forward flight.');
       } else if (!lift) chk('crit', 'Pick a lift motor and prop.');
@@ -1239,6 +1248,10 @@
     return k ? log.msgs[k] : null;
   }
 
+  // loop instead of Math.max(...col): a long log has more samples than the call stack allows as arguments
+  const colMax = (a) => { let m = -Infinity; for (let i = 0; i < a.length; i++) if (a[i] > m) m = a[i]; return m; };
+  const colMin = (a) => { let m = Infinity; for (let i = 0; i < a.length; i++) if (a[i] < m) m = a[i]; return m; };
+
   function logSummary(log) {
     const s = {};
     const any = Object.values(log.msgs).filter((m) => m.count)[0];
@@ -1254,8 +1267,8 @@
       const v = bat.col(bat.cols.includes('Volt') ? 'Volt' : 'V');
       const c = bat.col(bat.cols.includes('Curr') ? 'Curr' : 'I');
       const vf = Array.from(v).filter((x) => x > 1);
-      s.vStart = vf[0]; s.vMin = Math.min(...vf);
-      s.iMax = Math.max(...Array.from(c));
+      s.vStart = vf[0]; s.vMin = colMin(vf);
+      s.iMax = colMax(c);
       if (bat.cols.includes('CurrTot')) { const ct = bat.col('CurrTot'); s.mAh = ct[ct.length - 1]; }
       let pw = 0, nArmed = 0;
       for (let k = 0; k < v.length; k++) if (c[k] > 1) { pw += v[k] * c[k]; nArmed++; }
@@ -1263,14 +1276,14 @@
       if (bat.cols.includes('EnrgTot')) { const e = bat.col('EnrgTot'); s.wh = e[e.length - 1]; }
     }
     const ctun = log.msgs.CTUN;
-    if (ctun && ctun.cols.includes('Alt')) s.altMax = Math.max(...Array.from(ctun.col('Alt')));
+    if (ctun && ctun.cols.includes('Alt')) s.altMax = colMax(ctun.col('Alt'));
     const gps = findMsg(log, 'GPS');
     if (gps) {
-      if (gps.cols.includes('Spd')) s.spdMax = Math.max(...Array.from(gps.col('Spd')));
-      if (gps.cols.includes('NSats')) s.satsMin = Math.min(...Array.from(gps.col('NSats')).filter((x) => x > 0));
+      if (gps.cols.includes('Spd')) s.spdMax = colMax(gps.col('Spd'));
+      if (gps.cols.includes('NSats')) s.satsMin = colMin(Array.from(gps.col('NSats')).filter((x) => x > 0));
     }
     const vibe = findMsg(log, 'VIBE');
-    if (vibe && vibe.cols.includes('VibeZ')) s.vibeMax = Math.max(...['VibeX', 'VibeY', 'VibeZ'].map((c) => Math.max(...Array.from(vibe.col(c)))));
+    if (vibe && vibe.cols.includes('VibeZ')) s.vibeMax = Math.max(...['VibeX', 'VibeY', 'VibeZ'].map((c) => colMax(vibe.col(c))));
     return s;
   }
 
