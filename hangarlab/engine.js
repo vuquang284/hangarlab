@@ -430,6 +430,17 @@
     return w;
   }
 
+  // ponytail: typical discharge-capacity vs temperature curves (LiPo / Li-ion datasheets, 0.5–1C); LiFePO4 suffers more in the cold
+  function coldFactor(t, chem) {
+    const pts = chem === 'life' ? [[-20, 0.5], [-10, 0.65], [0, 0.8], [10, 0.95], [15, 1]] : [[-20, 0.6], [-10, 0.75], [0, 0.88], [10, 1]];
+    if (!(t < pts[pts.length - 1][0])) return 1;
+    if (t <= pts[0][0]) return pts[0][1];
+    for (let i = 1; i < pts.length; i++) if (t <= pts[i][0]) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i]; return y0 + ((t - x0) / (x1 - x0)) * (y1 - y0); }
+    return 1;
+  }
+  // control-surface servo torque (kg·cm), common RC formula: 8.5e-6 · C² · V² · L · sin(θ), C and L in cm, V in km/h, 1:1 linkage
+  const servoTorque = (chordMm, lenMm, throwDeg, vMs) => 8.5e-6 * Math.pow(chordMm / 10, 2) * Math.pow(vMs * 3.6, 2) * (lenMm / 10) * Math.sin((throwDeg * Math.PI) / 180);
+
   // ---------- main compute ----------
   function hover(set, n, coax, Wg, sigma, V) {
     if (!set || !n || !set.rows.length) return null;
@@ -458,6 +469,9 @@
     const rho = rhoAt(p.env.alt, p.env.temp), sigma = rho / RHO0;
     const pAv = avionicsPower(p);
     const R = { type: p.type, bat, mass, Wg, WN, rho, sigma, pAv, checks: [] };
+    // cold packs give less: usable energy factor from air temperature (packs warm up in flight, so mild below 10 °C)
+    const cf = coldFactor(p.env.temp, b.chem);
+    if (cf < 1) { bat.usableWh *= cf; bat.coldF = cf; }
     const chk = (level, msg) => R.checks.push({ level, msg });
     // sustained current (hover/cruise) must stay under the continuous rating; full throttle only lasts seconds, so it is checked against peak
     const battChk = (iMax, iSus, what) => {
@@ -1416,6 +1430,6 @@
     rhoAt, battery, packOf, curve, dragBuildup, oswald, FINISH, CONSERVATIVE, DEFAULT_K, motorCanMm, combo, parseAPC, parsePropTable, propCoef, drive, drivePower, sizeOf, splitSets, propulsion, payloadSweep, fullBom, consolidate, costOf, cgOf, missionPlan, SEG, enduranceOf, fwDrag, mrForward, massOf, autoRows, avionicsPower, compute, batterySweep,
     powerPlan, pickWire, pickConn, CONNECTORS, WIRE, link, fspl, radioHorizonKm, rfConflicts,
     rankMaterials, partMass, partShell, parseSTL, stlStats,
-    parseBin, parseText, parseCSV, logModes, logSummary, modeCruise, missionFromLog, gpsTrack, sampleLog, findMsg, interp, logEvents, logParams, logTrack, evalExpr, idxAt, ERR_SUBSYS, EV_IDS,
+    parseBin, parseText, parseCSV, logModes, logSummary, modeCruise, missionFromLog, coldFactor, servoTorque, gpsTrack, sampleLog, findMsg, interp, logEvents, logParams, logTrack, evalExpr, idxAt, ERR_SUBSYS, EV_IDS,
   };
 })(typeof window !== 'undefined' ? window : globalThis);

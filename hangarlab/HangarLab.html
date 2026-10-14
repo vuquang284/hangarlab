@@ -904,6 +904,17 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
     return w;
   }
 
+  // ponytail: typical discharge-capacity vs temperature curves (LiPo / Li-ion datasheets, 0.5–1C); LiFePO4 suffers more in the cold
+  function coldFactor(t, chem) {
+    const pts = chem === 'life' ? [[-20, 0.5], [-10, 0.65], [0, 0.8], [10, 0.95], [15, 1]] : [[-20, 0.6], [-10, 0.75], [0, 0.88], [10, 1]];
+    if (!(t < pts[pts.length - 1][0])) return 1;
+    if (t <= pts[0][0]) return pts[0][1];
+    for (let i = 1; i < pts.length; i++) if (t <= pts[i][0]) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i]; return y0 + ((t - x0) / (x1 - x0)) * (y1 - y0); }
+    return 1;
+  }
+  // control-surface servo torque (kg·cm), common RC formula: 8.5e-6 · C² · V² · L · sin(θ), C and L in cm, V in km/h, 1:1 linkage
+  const servoTorque = (chordMm, lenMm, throwDeg, vMs) => 8.5e-6 * Math.pow(chordMm / 10, 2) * Math.pow(vMs * 3.6, 2) * (lenMm / 10) * Math.sin((throwDeg * Math.PI) / 180);
+
   // ---------- main compute ----------
   function hover(set, n, coax, Wg, sigma, V) {
     if (!set || !n || !set.rows.length) return null;
@@ -932,6 +943,9 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
     const rho = rhoAt(p.env.alt, p.env.temp), sigma = rho / RHO0;
     const pAv = avionicsPower(p);
     const R = { type: p.type, bat, mass, Wg, WN, rho, sigma, pAv, checks: [] };
+    // cold packs give less: usable energy factor from air temperature (packs warm up in flight, so mild below 10 °C)
+    const cf = coldFactor(p.env.temp, b.chem);
+    if (cf < 1) { bat.usableWh *= cf; bat.coldF = cf; }
     const chk = (level, msg) => R.checks.push({ level, msg });
     // sustained current (hover/cruise) must stay under the continuous rating; full throttle only lasts seconds, so it is checked against peak
     const battChk = (iMax, iSus, what) => {
@@ -1890,7 +1904,7 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
     rhoAt, battery, packOf, curve, dragBuildup, oswald, FINISH, CONSERVATIVE, DEFAULT_K, motorCanMm, combo, parseAPC, parsePropTable, propCoef, drive, drivePower, sizeOf, splitSets, propulsion, payloadSweep, fullBom, consolidate, costOf, cgOf, missionPlan, SEG, enduranceOf, fwDrag, mrForward, massOf, autoRows, avionicsPower, compute, batterySweep,
     powerPlan, pickWire, pickConn, CONNECTORS, WIRE, link, fspl, radioHorizonKm, rfConflicts,
     rankMaterials, partMass, partShell, parseSTL, stlStats,
-    parseBin, parseText, parseCSV, logModes, logSummary, modeCruise, missionFromLog, gpsTrack, sampleLog, findMsg, interp, logEvents, logParams, logTrack, evalExpr, idxAt, ERR_SUBSYS, EV_IDS,
+    parseBin, parseText, parseCSV, logModes, logSummary, modeCruise, missionFromLog, coldFactor, servoTorque, gpsTrack, sampleLog, findMsg, interp, logEvents, logParams, logTrack, evalExpr, idxAt, ERR_SUBSYS, EV_IDS,
   };
 })(typeof window !== 'undefined' ? window : globalThis);
 
@@ -2557,6 +2571,10 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
     let h = '';
     h += group('Vehicle', `
       ${txt('name', 'Design name', { wide: true })}
+      <label class="f wide"><span>Notes</span><textarea data-k="notes" rows="3" placeholder="What changed, part numbers, test results…">${esc(p.notes || '')}</textarea></label>
+      <div class="f wide"><span>Versions ${tip('A version is a frozen copy of this design. Restore brings every setting back (Undo works).')}</span>
+        ${(p.versions || []).map((v, j) => `<div class="in segrow" style="margin-top:4px"><input type="text" data-k="versions.${j}.name" value="${esc(v.name)}" aria-label="Version name"><span class="faint" style="white-space:nowrap;font-size:12px">${new Date(v.at).toLocaleDateString()}</span><button class="btn sm" data-act="ver-restore" data-i="${j}">Restore</button><button class="btn ghost sm danger" data-act="ver-del" data-i="${j}" aria-label="Delete version">×</button></div>`).join('') || '<p class="hint" style="margin:2px 0">None yet.</p>'}
+        <button class="btn sm" data-act="ver-save" style="margin-top:6px">Save version</button></div>
       <div class="f wide"><span>Configuration</span><div class="seg" role="group">${Object.entries(TYPE_LABEL).map(([k, l]) => `<button data-settype="${k}" aria-pressed="${t === k}">${l}</button>`).join('')}</div></div>
       ${t === 'vtol' ? sel('vtol.kind', 'VTOL type', [['quadplane', 'Quadplane (separate lift + cruise)'], ['tiltrotor', 'Tilt-rotor (shared motors)'], ['tailsitter', 'Tailsitter (shared motors)']], { wide: true, rebuild: true }) : ''}`);
     h += group('Environment', `${num('env.alt', 'Field altitude', { unit: 'm' })}${num('env.temp', 'Air temperature', { unit: '°C' })}<p class="hint" id="rhoHint"></p>`);
@@ -2647,6 +2665,21 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
           <button class="btn sm" data-act="seg-add" style="margin-top:6px">+ Add segment</button></div>
         <p class="hint">Climb and descend are in metres of height. Energy available = battery usable capacity (its unused part is the landing reserve), minus any extra reserve.</p>`, false);
     }
+    if (t !== 'multirotor') {
+      if (p.servos && p.servos[0] && p.servos[0].len === Math.round(p.fw.span * 350)) p.servos[0].len = Math.round(p.fw.span * 250); // first default was oversized
+      if (!p.servos) { const c = Math.round((p.fw.area / p.fw.span) * 1000); p.servos = [{ name: 'Aileron', n: 2, chord: Math.round(c * 0.25), len: Math.round(p.fw.span * 250), throw: 20, rating: 0 }, { name: 'Elevator', n: 1, chord: Math.round(c * 0.3), len: Math.round(p.fw.span * 250), throw: 25, rating: 0 }]; }
+      h += group('Servo sizing', `
+        <div class="f wide"><span>Control surfaces: count, chord mm, length mm, max throw °, servo rating kg·cm</span>
+        ${p.servos.map((s, j) => `<div class="in segrow" style="margin-top:4px"><input type="text" data-k="servos.${j}.name" value="${esc(s.name)}" style="min-width:70px" aria-label="Surface">
+          <input type="number" data-k="servos.${j}.n" value="${s.n}" step="1" style="width:42px" aria-label="Count" title="Count">
+          <input type="number" data-k="servos.${j}.chord" value="${s.chord}" step="any" style="width:56px" aria-label="Chord mm" title="Chord mm">
+          <input type="number" data-k="servos.${j}.len" value="${s.len}" step="any" style="width:60px" aria-label="Length mm" title="Length mm">
+          <input type="number" data-k="servos.${j}.throw" value="${s.throw}" step="any" style="width:46px" aria-label="Throw °" title="Throw °">
+          <input type="number" data-k="servos.${j}.rating" value="${s.rating || ''}" placeholder="kg·cm" step="any" style="width:60px" aria-label="Servo rating kg·cm" title="Servo rating kg·cm">
+          <button class="btn ghost sm danger" data-act="servo-del" data-i="${j}" aria-label="Remove">×</button></div>`).join('')}
+        <button class="btn sm" data-act="servo-add" style="margin-top:6px">+ Add surface</button></div>
+        <p class="hint wide" id="servoHint"></p>`, false);
+    }
     h += group('Electronics', `${num('becEff', 'BEC / regulator efficiency', { unit: '%' })}<p class="hint" id="avHint"></p>`, false);
     return h;
   }
@@ -2695,8 +2728,24 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
 
   const SEG_HUE = { hover: 352, climb: 24, cruise: 212, loiter: 140, descend: 172 };
   // straight-line range and out-and-back radius in wind, from the endurance at the cruise speed
+  // strongest wind the aircraft can work in: multirotor = top speed at 85 % thrust; plane = top level speed
+  function servoText(p, R) {
+    const v = p.fw.vc * 1.25;
+    return `At ${fmt(v, 0)} m/s (cruise + 25 %), full throw, with ×1.5 margin: ` + (p.servos || []).map((s) => {
+      const need = U.servoTorque(+s.chord, +s.len, +s.throw, v) * 1.5;
+      const st = !(+s.rating > 0) ? '' : +s.rating >= need ? ' <span class="pill good">OK</span>' : ' <span class="pill crit">too weak</span>';
+      return `<b>${esc(s.name)}</b> ${fmt(need, 1)} kg·cm${st}`;
+    }).join(' · ') + '. Rule-of-thumb formula for a 1:1 linkage; a longer servo horn than control horn needs more.';
+  }
+  function windReadout(p, R) {
+    const lim = p.type === 'multirotor' ? R.vmax : R.vmaxLevel;
+    if (!fin(lim)) return '';
+    const plan = p.type === 'multirotor' ? lim * 0.66 : Math.min(lim * 0.66, p.fw.vc * 0.5);
+    const w = +p.mission.wind || 0;
+    return ro('Wind limit', fmt(lim, 0), 'm/s', `fly in under ~${fmt(plan, 0)} m/s${w ? ` · set: ${fmt(w, 0)} m/s` : ''}`, w > lim * 0.8 ? 'crit' : w > plan ? 'warn' : '');
+  }
   function missionReadouts(p, R, mp) {
-    let h = '';
+    let h = windReadout(p, R);
     if (mp) {
       const st = misStatus(mp);
       h += ro('Mission energy', `${fmt(mp.total, 0)} / ${fmt(mp.avail, 0)}`, 'Wh', `${st.pill}: ${leftTxt(mp.avail - mp.total, mp.avail)} · ${fmt(mp.km, 1)} km, ${fmt(mp.minutes, 0)} min${mp.consK > 1 ? ` · conservative ${fmt(mp.totalCons, 0)} Wh` : ''}`, st.st, true);
@@ -2722,6 +2771,22 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
     if (mp.okNominal) return { st: 'warn', pill: 'Tight', text: `${leftTxt(lN, mp.avail)} at landing; ${fmt(-lC, 0)} Wh short if power is ${fmt((mp.consK - 1) * 100, 0)} % higher than modelled` };
     return { st: 'crit', pill: 'Does not fit', text: `${leftTxt(lN, mp.avail)}: shorten the mission, fly slower or add battery` };
   }
+  // logged cruise current vs what the model predicts at the same speed and weight
+  function flightsCard(p, R) {
+    const el = $('#flights');
+    if (!el) return;
+    const fl = p.flights || [];
+    if (!fl.length) { el.innerHTML = '<p class="faint">No flights yet. Open a log in Flight Logs and press "Save this flight".</p>'; return; }
+    const model = (f) => {
+      if (!fin(f.v) || p.type === 'multirotor') return null;
+      const q = clone(p); q.fw.vc = f.v; if (q.fw.cal) q.fw.cal.on = false;
+      try { const r = U.compute(q, S.lib, { lite: true }); return r.cruise && fin(r.cruise.I) ? r.cruise.I : null; } catch (e) { return null; }
+    };
+    const rows = fl.map((f, j) => { const mI = model(f), d = mI && fin(f.i) ? (f.i / mI - 1) * 100 : null; return `<tr><td>${new Date(f.at).toLocaleDateString()}</td><td>${esc(f.log)}</td><td class="n">${fmtT(f.dur)}</td><td class="n">${fin(f.wh) ? `${fmt(f.wh, 0)} Wh` : '—'}</td><td>${esc(f.mode || '—')}</td><td class="n">${fin(f.v) ? `${fmt(f.v, 1)} m/s` : '—'}</td><td class="n">${fin(f.i) ? `${fmt(f.i, 1)} A` : '—'}</td><td class="n">${fin(mI) ? `${fmt(mI, 1)} A` : '—'}</td><td class="n${d != null && Math.abs(d) > 15 ? ' bad' : ''}">${d != null ? `${d >= 0 ? '+' : ''}${fmt(d, 0)} %` : '—'}</td><td><button class="btn ghost sm danger" data-act="fl-del" data-i="${j}" aria-label="Remove">×</button></td></tr>`; });
+    const ds = fl.map((f) => { const mI = model(f); return mI && fin(f.i) ? f.i / mI : null; }).filter(fin);
+    el.innerHTML = `<div class="tbl-wrap"><table class="mis"><thead><tr><th>Date</th><th>Log</th><th class="n">Length</th><th class="n">Energy</th><th>Cruise mode</th><th class="n">Speed</th><th class="n">Logged A</th><th class="n">Model A</th><th class="n">Diff</th><th></th></tr></thead><tbody>${rows.join('')}</tbody></table></div>
+      <p class="hint">Model A = this design's uncalibrated estimate at the logged speed${ds.length > 1 ? `. Across ${ds.length} flights the logs average <b>${fmt((ds.reduce((a, b) => a + b, 0) / ds.length - 1) * 100, 0)} %</b> vs the model` : ''}. A steady gap means the drag inputs need work; use Calibrate in Flight Logs to fold one flight in.</p>`;
+  }
   function missionCard(p, mp) {
     const el = $('#mission'), note = $('#misNote');
     if (!el) return;
@@ -2742,11 +2807,80 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
       <p class="hint">Power per segment comes from the same model as the readouts above; climb and descent are estimates within ~10 %. ${cons ? 'The conservative row covers the usual gap between a model and real flight until you calibrate from a flight log.' : ''}</p>`;
     if (note) note.innerHTML = `<span class="pill ${st.st}">${st.pill}</span> ${st.text}`;
   }
+  // ---- part finders: try library options in the full model, rank by endurance within limits ----
+  function finderRows(p, kind, role) {
+    const cur = U.compute(p, S.lib, { lite: true }), out = [];
+    const twMin = p.type === 'vtol' ? 1.5 : 2;
+    const judge = (q, label, apply) => {
+      let R; try { R = U.compute(q, S.lib, { lite: true }); } catch (e) { return; }
+      const end = U.enduranceOf(q, R);
+      if (!fin(end) || end <= 0) return;
+      const why = [];
+      if (R.h) { if (R.h.tw < twMin) why.push(`T/W ${fmt(R.h.tw, 1)}`); if (R.h.thr > 70) why.push(`hover ${fmt(R.h.thr, 0)} %`); if (q.mr.escA && R.h.iMaxMotor > q.mr.escA) why.push('over ESC'); }
+      if (R.cruise && q.type !== 'multirotor' && (!fin(R.cruise.P) || R.cruise.thr > 90)) why.push('cannot hold cruise');
+      if (q.type === 'fixedwing' && +q.fw.vsMax > 0 && R.vs > +q.fw.vsMax) why.push(`stall ${fmt(R.vs, 1)} m/s`);
+      const sus = R.h && q.type === 'multirotor' ? R.hoverI : R.cruise ? R.cruise.I : R.hoverI;
+      if (fin(sus) && sus > R.bat.iMaxCont) why.push(`${fmt(sus, 0)} A over pack`);
+      if (fin(R.maxI) && R.maxI > (R.bat.peakSet ? R.bat.iMaxPeak : R.bat.iMaxCont * 1.5)) why.push('full throttle over pack');
+      out.push({ label, end, auw: R.Wg, info: R.h && q.type === 'multirotor' ? `${fmt(R.h.thr, 0)} % hover` : R.cruise ? `${fmt(R.cruise.I, 1)} A cruise` : '', ok: !why.length, why: why.join(', '), apply });
+    };
+    if (kind === 'mp') {
+      for (const m of S.lib.motors) for (const pr of S.lib.props) {
+        if (!U.combo(S.lib, m.id, pr.id, cur.bat.V)) continue;
+        const q = clone(p); q[role].motor = m.id; q[role].prop = pr.id;
+        judge(q, `${m.name} + ${pr.name}`, { role, motor: m.id, prop: pr.id });
+      }
+    } else {
+      for (const b of S.lib.batteries) for (const n of [1, 2, 3, 4]) {
+        const q = clone(p); Object.assign(q.batt, { name: b.name, chem: b.chem, s: b.s, p: b.p || 1, cellMah: b.cellMah, g: b.g, c: b.c, cPeak: b.cPeak || 0, packs: n, conn: 'parallel' });
+        judge(q, `${n > 1 ? `${n}× ` : ''}${b.name}`, { bat: b.id, packs: n });
+      }
+    }
+    return { rows: out.sort((a, b) => (b.ok - a.ok) || b.end - a.end).slice(0, 25), now: U.enduranceOf(p, cur) };
+  }
+  let finderLast = null;
+  function finderDialog(kind, role) {
+    const p = P(), { rows, now } = finderRows(p, kind, role);
+    finderLast = rows;
+    openDlg(kind === 'mp' ? `Best ${role === 'mr' ? (p.type === 'vtol' ? 'lift' : '') : 'cruise'} motor + prop for ${esc(p.name)}` : `Best battery for ${esc(p.name)}`,
+      rows.length ? `<p class="note" style="margin-top:0">Ranked by ${p.type === 'multirotor' ? 'hover' : p.type === 'vtol' ? 'mission cruise' : 'cruise'} endurance; now ${fmt(now, 1)} min. Options that break a limit are listed last with the reason.</p>
+      <div class="tbl-wrap"><table class="mis"><thead><tr><th>Option</th><th class="n">Endurance</th><th class="n">AUW</th><th class="n"></th><th>Limits</th><th></th></tr></thead><tbody>
+      ${rows.map((r, i) => `<tr${r.ok ? '' : ' style="opacity:.6"'}><td>${esc(r.label)}</td><td class="n">${fmt(r.end, 1)} min</td><td class="n">${fmt(r.auw / 1000, 2)} kg</td><td class="n">${r.info}</td><td>${r.ok ? '<span class="pill good">OK</span>' : `<span class="pill warn">${esc(r.why)}</span>`}</td><td><button class="btn sm" data-act="find-use" data-i="${i}">Use</button></td></tr>`).join('')}</tbody></table></div>
+      <p class="hint">${kind === 'mp' ? 'Pairs need a thrust test, or motor kV with prop size, to be modelled.' : 'Packs are tried 1–4 in parallel.'} Use applies it to the design (Undo works).</p>`
+        : '<p class="note">Nothing in the library can be modelled for this yet. Add motors with kV and props with a size, thrust tests, or battery packs.</p>',
+      '<button class="btn" data-act="dlg-close">Close</button>');
+  }
+  function regsDialog() {
+    const p = P(), R = U.compute(p, S.lib, { lite: true }), g = R.Wg;
+    const all = U.fullBom(p, S.lib).map((r) => r.name).join(' | ');
+    const rid = /remote\s?id|\brid\b|beacon|dronetag|db120|rid module/i.test(all);
+    const cam = /cam|gimbal|siyi|gopro|camera|eo\/ir|thermal/i.test(all);
+    const us = g < 250 ? ['Under 250 g', 'Recreational: no FAA registration (TRUST certificate still needed). Commercial (Part 107): register and Remote ID.']
+      : g < 25000 ? ['250 g – 25 kg', 'Register with the FAA. Remote ID required (built in or broadcast module). Commercial flights under Part 107.']
+      : ['Over 25 kg (55 lb)', 'Outside Part 107: needs a Section 44807 exemption or other approval.'];
+    const eu = g < 250 ? 'C0 class (under 250 g): open category A1, no pilot test; register the operator if it has a camera.'
+      : g < 900 ? 'C1 class (under 900 g): open category A1; operator registration, online pilot test, Remote ID.'
+      : g < 4000 ? 'C2 class (under 4 kg): open category A2 with the A2 certificate, or A3 away from people; Remote ID.'
+      : g < 25000 ? 'C3/C4 class (under 25 kg): open category A3 only (far from people and built-up areas); Remote ID for C3.'
+      : 'Over 25 kg: specific category with an operational authorisation (SORA).';
+    openDlg(`Regulations for ${esc(p.name)}`, `<dl class="kv" style="margin-top:0"><dt>All-up weight</dt><dd>${fmt(g, 0)} g (${fmt(g / 453.592, 2)} lb)</dd>
+      <dt>USA (FAA)</dt><dd><b>${us[0]}</b>: ${us[1]}</dd>
+      <dt>EU (EASA)</dt><dd>${eu}</dd>
+      <dt>Remote ID in BOM</dt><dd>${rid ? '<span class="pill good">found</span>' : g >= 250 ? '<span class="pill warn">not found</span> add a module, or check the flight controller supports broadcast RID' : 'not needed for recreational use'}</dd>
+      <dt>Camera on board</dt><dd>${cam ? 'yes: privacy rules and operator registration apply even under 250 g in the EU' : 'none found in the BOM'}</dd>
+      ${R.bat.Wh > 100 ? `<dt>Battery transport</dt><dd>${fmt(R.bat.Wh / R.bat.packs, 0)} Wh per pack${R.bat.Wh / R.bat.packs > 160 ? ': over 160 Wh, not allowed on passenger aircraft' : R.bat.Wh / R.bat.packs > 100 ? ': 100–160 Wh, airline approval needed, max 2 spares' : ''}.</dd>` : ''}</dl>
+      <p class="hint">A quick orientation from weight and BOM, not legal advice. Rules change and vary by country; check the current FAA / EASA / local rules before flying.</p>`,
+      '<button class="btn" data-act="dlg-close">Close</button>');
+  }
   function renderDesign(el) {
+    const p0 = P();
     el.innerHTML = `<div class="bench"><aside class="side">${sideTools}${designInputs()}</aside>
       <section class="stack">
         <div class="readouts" id="readouts"></div>
+        <div class="card"><div class="card-h"><h2>Find parts from your library</h2><p>Every option is run through the full model for this design</p></div>
+          <div class="row">${p0.type !== 'fixedwing' ? `<button class="btn" data-act="find-mp" data-role="mr">Best ${p0.type === 'vtol' ? 'lift ' : ''}motor + prop</button>` : ''}${p0.type !== 'multirotor' && !(p0.type === 'vtol' && p0.vtol.kind !== 'quadplane') ? '<button class="btn" data-act="find-mp" data-role="fw">Best cruise motor + prop</button>' : ''}<button class="btn" data-act="find-bat">Best battery</button><button class="btn ghost" data-act="regs">Regulations</button></div></div>
         <div class="card"><div class="card-h"><h2>Checks</h2><p id="chkCount">Updated as you type</p></div><div class="checks" id="checks"></div></div>
+        <div class="card"><div class="card-h"><h2>Flight history</h2><p>Save flights from the Flight Logs tab</p></div><div id="flights"></div></div>
         <div class="card"><div class="card-h"><h2>Mission profile</h2><p id="misNote">Set segments under Mission &amp; wind</p></div><div id="mission"></div></div>
         <div class="charts">
           <div class="card"><div class="card-h"><h2 id="spTitle">Power vs airspeed</h2><p id="spNote"></p></div><div class="chart" id="chSpeed"></div></div>
@@ -2764,11 +2898,14 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
     const mp = U.missionPlan(p, S.lib, R);
     $('#readouts').innerHTML = designReadouts(p, R) + missionReadouts(p, R, mp);
     missionCard(p, mp);
+    flightsCard(p, R);
     const nBad = R.checks.filter((c) => c.level === 'crit').length, nWarn = R.checks.filter((c) => c.level === 'warn').length;
     $('#chkCount').textContent = nBad || nWarn ? `${nBad} to fix · ${nWarn} to check` : 'All clear';
     $('#checks').innerHTML = R.checks.map((c) => `<div class="chk"><span class="pill ${c.level}">${{ good: 'OK', warn: 'Check', crit: 'Fix', info: 'Note' }[c.level]}</span><span>${esc(c.msg)}</span></div>`).join('');
     const rh = $('#rhoHint'); if (rh) rh.innerHTML = `Air density <b>${fmt(R.rho, 3)} kg/m³</b> (σ = ${fmt(R.sigma, 3)}).`;
     const bh = $('#batHint'); if (bh) bh.innerHTML = `Each pack ${p.batt.s}S${p.batt.p || 1}P, ${fmt(R.bat.packMah, 0)} mAh. On board: <b>${R.bat.S}S${R.bat.P}P · ${fmt(R.bat.mah, 0)} mAh · ${fmt(R.bat.V, 1)} V</b> (${fmt(R.bat.vMin, 1)}–${fmt(R.bat.vMax, 1)} V), <b>${fmt(R.bat.Wh, 0)} Wh</b>, ${fmt(R.bat.g, 0)} g, ${fmt(R.bat.iMaxCont, 0)} A continuous${R.bat.peakSet ? `, ${fmt(R.bat.iMaxPeak, 0)} A peak` : ''}. A ${R.bat.chem.label} pack this size typically weighs ~${fmt(R.bat.estG, 0)} g.`;
+    const bh2 = $('#batHint'); if (bh2 && R.bat.coldF) bh2.innerHTML += ` <b style="color:var(--warn)">Cold: ${fmt(p.env.temp, 0)} °C leaves ${fmt(R.bat.coldF * 100, 0)} % of the usable energy.</b>`;
+    const sh = $('#servoHint'); if (sh) sh.innerHTML = servoText(p, R);
     const ah = $('#avHint'); if (ah) ah.innerHTML = `Electronics draw <b>${fmt(R.pAv, 1)} W</b> from the flight pack (from BOM rails).`;
     const ch = $('#calHint'); if (ch) ch.innerHTML = R.calK ? `Model scaled by <b>×${fmt(R.calK, 2)}</b> to match the measured point.` : 'Fill all three values.';
     const dh = $('#dragHint');
@@ -4012,7 +4149,7 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
     return `<div class="tbl-wrap" style="margin-top:10px"><table class="mis" id="lvModes"><thead><tr><th>Flight mode</th><th class="n">Time</th><th class="n">Cruising</th><th class="n">Avg cruise speed</th><th class="n">Avg cruise current</th><th class="n">Avg cruise power</th>${fwDesign ? '<th></th>' : ''}</tr></thead><tbody>
       ${mc.rows.map((r, i) => `<tr><td><i class="dot" style="background:${modeColor(r.name)}"></i>${esc(r.name)}</td><td class="n">${fmtT(r.time)}</td><td class="n">${r.cruise ? fmtT(r.cruise) : '<span class="faint">—</span>'}</td><td class="n">${fin(r.v) ? `${fmt(r.v, 1)} m/s` : '<span class="faint">—</span>'}</td><td class="n">${fin(r.i) ? `${fmt(r.i, 1)} A` : '<span class="faint">—</span>'}</td><td class="n">${fin(r.p) ? `${fmt(r.p, 0)} W` : '<span class="faint">—</span>'}</td>${fwDesign ? `<td>${fin(r.v) && fin(r.i) && r.cruise > 30 ? `<button class="btn sm" data-lv="cal" data-i="${i}" title="Use this as the measured cruise point of ${esc(P().name)}">Calibrate ${esc(P().name)}</button>` : ''}</td>` : ''}</tr>`).join('')}
       </tbody></table></div><p class="hint">Cruising = armed, moving faster than 3 m/s and holding altitude within 1 m/s. Speed is ${mc.src}${mc.src === 'ground speed' ? ' (no airspeed sensor logged, so wind is included)' : ''}.</p>
-      <div class="row" style="margin-top:6px"><button class="btn sm" data-lv="mission"${LV.track ? '' : ' disabled'}>Build ${esc(P().name)}'s mission profile from this flight</button></div>`;
+      <div class="row" style="margin-top:6px"><button class="btn sm" data-lv="hist">Save this flight to ${esc(P().name)}'s history</button><button class="btn sm" data-lv="mission"${LV.track ? '' : ' disabled'}>Build ${esc(P().name)}'s mission profile from this flight</button></div>`;
   }
   const modeAt = (t) => { let n = null; for (const s of LV.segs) if (s.a <= t) n = s.name; return n; };
   function valAt(key, t) {
@@ -4351,6 +4488,15 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
       });
       if (LV.mc.src === 'ground speed') setTimeout(() => toast('Calibrated from ground speed: wind on the day is baked in. An airspeed sensor log gives a cleaner point.'), 2500);
     }
+    if (a === 'hist') {
+      const p = P(), mc = LV.mc, R = U.compute(p, S.lib, { lite: true });
+      const best = mc && mc.rows.filter((r) => fin(r.v) && r.cruise > 30).sort((x, y) => y.cruise - x.cruise)[0];
+      const m = U.missionFromLog(LOG, LV.segs, LV.track, p.type);
+      withUndo(`Flight saved to ${p.name}'s history (Performance tab)`, () => {
+        p.flights = p.flights || [];
+        p.flights.unshift({ at: Date.now(), log: LOG.name || 'log', dur: LV.t1 - LV.t0, wh: m && fin(m.wh) ? +m.wh.toFixed(1) : null, mode: best ? best.name : '', v: best ? +best.v.toFixed(2) : null, i: best ? +best.i.toFixed(2) : null, src: mc ? mc.src : '', auw: Math.round(R.Wg) });
+      });
+    }
     if (a === 'mission') {
       const p = P(), m = U.missionFromLog(LOG, LV.segs, LV.track, p.type);
       if (!m || !m.segs.length) { toast('Could not find climb, cruise or hover segments in this log.'); return; }
@@ -4559,6 +4705,30 @@ ${Object.entries(sections).map(([s, rs]) => `<h2>${esc(s)}</h2><table>${rs.map((
 </html>`;
   }
 
+  // print through a hidden frame; where the viewer blocks printing, fall back to a download
+  function printHtml(html) {
+    const f = document.createElement('iframe');
+    f.style.cssText = 'position:fixed;width:0;height:0;border:0;right:0;bottom:0';
+    f.srcdoc = html;
+    f.onload = () => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) { download('hangarlab-print.html', html, 'text/html'); toast('Printing is blocked here: downloaded the page instead. Open it and print to PDF.'); } setTimeout(() => f.remove(), 60000); };
+    document.body.appendChild(f);
+  }
+  function checklistHtml(p) {
+    const R = U.compute(p, S.lib, { lite: true }), b = R.bat, bom = U.fullBom(p, S.lib);
+    const radios = bom.filter((r) => r.rf).map((r) => `${r.name} (${(U.BANDS[r.rf] || {}).label || r.rf})`);
+    const cg = U.cgOf(p, S.lib), mp = U.missionPlan(p, S.lib, U.compute(p, S.lib));
+    const sec = (t, items) => `<h2>${t}</h2><ul>${items.filter(Boolean).map((x) => `<li><span class="box"></span>${x}</li>`).join('')}</ul>`;
+    return `<!doctype html><html lang="en"><meta charset="utf-8"><title>${esc(p.name)} — pre-flight checklist</title>
+<style>body{font:14px/1.5 system-ui,sans-serif;color:#15212b;max-width:720px;margin:24px auto;padding:0 18px}h1{font-size:20px;margin:0}h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#546472;border-bottom:1px solid #d6dde3;padding-bottom:3px;margin:18px 0 6px}ul{list-style:none;padding:0;margin:0}li{display:flex;gap:10px;padding:4px 0;border-bottom:1px solid #eef1f4}.box{flex:none;width:14px;height:14px;border:1.5px solid #15212b;border-radius:3px;margin-top:3px}.sub{color:#546472;margin:2px 0 0}@media print{body{margin:0}}</style>
+<h1>${esc(p.name)} — pre-flight checklist</h1><p class="sub">${TYPE_LABEL[p.type]} · AUW ${fmt(R.Wg, 0)} g · HangarLab · ${new Date().toLocaleDateString()}</p>
+${sec('Site & weather', ['Airspace checked, permissions in hand', `Wind under ${fmt(p.type === 'multirotor' ? (R.vmax || 10) * 0.66 : Math.min((R.vmaxLevel || 20) * 0.66, p.fw.vc * 0.5), 0)} m/s`, `Air temperature near the planned ${p.env.temp} °C${b.coldF ? ' (cold: shorter flights)' : ''}`, 'Take-off / landing area clear, people briefed'])}
+${sec('Battery', [`${b.packs > 1 ? `${b.packs}× ` : ''}${esc(p.batt.name || 'flight pack')}: ${b.S}S${b.P}P ${b.chem.label}`, `Fully charged: ${fmt(b.vMax, 1)} V (${b.chem.max} V per cell)`, 'No swelling, damage or hot cells; balance leads secure', 'Pack strapped and connector locked', `Land at ${p.mission && +p.mission.reserve ? `${p.mission.reserve} % extra reserve, ` : ''}${fmt(100 - (+p.batt.usable || 80), 0)} % left (usable ${p.batt.usable || 80} %)`])}
+${sec('Airframe & propulsion', [`${p.type === 'fixedwing' ? p.fw.n : p.mr.n} props tight, right way round, undamaged`, 'Motors spin freely, no rubbing; bells and mounts tight', p.type !== 'multirotor' ? 'Control surfaces move the right way, no slop; hinges and horns secure' : 'Arms locked, frame bolts tight', cg.x != null ? (p.type === 'multirotor' ? `CG within 10 mm of the centre (plan: ${fmt(cg.x, 0)} mm)` : `CG at ${fmt(cg.pct, 0)} % MAC (plan), check with the payload fitted`) : 'CG checked with the payload fitted', +p.payload.g ? `${esc(p.payload.name || 'Payload')} (${fmt(+p.payload.g, 0)} g) secured` : ''])}
+${sec('Radios & avionics', ['Transmitter on, model selected, range check', ...radios.map((r) => `${esc(r)} linked, antennas undamaged`), 'GPS lock, enough satellites, home position set', 'Compass and accelerometer healthy; arming checks pass', 'Failsafe set: radio loss and low battery actions', bom.some((r) => /remote\s?id|\brid\b|beacon/i.test(r.name)) ? 'Remote ID broadcasting' : 'Remote ID (if required) broadcasting'])}
+${sec('Mission', [mp ? `Mission plan ${mp.ok ? 'fits' : mp.okNominal ? 'is tight' : 'DOES NOT FIT'}: ${fmt(mp.total, 0)} of ${fmt(mp.avail, 0)} Wh` : 'Mission plan loaded', 'Geofence and RTL altitude set', 'Logging enabled'])}
+${sec('After landing', ['Disarm, then unplug the battery', 'Note pack voltage and mAh used', 'Save the log; add it to the flight history in HangarLab'])}
+</html>`;
+  }
   function exportDialog() {
     const p = P();
     const bk = backups();
@@ -4567,7 +4737,10 @@ ${Object.entries(sections).map(([s, rs]) => `<h2>${esc(s)}</h2><table>${rs.map((
       <div class="exp-grid">
         <button class="exp" data-act="tpl-download"><b>Component template</b><span>.xlsx · blank workbook for components, motors, props, batteries, airframes and thrust tests; import it in Parts Library</span></button>
         <button class="exp" data-act="ex-xlsx"><b>Excel workbook</b><span>.xlsx · calculations, BOM, power rails, RF links, speed-power, battery and payload trades, motor curve</span></button>
-        <button class="exp" data-act="ex-html"><b>Design report</b><span>.html · one printable page; print to PDF from your browser</span></button>
+        <button class="exp" data-act="print-report"><b>Print / save as PDF</b><span>the design report, straight to your printer or a PDF</span></button>
+        <button class="exp" data-act="ex-html"><b>Design report</b><span>.html · one printable page</span></button>
+        <button class="exp" data-act="checklist"><b>Pre-flight checklist</b><span>printable, built from this design's battery, radios and parts</span></button>
+        <button class="exp" data-act="checklist-dl"><b>Checklist file</b><span>.html · keep it on a phone or tablet in the field</span></button>
         <button class="exp" data-act="ex-csv"><b>Calculations</b><span>.csv · every number with section and unit</span></button>
         <button class="exp" data-act="ex-bom"><b>Bill of materials</b><span>.csv · all components incl. motors, props, pack, payload</span></button>
         <button class="exp" data-act="ex-copy"><b>Copy calculations</b><span>paste straight into Excel or Google Sheets</span></button>
@@ -4918,11 +5091,11 @@ ${Object.entries(sections).map(([s, rs]) => `<h2>${esc(s)}</h2><table>${rs.map((
       case 'new-go': {
         const type = $('#nd-type').value;
         const base = clone(window.UAS_SEED.projects.find((x) => x.type === type));
-        base.id = 'p-' + uid(); base.name = $('#nd-name').value || 'New design'; fixDesign(base);
+        base.id = 'p-' + uid(); base.name = $('#nd-name').value || 'New design'; delete base.versions; delete base.flights; fixDesign(base);
         Object.assign(base.batt, { usable: S.settings.newDesign.usable }); Object.assign(base.env, { alt: S.settings.newDesign.alt, temp: S.settings.newDesign.temp });
         S.projects.push(base); S.active = base.id; closeDlg(); save(); render(); break;
       }
-      case 'dup': { const c = clone(p); c.id = 'p-' + uid(); c.name = p.name + ' (copy)'; S.projects.push(c); S.active = c.id; save(); render(); toast('Duplicated'); break; }
+      case 'dup': { const c = clone(p); c.id = 'p-' + uid(); c.name = p.name + ' (copy)'; delete c.versions; S.projects.push(c); S.active = c.id; save(); render(); toast('Duplicated'); break; }
       case 'del': {
         if (S.projects.length < 2) { toast('Keep at least one design. Create a new one first, then delete this one.'); break; }
         const R = U.compute(p, S.lib, { lite: true });
@@ -4972,6 +5145,38 @@ ${Object.entries(sections).map(([s, rs]) => `<h2>${esc(s)}</h2><table>${rs.map((
         });
         break;
       }
+      case 'find-mp': finderDialog('mp', b.dataset.role); break;
+      case 'find-bat': finderDialog('bat'); break;
+      case 'regs': regsDialog(); break;
+      case 'find-use': {
+        const r = finderLast && finderLast[i];
+        if (!r) break;
+        closeDlg();
+        withUndo(`${p.name}: now using ${r.label}`, () => {
+          if (r.apply.motor) { p[r.apply.role].motor = r.apply.motor; p[r.apply.role].prop = r.apply.prop; }
+          else { p.batt.ref = r.apply.bat; delete p.batt.unlinked; p.batt.packs = r.apply.packs; p.batt.conn = 'parallel'; syncLib(); }
+        });
+        break;
+      }
+      case 'servo-add': p.servos.push({ name: 'Rudder', n: 1, chord: 40, len: 150, throw: 25, rating: 0 }); save(); render(); break;
+      case 'servo-del': withUndo('Surface removed', () => p.servos.splice(i, 1)); break;
+      case 'ver-save': {
+        const snap = clone(p); delete snap.versions; delete snap.flights;
+        p.versions = p.versions || [];
+        p.versions.unshift({ name: `v${p.versions.length + 1}${p.notes ? ` · ${String(p.notes).split('\n')[0].slice(0, 40)}` : ''}`, at: Date.now(), data: snap });
+        if (p.versions.length > 20) p.versions.length = 20;
+        save(); render(); toast('Version saved. Rename it in the Vehicle panel.'); break;
+      }
+      case 'ver-restore': {
+        const v = p.versions[i];
+        withUndo(`${p.name} restored to ${v.name}`, () => { const keep = { id: p.id, versions: p.versions, flights: p.flights }; for (const k of Object.keys(p)) delete p[k]; Object.assign(p, clone(v.data), keep); fixDesign(p); });
+        break;
+      }
+      case 'ver-del': withUndo('Version deleted', () => p.versions.splice(i, 1)); break;
+      case 'fl-del': withUndo('Flight removed from history', () => p.flights.splice(i, 1)); break;
+      case 'print-report': printHtml(reportHtml(p)); break;
+      case 'checklist': printHtml(checklistHtml(p)); break;
+      case 'checklist-dl': download(`${fileBase(p)}-preflight.html`, checklistHtml(p), 'text/html'); break;
       case 'bom-unlink': { const r = p.bom[i]; delete r.ref; r.unlinked = true; save(); render(); toast(`${r.name} is now a custom row; library changes no longer reach it.`); break; }
       case 'bat-unlink': delete p.batt.ref; p.batt.unlinked = true; save(); render(); toast('Pack unlinked from the library'); break;
       case 'seg-add': p.mission.segs.push({ type: 'cruise', v: p.type === 'multirotor' ? 1 : 5, dir: 'none' }); save(); render(); break;
