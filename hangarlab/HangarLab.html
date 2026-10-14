@@ -2564,6 +2564,13 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
   const DRAG_ADDONS = [['Gimbal camera (A8 mini size)', 40], ['Large gimbal / EO-IR ball', 120], ['Fixed landing gear (pair + wheel)', 35], ['Skids', 20], ['Exposed antenna', 5], ['GPS mast', 6], ['Pitot / airspeed probe', 3], ['Cooling scoop', 8], ['External payload pod', 60]];
 
   // ---------- DESIGN ----------
+  // "find best" button for one input group, with an undo for the last pick made from it
+  const finderPrev = {};
+  function finderRow(p, key) {
+    const label = key === 'bat' ? 'Find the best battery' : 'Find the best motor + prop';
+    const prev = finderPrev[`${p.id}:${key}`];
+    return `<div class="row wide" style="gap:6px"><button class="btn sm" data-act="${key === 'bat' ? 'find-bat' : 'find-mp'}" data-role="${key}" title="Tries every option in your library on this design">${label}</button>${prev ? `<button class="btn sm ghost" data-act="find-undo" data-key="${key}" title="Back to ${esc(prev.label)}">Undo pick</button>` : ''}</div>`;
+  }
   function designInputs() {
     const p = P(), t = p.type;
     const bat = U.battery(p.batt);
@@ -2577,6 +2584,8 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
       <div class="f wide"><span>Configuration</span><div class="seg" role="group">${Object.entries(TYPE_LABEL).map(([k, l]) => `<button data-settype="${k}" aria-pressed="${t === k}">${l}</button>`).join('')}</div></div>
       ${t === 'vtol' ? sel('vtol.kind', 'VTOL type', [['quadplane', 'Quadplane (separate lift + cruise)'], ['tiltrotor', 'Tilt-rotor (shared motors)'], ['tailsitter', 'Tailsitter (shared motors)']], { wide: true, rebuild: true }) : ''}`);
     h += group('Environment', `${num('env.alt', 'Field altitude', { unit: 'm' })}${num('env.temp', 'Air temperature', { unit: '°C' })}<p class="hint" id="rhoHint"></p>`);
+    h += '%%PROP%%'; // propulsion groups land right under Environment
+    let prop = '';
     h += group('Battery', `
       ${sel('_batPreset', 'Load from library', [['', 'Choose a pack…']].concat(S.lib.batteries.map((b) => [b.id, b.name])), { wide: true })}
       ${p.batt.ref ? `<p class="hint wide"><span class="libpill" style="cursor:default">LIB</span> Linked to the library pack: edits here update it. <a href="#" data-act="bat-unlink">Unlink</a></p>` : ''}
@@ -2591,17 +2600,19 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
       ${num('batt.usable', 'Usable capacity', { unit: '%', min: 10, max: 100 })}
       ${num('batt.packs', 'Packs on board', { min: 1, step: 1 })}
       ${sel('batt.conn', 'Packs wired in', [['parallel', 'Parallel (more capacity)'], ['series', 'Series (more voltage)']])}
-      <p class="hint" id="batHint"></p>`);
+      <p class="hint" id="batHint"></p>
+      ${finderRow(p, 'bat')}`);
     h += group('Payload', `
       ${txt('payload.name', 'Payload', { wide: true })}
       ${num('payload.g', 'Payload mass', { unit: 'g', min: 0 })}
       <label class="f wide" style="margin-top:-6px"><input type="range" id="paySlide" data-k="payload.g" min="0" max="${Math.max(2000, Math.ceil(((+p.payload.g || 0) * 2) / 500) * 500)}" step="10" value="${+p.payload.g || 0}" aria-label="Payload mass (g)"></label>
       <p class="hint" id="payHint"></p>`);
     if (t === 'multirotor' || t === 'vtol') {
-      h += group(t === 'vtol' ? 'Lift propulsion' : 'Propulsion', `
+      prop += group(t === 'vtol' ? 'Lift propulsion' : 'Propulsion', `
         ${sel('mr.layout', 'Frame layout', Object.entries(U.LAYOUTS).map(([k, l]) => [k, l.label]), { rebuild: true })}
         ${num('mr.n', 'Motors', { step: 1, min: 1 })}
         ${propPick('mr', bat.V)}
+        ${finderRow(p, 'mr')}
         ${num('mr.escA', 'ESC rating', { unit: 'A' })}
         ${num('mr.maxThr', `Payload limit ${tip('Extra payload is counted until hover throttle reaches this value.')}`, { unit: '% thr' })}
         ${t === 'multirotor' ? num('mr.cda', 'Frame drag area CdA', { unit: 'm²', step: 0.01 }) : ''}
@@ -2635,7 +2646,7 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
         ${num('fw.etaD', 'Motor + ESC eff.', { unit: '%' })}
         ${t === 'fixedwing' ? num('fw.vsMax', 'Max stall speed', { unit: 'm/s' }) : ''}
         ${(p.fw.drag || {}).mode === 'buildup' ? '' : '<p class="hint">Typical CD0: glider 0.02, FPV wing 0.03, ISR plane 0.05–0.07.</p>'}`);
-      if (!shared) h += group('Cruise propulsion', `${propPick('fw', bat.V)}${num('fw.n', 'Cruise motors', { step: 1, min: 1 })}${chk('fw.propOther', 'My actual prop differs from this data (−15 % prop efficiency)')}`);
+      if (!shared) prop += group(t === 'fixedwing' ? 'Propulsion' : 'Cruise propulsion', `${propPick('fw', bat.V)}${finderRow(p, 'fw')}${num('fw.n', 'Cruise motors', { step: 1, min: 1 })}${chk('fw.propOther', 'My actual prop differs from this data (−15 % prop efficiency)')}`);
       h += group('Calibrate from flight', `
         ${chk('fw.cal.on', 'Scale the drag model to a measured cruise point', { rebuild: true })}
         ${p.fw.cal.on ? `${chk('fw.cal.learn', 'Real measurement of this aircraft: use it to improve estimates for other designs')}${num('fw.cal.v', 'Measured airspeed', { unit: 'm/s' })}${num('fw.cal.a', 'Propulsion current', { unit: 'A' })}${num('fw.cal.g', 'Weight at test', { unit: 'g' })}<p class="hint" id="calHint"></p>` : '<p class="hint">Optional: anchor the model to a measured cruise point.</p>'}`, p.fw.cal.on);
@@ -2665,7 +2676,7 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
         <p class="hint">Climb and descend are in metres of height. Energy available = battery usable capacity (its unused part is the landing reserve), minus any extra reserve.</p>`, false);
     }
     h += group('Electronics', `${num('becEff', 'BEC / regulator efficiency', { unit: '%' })}<p class="hint" id="avHint"></p>`, false);
-    return h;
+    return h.replace('%%PROP%%', prop);
   }
 
   // full-throttle current: green under continuous, amber within the burst rating (or burst unknown), red over burst
@@ -2849,13 +2860,10 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
       '<button class="btn" data-act="dlg-close">Close</button>');
   }
   function renderDesign(el) {
-    const p0 = P();
     el.innerHTML = `<div class="bench"><aside class="side">${sideTools}${designInputs()}</aside>
       <section class="stack">
         <div class="readouts" id="readouts"></div>
-        <div class="card"><div class="card-h"><h2>Find parts from your library</h2><p>Every option is run through the full model for this design</p></div>
-          <div class="row">${p0.type !== 'fixedwing' ? `<button class="btn" data-act="find-mp" data-role="mr">Best ${p0.type === 'vtol' ? 'lift ' : ''}motor + prop</button>` : ''}${p0.type !== 'multirotor' && !(p0.type === 'vtol' && p0.vtol.kind !== 'quadplane') ? '<button class="btn" data-act="find-mp" data-role="fw">Best cruise motor + prop</button>' : ''}<button class="btn" data-act="find-bat">Best battery</button><button class="btn ghost" data-act="regs">Regulations</button></div></div>
-        <div class="card"><div class="card-h"><h2>Checks</h2><p id="chkCount">Updated as you type</p></div><div class="checks" id="checks"></div></div>
+        <div class="card"><div class="card-h"><h2>Checks</h2><div class="row"><p id="chkCount" style="margin:0">Updated as you type</p><button class="btn sm ghost" data-act="regs">Regulations</button></div></div><div class="checks" id="checks"></div></div>
         <div class="card"><div class="card-h"><h2>Flight history</h2><p>Save flights from the Flight Logs tab</p></div><div id="flights"></div></div>
         <div class="card"><div class="card-h"><h2>Mission profile</h2><p id="misNote">Set segments under Mission &amp; wind</p></div><div id="mission"></div></div>
         <div class="charts">
@@ -5122,11 +5130,25 @@ ${sec('After landing', ['Disarm, then unplug the battery', 'Note pack voltage an
       }
       case 'find-mp': finderDialog('mp', b.dataset.role); break;
       case 'find-bat': finderDialog('bat'); break;
+      case 'find-undo': {
+        const key = b.dataset.key, k = `${p.id}:${key}`, prev = finderPrev[k];
+        if (!prev) break;
+        delete finderPrev[k];
+        withUndo(`${p.name}: back to ${prev.label}`, () => {
+          if (prev.batt) p.batt = clone(prev.batt); else { p[key].motor = prev.motor; p[key].prop = prev.prop; }
+          syncLib();
+        });
+        break;
+      }
       case 'regs': regsDialog(); break;
       case 'find-use': {
         const r = finderLast && finderLast[i];
         if (!r) break;
         closeDlg();
+        const key = r.apply.motor ? r.apply.role : 'bat';
+        finderPrev[`${p.id}:${key}`] = r.apply.motor
+          ? { label: `${nameOf('motors', p[key].motor)} + ${nameOf('props', p[key].prop)}`, motor: p[key].motor, prop: p[key].prop }
+          : { label: p.batt.name || 'the previous pack', batt: clone(p.batt) };
         withUndo(`${p.name}: now using ${r.label}`, () => {
           if (r.apply.motor) { p[r.apply.role].motor = r.apply.motor; p[r.apply.role].prop = r.apply.prop; }
           else { p.batt.ref = r.apply.bat; delete p.batt.unlinked; p.batt.packs = r.apply.packs; p.batt.conn = 'parallel'; syncLib(); }
