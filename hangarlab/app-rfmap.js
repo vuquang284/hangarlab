@@ -6,6 +6,16 @@
 
 let rfMap = null; // { map, L, base, layers }
 let rfTerrain = null; // { key, elev }
+let rfView = null; // last map centre/zoom, kept across tab re-renders
+// move the ground station without re-rendering the tab, so the map keeps its view
+function rfSetGcs(ll) {
+  const p = P();
+  snapshot();
+  p.rf.gcs = [+ll[0].toFixed(7), +ll[1].toFixed(7)];
+  save();
+  const box = $('#rfGcs'); if (box) box.value = `${p.rf.gcs[0].toFixed(6)}, ${p.rf.gcs[1].toFixed(6)}`;
+  rfMapDraw();
+}
 const rfCov = { busy: false, last: '' };
 
 // "lat, lng" / "lat lng" / "lat<TAB>lng" per line; also QGC .waypoints rows (lat/lng in columns 9 and 10)
@@ -68,15 +78,18 @@ async function rfMapDraw() {
     };
     (bases[S.settings.logs.map] || bases.Satellite).addTo(map);
     L.control.layers(bases, null, { position: 'topright', collapsed: false }).addTo(map);
-    map.on('click', (e) => { withUndo('Ground station placed', () => { rf.gcs = [e.latlng.lat, e.latlng.lng]; }); });
-    rfMap = { map, L, group: L.layerGroup().addTo(map), fitted: false };
-    map.setView(rf.gcs || [38.99, -76.94], rf.gcs ? 12 : 4);
+    map.on('click', (e) => rfSetGcs([e.latlng.lat, e.latlng.lng]));
+    map.on('moveend', () => { rfView = { c: map.getCenter(), z: map.getZoom() }; });
+    rfMap = { map, L, group: L.layerGroup().addTo(map), fitted: !!rfView };
+    if (rfView) map.setView(rfView.c, rfView.z); else map.setView(rf.gcs || [38.99, -76.94], rf.gcs ? 12 : 4);
   }
   rfMap.group.clearLayers();
   const note = $('#rfCovNote');
   if (!rf.gcs) { if (note) note.textContent = 'Paste the ground station position or click the map'; return; }
   const link = rfLinks(p).find((x) => x.key === rf.cov);
-  const gcsIcon = L.circleMarker(rf.gcs, { radius: 7, color: '#111', weight: 2, fillColor: '#ff6a13', fillOpacity: 1 }).bindTooltip('Ground station');
+  // draggable ground station: drop it anywhere and the coverage redraws in place
+  const gcsIcon = L.marker(rf.gcs, { draggable: true, autoPan: true, icon: L.divIcon({ className: 'rf-gcs', iconSize: [18, 18], iconAnchor: [9, 9] }) }).bindTooltip('Ground station · drag to move');
+  gcsIcon.on('dragend', (e) => { const ll = e.target.getLatLng(); rfSetGcs([ll.lat, ll.lng]); });
   if (rf.path && rf.path.length) L.polyline(rf.path, { color: '#111', weight: 6, opacity: 0.5 }).addTo(rfMap.group);
   if (!link) { gcsIcon.addTo(rfMap.group); if (note) note.textContent = 'No radios on this design yet'; return; }
   // range rings for every radio (where its budget alone runs out, capped by the radio horizon)
@@ -90,7 +103,7 @@ async function rfMapDraw() {
   const kx0 = Math.cos((rf.gcs[0] * Math.PI) / 180) * 111320;
   const far = (rf.path || []).reduce((m, q) => Math.max(m, Math.hypot((q[0] - rf.gcs[0]) * 110540, (q[1] - rf.gcs[1]) * kx0) / 1000), 0);
   const R = Math.max(1, edge, far) * 1.1;
-  if (!rfMap.fitted || rfMap.lastR !== R) { rfMap.map.fitBounds(L.latLng(rf.gcs).toBounds(R * 2000), { padding: [10, 10] }); rfMap.fitted = true; rfMap.lastR = R; }
+  if (!rfMap.fitted) { rfMap.map.fitBounds(L.latLng(rf.gcs).toBounds(R * 2000), { padding: [10, 10] }); rfMap.fitted = true; } // only the first time: after that the view stays where you put it
   // terrain once per ground station / radius
   const kx = Math.cos((rf.gcs[0] * Math.PI) / 180) * 111320, dLa = (R * 1000) / 110540, dLo = (R * 1000) / kx;
   const tkey = `${rf.gcs.join()}|${Math.ceil(R)}`;
@@ -153,7 +166,8 @@ document.addEventListener('change', (e) => {
   if (el.id === 'rfGcs') {
     const c = rfParseCoords(el.value)[0];
     if (!c) { toast('Use "lat, lng", e.g. 38.9869, -76.9426'); return; }
-    withUndo('Ground station set', () => { p.rf.gcs = c; });
+    rfView = null; if (rfMap) rfMap.fitted = false; // typed position: jump to it
+    rfSetGcs(c);
   }
   if (el.id === 'rfCovSel') { p.rf.cov = el.value; save(); rfMapDraw(); }
   if (el.id === 'rfFile' && el.files[0]) { rfLoadFile(el.files[0]); el.value = ''; }
