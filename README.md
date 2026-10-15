@@ -79,7 +79,7 @@ The **Team library** (shared parts library) only works when the app runs inside 
 
 ## Versions
 
-The current version is shown at the bottom right of the app and set by `APP_VERSION` in `hangarlab/app-core.js`. See [CHANGELOG.md](CHANGELOG.md) for what changed and how to release.
+HangarLab is in development (0.x versions; 1.0.0 will be the first public release). The current version is shown at the bottom right of the app and set by `APP_VERSION` in `hangarlab/app-core.js`. See [CHANGELOG.md](CHANGELOG.md) for what changed and how to release.
 
 ## Development
 
