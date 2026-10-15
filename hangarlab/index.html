@@ -422,6 +422,10 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
 
 .rf-gcs { background: #ff6a13; border: 2px solid #111; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255,255,255,.7); cursor: grab; }
 
+.site-foot { max-width: 1920px; margin: 0 auto; padding: 8px 16px 28px; color: var(--faint); font-size: 12px; line-height: 1.5; }
+.site-foot p { margin: 0 0 4px; max-width: 110ch; }
+.site-foot b { color: var(--muted); }
+
 /* flight log viewer */
 #lvMap { position: relative; z-index: 0; isolation: isolate; } /* keeps Leaflet's panes under the sticky header */
 .lv { display: grid; grid-template-columns: minmax(240px, 300px) minmax(0, 1fr); gap: 16px; align-items: start; }
@@ -508,6 +512,10 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
 </header>
 
 <main id="view"></main>
+<footer class="site-foot">
+  <p><b>HangarLab</b> gives planning estimates, not guarantees. Check them against bench tests and test flights, and follow your local aviation rules; the regulation notes are not legal advice.</p>
+  <p>Your designs, library and logs stay in this browser. Nothing is uploaded; map, terrain and parameter data are downloaded from their public sources when you open those views.</p>
+</footer>
 <dialog id="dlg"></dialog>
 <input type="file" id="importFile" accept=".json,application/json" hidden>
 <input type="file" id="tplFile" accept=".xlsx,.xls,.ods,.csv" hidden>

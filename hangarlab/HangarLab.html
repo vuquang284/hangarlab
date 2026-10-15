@@ -425,6 +425,10 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
 
 .rf-gcs { background: #ff6a13; border: 2px solid #111; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255,255,255,.7); cursor: grab; }
 
+.site-foot { max-width: 1920px; margin: 0 auto; padding: 8px 16px 28px; color: var(--faint); font-size: 12px; line-height: 1.5; }
+.site-foot p { margin: 0 0 4px; max-width: 110ch; }
+.site-foot b { color: var(--muted); }
+
 /* flight log viewer */
 #lvMap { position: relative; z-index: 0; isolation: isolate; } /* keeps Leaflet's panes under the sticky header */
 .lv { display: grid; grid-template-columns: minmax(240px, 300px) minmax(0, 1fr); gap: 16px; align-items: start; }
@@ -511,6 +515,10 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
 </header>
 
 <main id="view"></main>
+<footer class="site-foot">
+  <p><b>HangarLab</b> gives planning estimates, not guarantees. Check them against bench tests and test flights, and follow your local aviation rules; the regulation notes are not legal advice.</p>
+  <p>Your designs, library and logs stay in this browser. Nothing is uploaded; map, terrain and parameter data are downloaded from their public sources when you open those views.</p>
+</footer>
 <dialog id="dlg"></dialog>
 <input type="file" id="importFile" accept=".json,application/json" hidden>
 <input type="file" id="tplFile" accept=".xlsx,.xls,.ods,.csv" hidden>
@@ -4030,7 +4038,7 @@ function renderLibrary(el) {
       ${t === 'props' ? `<button class="btn" data-act="apc-import">Import APC .dat / .zip</button><button class="btn" data-act="spec-import" data-kind="props">Import / paste prop list</button><span class="note">Prop data drives cruise efficiency ${tip('Ct and Cp versus advance ratio at each RPM, e.g. APC PER3 files. Also used for motor + prop pairs without a thrust test.')}</span>` : ''}</div>`;
   }
   el.innerHTML = `<div class="card"><div class="card-h"><h2>Component library</h2>
-      <div class="row"><span class="note">Shared by every design.</span><button class="btn sm" data-act="team-open" title="Share this library with everyone who can open the app">Team library</button><button class="btn sm" data-act="tpl-download" title="Excel workbook with a sheet per component type">Download template</button><button class="btn sm primary" data-act="tpl-import">Import workbook</button></div></div>
+      <div class="row"><span class="note">Shared by every design.</span><button class="btn sm" data-act="team-open"${window.claude && window.claude.use ? '' : ' hidden'} title="Share this library with everyone who can open the app">Team library</button><button class="btn sm" data-act="tpl-download" title="Excel workbook with a sheet per component type">Download template</button><button class="btn sm primary" data-act="tpl-import">Import workbook</button></div></div>
     <div class="row" style="margin-bottom:12px"><label class="f" style="min-width:240px"><span>Library section</span><select id="libSection">${tabs.map(([k, l, n]) => `<option value="${k}"${k === t ? ' selected' : ''}>${l} (${n})</option>`).join('')}</select></label></div>
     <div class="sub-tabs">${tabs.map(([k, l, n]) => `<button class="btn${k === t ? ' primary' : ''}" data-libtab="${k}">${l} <span class="num" style="opacity:.7">${n}</span></button>`).join('')}</div>${body}${subsBody}</div>`;
   libFilterApply();
@@ -5826,7 +5834,10 @@ function renderSettings(el) {
       <div class="card"><h2>Keyboard shortcuts</h2><dl class="kv" style="margin-top:8px"><dt>Switch tab</dt><dd>1 – 9</dd><dt>Undo</dt><dd>Ctrl/⌘ + Z</dd><dt>Export</dt><dd>Ctrl/⌘ + E</dd><dt>Quick start guide</dt><dd>?</dd></dl>
         <div class="row" style="margin-top:12px"><button class="btn sm" data-act="shortcuts">Open quick start</button>${chk('settings.quickstart', 'Show the quick start next time the app opens', { st: true })}</div></div>
 
-      <div class="card"><h2>About</h2><p class="note" style="margin:8px 0 0">Libraries: uPlot (MIT), Leaflet (BSD-2), SheetJS (Apache-2.0), LZMA-JS (MIT). Prop data: APC Propellers PER3 files. Fonts: Barlow, Barlow Condensed, Roboto Mono (OFL / Apache-2.0). The flight log viewer follows the layout of ArduPilot UAV Log Viewer but shares no code with it.</p></div>
+      <div class="card"><h2>About</h2>
+        <p class="note" style="margin:8px 0 6px">HangarLab gives planning estimates, not guarantees. Check them against bench tests and test flights and follow your local aviation rules; the regulation notes are not legal advice. Your designs, library and logs stay in this browser.</p>
+        <p class="note" style="margin:0 0 6px"><b>Libraries:</b> uPlot (MIT), Leaflet (BSD-2), three.js (MIT), SheetJS (Apache-2.0), LZMA-JS (MIT). Fonts: Barlow, Barlow Condensed, Roboto Mono (OFL / Apache-2.0).</p>
+        <p class="note" style="margin:0"><b>Data:</b> satellite imagery © Esri, Maxar, Earthstar Geographics; street map © OpenStreetMap contributors; terrain heights from AWS Terrain Tiles (Mapzen, with SRTM, GMTED, ETOPO1 and other public sources); ArduPilot parameter descriptions from autotest.ardupilot.org (GPLv3); APC Propellers PER3 performance files. The flight-log viewer, health check and 3D map follow ArduPilot UAV Log Viewer, LogAnalyzer and Mission Planner but share no code with them.</p></div>
     </div></div>`;
   settingsLive();
 }

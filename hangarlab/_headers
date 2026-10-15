@@ -1,0 +1,9 @@
+# Cloudflare Pages headers: browsers re-check the app files on every visit (cheap: 304 when unchanged),
+# so a new deploy shows up right away instead of a stale cached script.
+/*
+  Cache-Control: no-cache
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+/*.png
+  Cache-Control: public, max-age=604800

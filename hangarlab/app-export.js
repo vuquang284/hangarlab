@@ -269,7 +269,10 @@ function renderSettings(el) {
       <div class="card"><h2>Keyboard shortcuts</h2><dl class="kv" style="margin-top:8px"><dt>Switch tab</dt><dd>1 – 9</dd><dt>Undo</dt><dd>Ctrl/⌘ + Z</dd><dt>Export</dt><dd>Ctrl/⌘ + E</dd><dt>Quick start guide</dt><dd>?</dd></dl>
         <div class="row" style="margin-top:12px"><button class="btn sm" data-act="shortcuts">Open quick start</button>${chk('settings.quickstart', 'Show the quick start next time the app opens', { st: true })}</div></div>
 
-      <div class="card"><h2>About</h2><p class="note" style="margin:8px 0 0">Libraries: uPlot (MIT), Leaflet (BSD-2), SheetJS (Apache-2.0), LZMA-JS (MIT). Prop data: APC Propellers PER3 files. Fonts: Barlow, Barlow Condensed, Roboto Mono (OFL / Apache-2.0). The flight log viewer follows the layout of ArduPilot UAV Log Viewer but shares no code with it.</p></div>
+      <div class="card"><h2>About</h2>
+        <p class="note" style="margin:8px 0 6px">HangarLab gives planning estimates, not guarantees. Check them against bench tests and test flights and follow your local aviation rules; the regulation notes are not legal advice. Your designs, library and logs stay in this browser.</p>
+        <p class="note" style="margin:0 0 6px"><b>Libraries:</b> uPlot (MIT), Leaflet (BSD-2), three.js (MIT), SheetJS (Apache-2.0), LZMA-JS (MIT). Fonts: Barlow, Barlow Condensed, Roboto Mono (OFL / Apache-2.0).</p>
+        <p class="note" style="margin:0"><b>Data:</b> satellite imagery © Esri, Maxar, Earthstar Geographics; street map © OpenStreetMap contributors; terrain heights from AWS Terrain Tiles (Mapzen, with SRTM, GMTED, ETOPO1 and other public sources); ArduPilot parameter descriptions from autotest.ardupilot.org (GPLv3); APC Propellers PER3 performance files. The flight-log viewer, health check and 3D map follow ArduPilot UAV Log Viewer, LogAnalyzer and Mission Planner but share no code with them.</p></div>
     </div></div>`;
   settingsLive();
 }
