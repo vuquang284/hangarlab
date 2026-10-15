@@ -17,7 +17,7 @@ To record an update: bump `APP_VERSION` at the top of `hangarlab/app-core.js`, a
 ## 0.2.0-dev (2026-10-15)
 
 - First-visit guided tour: a spotlight and arrow walk through the design picker, New, Simple/Detailed, inputs, results, tabs, Parts Library, Flight Logs, Export and Help. Replay it from the quick start guide or Settings.
-- Example designs are now generic (Example quadcopter, Example fixed-wing, Example quadplane VTOL) with generic parts, instead of real team builds. Existing saved designs are not touched.
+- Example generic designs (Example quadcopter, Example fixed-wing, Example quadplane VTOL) with generic parts, instead of real part builds. Existing saved designs are not touched.
 - The self-check runs against fixed reference designs (`test-fixtures.json`), so changing the examples never changes the test.
 
 ## 0.1.0-dev (2026-10-15)
@@ -33,4 +33,4 @@ In development. Everything built so far:
 - Parts Library with thrust data, APC prop data, editable subsystems and Excel template import.
 - Flight Logs with plots, 3D satellite map and vehicle model, per-mode cruise stats, health check, ArduPilot parameter descriptions, calibration and mission from a log.
 - Exports: Excel, report / PDF, CSV, pre-flight checklist, ArduPilot `.param` file, workspace backups.
-- Disclaimer and privacy footer; set up for Cloudflare Pages.
+- Disclaimer and privacy footer.
