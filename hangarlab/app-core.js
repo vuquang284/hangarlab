@@ -4,7 +4,7 @@
 'use strict';
 
 // app version: bump on every update and add a CHANGELOG.md entry. 0.x + '-dev' while in development; 1.0.0 = first public release
-const APP_VERSION = '0.5.0-dev';
+const APP_VERSION = '0.6.0-dev';
 const U = window.UAS;
 const KEY = 'uas-workbench.v1'; // storage key kept from the old name so saved work still loads
 const $ = (s, el = document) => el.querySelector(s);
@@ -18,6 +18,7 @@ const cssv = (n) => getComputedStyle(document.documentElement).getPropertyValue(
 const PRN = () => (S.lib.printer || { lineW: 0.45, layerH: 0.2 });
 const SUBS = ['Structures', '3D printed', 'Propulsion', 'Power', 'Avionics', 'Sensors', 'Comms', 'Compute', 'Payload', 'Wiring', 'Hardware', 'Other'];
 const RAILS = [['', '—'], ['VBAT', 'VBAT'], ['3.3V', '3.3 V'], ['5V', '5 V'], ['9V', '9 V'], ['12V', '12 V'], ['24V', '24 V'], ['Separate', 'Own supply']];
+const AF_TYPES = [['fixedwing', 'Fixed-wing'], ['multirotor', 'Multirotor'], ['vtol', 'Hybrid VTOL']];
 const ESC_USE = [['', 'Either'], ['mr', 'Multirotor'], ['plane', 'Plane']];
 const RF_OPTS = [['', '—']].concat(Object.entries(U.BANDS).filter(([k]) => k !== 'gnss').map(([k, b]) => [k, b.label]));
 const TYPE_LABEL = { multirotor: 'Multirotor', fixedwing: 'Fixed-wing', vtol: 'Hybrid VTOL' };
@@ -136,6 +137,7 @@ function migrate(s) {
   if (!s.lib.batPruned) { const old = ['6s5000', '4s5000', '6s4000', 'p45b-6s2p', 'p45b-6s4p']; s.lib.batteries = (s.lib.batteries || []).filter((x) => !old.includes(x.id)); s.lib.batPruned = 1; }
   if (hadSettings) s.settings.detail = 'detailed';
   s.lib.escs = s.lib.escs || [];
+  for (const a of s.lib.airframes || []) if (!a.type) a.type = /vtol|quad-?plane|tilt|tailsitter/i.test(a.name) ? 'vtol' : /quad(?!-?plane)|hexa|octo|copter|\bframe\b/i.test(a.name) ? 'multirotor' : 'fixedwing';
   s.massView = s.massView || 'edit';
   s.bomSel = s.bomSel || [];
   return s;

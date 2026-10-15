@@ -5,6 +5,21 @@
 // ---------- DESIGN ----------
 // "find best" button for one input group, with an undo for the last pick made from it
 const finderPrev = {};
+// airframes that suit this design type (VTOL designs also list fixed-wing airframes, and the reverse)
+function afFits(a, t) { const at = a.type || 'fixedwing'; return t === 'multirotor' ? at === 'multirotor' : at !== 'multirotor'; }
+function afPick(t) {
+  const list = S.lib.airframes.filter((a) => afFits(a, t));
+  return sel('_airframe', t === 'multirotor' ? 'Load frame' : 'Load airframe', [['', list.length ? `Choose ${t === 'multirotor' ? 'a frame' : 'an airframe'}…` : `No ${t === 'multirotor' ? 'multirotor frames' : 'airframes'} in the library yet`]].concat(list.map((a) => [a.id, a.name + (t !== 'multirotor' && !a.area ? ' (no area)' : '')])), { wide: true });
+}
+// apply a library airframe to a design: wing geometry, or frame layout and size; its weight goes in the BOM once
+function applyAirframe(p, a) {
+  if (a.type === 'multirotor') {
+    if (a.layout && U.LAYOUTS[a.layout]) { p.mr.layout = a.layout; p.mr.n = U.LAYOUTS[a.layout].n; }
+    if (+a.wb > 0) p.mr.wb = +a.wb;
+    p.mr.maxProp = +a.maxProp || 0;
+  } else if (p.fw) { if (a.span) p.fw.span = a.span; if (a.area) p.fw.area = a.area; }
+  if (a.g && !p.bom.some((r) => r.name === a.name || r.ref === `airframes:${a.id}`)) p.bom.unshift(libToBom('airframes', a));
+}
 function finderRow(p, key) {
   const label = key === 'bat' ? 'Find the best battery' : 'Find the best motor + prop';
   const prev = finderPrev[`${p.id}:${key}`];
@@ -51,6 +66,7 @@ function designInputs() {
     <p class="hint" id="payHint"></p>`);
   if (t === 'multirotor' || t === 'vtol') {
     prop += group(t === 'vtol' ? 'Lift propulsion' : 'Propulsion', `
+      ${t === 'multirotor' ? afPick('multirotor') : ''}
       ${sel('mr.layout', 'Frame layout', Object.entries(U.LAYOUTS).map(([k, l]) => [k, l.label]), { rebuild: true })}
       ${num('mr.n', 'Motors', { step: 1, min: 1 })}
       ${propPick('mr', bat.V)}
@@ -58,6 +74,8 @@ function designInputs() {
       ${escPick('mr')}
       ${adv(`
       ${num('mr.maxThr', `Payload limit ${tip('Extra payload is counted until hover throttle reaches this value.')}`, { unit: '% thr' })}
+      ${t === 'multirotor' ? num('mr.wb', `Wheelbase ${tip('Motor-to-motor diagonal. Used to check that the props clear each other.')}`, { unit: 'mm', min: 0, step: 1 }) : ''}
+      ${t === 'multirotor' ? num('mr.maxProp', "Frame's max prop", { unit: 'in', min: 0 }) : ''}
       ${t === 'multirotor' ? num('mr.cda', 'Frame drag area CdA', { unit: 'm²', step: 0.01 }) : ''}
       ${t === 'multirotor' ? num('mr.lean', `Max lean angle ${tip('ArduPilot ANGLE_MAX (default 30°). Top speed and wind limit stop where the frame would need to tilt further than this.')}`, { unit: '°', step: 1, min: 5 }) : ''}`)}
 `);
@@ -65,7 +83,7 @@ function designInputs() {
   if (t === 'fixedwing' || t === 'vtol') {
     const shared = t === 'vtol' && p.vtol.kind !== 'quadplane';
     h += group('Wing & aero', `
-      ${sel('_airframe', 'Load airframe', [['', 'Choose an airframe…']].concat(S.lib.airframes.map((a) => [a.id, a.name + (a.area ? '' : ' (no area)')])), { wide: true })}
+      ${afPick(t)}
       ${num('fw.vc', 'Cruise speed', { unit: 'm/s', min: 1 })}
       ${num('fw.span', 'Wingspan', { unit: 'm', imp: 'in', step: 0.01, min: 0.05 })}
       ${num('fw.area', 'Wing area', { unit: 'm²', step: 0.001, min: 0.005 })}

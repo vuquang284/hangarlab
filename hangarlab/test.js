@@ -218,6 +218,18 @@ assert(big.iMax === 99 && big.vibeMax === 42 && big.vMin > 49 && big.vMin < 49.0
   assert(U.compute(ex, L2).checks.some((c) => c.level === 'warn' && /plane ESC/.test(c.msg)), 'plane ESC on lift motors');
 }
 
+// prop clearance: 16" props overlap on a 500 mm quad (tips 354 mm apart), fit on 700 mm
+{
+  const q = JSON.parse(JSON.stringify(globalThis.UAS_SEED.projects[0])), L = globalThis.UAS_SEED.lib;
+  q.mr.wb = 500;
+  assert(U.compute(q, L).checks.some((c) => c.level === 'crit' && /overlap/.test(c.msg)), 'props overlap on 500 mm');
+  q.mr.wb = 700;
+  const r = U.compute(q, L);
+  assert(r.propGap > 80 && !r.checks.some((c) => /overlap|prop tips/.test(c.msg)), 'props fit on 700 mm ' + r.propGap);
+  const f = U.pageSpecs('Holybro X500 V2 frame kit\nWheelbase: 500mm\nMax propeller size: 13 inch\nWeight: 610 g', 'airframes');
+  assert(f.type === 'multirotor' && f.wb === 500 && f.maxProp === 13 && f.layout === 'quadx' && f.g === 610 && !f.span, 'frame page ' + JSON.stringify(f));
+}
+
 // product pages: structured data plus "label | value unit" spec tables
 {
   const m = U.pageSpecs('<title>T-Motor MN5008 KV340 – Shop</title><script type="application/ld+json">{"@type":"Product","name":"T-Motor MN5008 KV340","brand":{"name":"T-Motor"},"offers":{"price":"109.90"}}</script><table><tr><td>Internal resistance</td><td>89 mΩ</td></tr><tr><td>Idle current (10V)</td><td>0.8 A</td></tr><tr><td>Max continuous current (180S)</td><td>28 A</td></tr><tr><td>Weight (incl. cable)</td><td>135 g</td></tr></table>', 'motors');

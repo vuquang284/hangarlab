@@ -18,6 +18,7 @@ No account and nothing to install: it runs in your browser, and your designs are
 - Drag build-up from the airframe geometry, or a fixed CD0. Calibrate from one measured flight to correct the model.
 - VTOL transitions (time and energy), hover thrust penalty per VTOL type, and tailsitter hover wind limit.
 - Mission profile with climb, cruise, loiter, hover and transition segments, wind and reserve.
+- Multirotor frames with wheelbase and layout, and a prop clearance check.
 - ESC and motor limits: full-throttle current and power against the ESC (current and cell range) and the motor's own ratings.
 - Part finders that try every motor + prop pair or battery pack in your library and rank them by endurance within limits.
 - **Simple / Detailed** input modes, and a guided **New design** setup.

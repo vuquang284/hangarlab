@@ -536,6 +536,15 @@
       R.kHover = kH;
       const h = hover(lift, p.mr.n, L.coax, Wg * kH, sigma, bat.V);
       R.h = h;
+      // props on neighbouring arms must not touch: arm tips are wheelbase · sin(π / arms) apart
+      const pr = (lib.props || []).find((x) => x.id === p.mr.prop), d = pr ? +pr.diam || 0 : 0, wb = +p.mr.wb || 0;
+      if (d && wb) {
+        const arms = L.coax ? p.mr.n / 2 : p.mr.n, gap = wb * Math.sin(Math.PI / arms) - d * 25.4;
+        R.propGap = gap;
+        if (gap < 0) chk('crit', `${d}" props overlap by ${(-gap).toFixed(0)} mm on a ${wb} mm ${arms}-arm frame. The largest that fits is ${((wb * Math.sin(Math.PI / arms)) / 25.4).toFixed(1)}".`);
+        else if (gap < 0.05 * d * 25.4) chk('warn', `Only ${gap.toFixed(0)} mm between prop tips on the ${wb} mm frame. Leave about 5 % of the prop diameter to keep them out of each other's wash.`);
+      }
+      if (d && +p.mr.maxProp > 0 && d > +p.mr.maxProp) chk('warn', `${d}" props are larger than the frame's ${p.mr.maxProp}" maximum.`);
       if (lift && lift.physics) chk(lift.rows.length ? (lift.drive.propData && lift.drive.motorModel ? 'info' : 'warn') : 'crit', lift.rows.length ? `${lift.name}: ${lift.source.toLowerCase()} (no bench data). Add thrust data, prop data or motor Rm/I0 in Library for better numbers.` : `${lift.name}: set the motor kV and prop size, or add bench data.`);
       if (h) {
         const P = h.pMotors + pAv;
@@ -1421,7 +1430,14 @@
       const mr = /multi-?rotor|multi-?copter|quad-?copter|\bdrones?\b|\bUAV\b|agricultur/i.test(all), pl = /air-?plane|fixed[- ]wing|\bplanes?\b|glider/i.test(all);
       if (mr !== pl) o.use = mr ? 'mr' : 'plane';
     } else if (kind === 'airframes') {
-      const sp = len('wing ?span|span'); if (sp) o.span = +sp.toFixed(3);
+      const vt = /\bvtol\b|quad-?plane|tilt-?rotor|tail-?sitter/i.test(all), mr = /multi-?rotor|multi-?copter|quad-?copter|hexa|octo|wheelbase|\bquad\b/i.test(all), fw = /wing ?span|fixed[- ]wing|air-?plane|glider/i.test(all);
+      o.type = vt ? 'vtol' : mr && !fw ? 'multirotor' : 'fixedwing';
+      if (o.type === 'multirotor') {
+        const wb = len('wheel ?base|diagonal(?: wheelbase)?|motor to motor'); if (wb) o.wb = Math.round(wb * 1000);
+        const mp = after('max(?:imum)?\\.? prop(?:eller)?(?: size)?|prop(?:eller)? size|supports?', 'in\\b|inch(?:es)?|"'); if (mp) o.maxProp = mp.v;
+        o.layout = /octo|x8\b/i.test(all) ? 'octo' : /hexa|\bhex\b|y6\b/i.test(all) ? 'hexa' : /\btri\b|y3/i.test(all) ? 'tri' : 'quadx';
+      }
+      const sp = o.type === 'multirotor' ? null : len('wing ?span|span'); if (sp) o.span = +sp.toFixed(3);
       const l = len('length'); if (l) o.length = +l.toFixed(3);
       const ar = after('wing area', 'dm²|dm2|dm\\^2|cm²|cm2|m²|m2|sq\\.? ?in'); if (ar) o.area = +(ar.u.startsWith('dm') ? ar.v / 100 : ar.u.startsWith('cm') ? ar.v / 1e4 : ar.u.startsWith('sq') ? ar.v * 0.00064516 : ar.v).toFixed(4);
     }

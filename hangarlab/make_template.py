@@ -70,7 +70,7 @@ lines = [
     ('Props — diameter and pitch in inches. Performance data (APC .dat) is imported separately in the app.', None),
     ('Batteries — one row per pack: cells in series (S), in parallel (P), capacity per cell, continuous C and peak (burst) C. Pack count is set per design in the app.', None),
     ('ESCs — continuous and burst current, the cell range it accepts, and weight. Designs pick an ESC for the lift and cruise motors.', None),
-    ('Airframes — wingspan, wing area and length in meters, weight in grams.', None),
+    ('Airframes — type, then wingspan, wing area and length in meters for wings, or wheelbase (mm), layout and max prop size for multirotor frames; weight in grams.', None),
     ('Motor thrust data — thrust-stand tests, one row per measurement: Motor, Prop, Throttle, Thrust, Voltage, Current. Rows with the same Motor + Prop form one test; pick names from the Motors and Props sheets. (Older one-sheet-per-test "Thrust - …" sheets still import.)', None),
     ('', None),
     ('Rules', Font(bold=True, size=12)),
@@ -169,9 +169,10 @@ dropdown(ba, 'B', '=Lists!$D$1:$D$%d' % len(CHEMS))
 
 # ---------- Airframes ----------
 af = wb.create_sheet('Airframes')
-table(af, ['Name', 'Wingspan (m)', 'Wing area (m²)', 'Length (m)', 'Weight (g)', 'Notes', 'Link', 'Unit cost', 'Buy link'], [30, 14, 15, 12, 12, 30, 42, 11, 42], [
-    ['AtomRC Dolphin Pro', 0.845, 0.1696, 0.826, 790, '', '', '', ''],
-    ['HEEWING T2 Cruza', 1.2, '', '', 1200, 'wing area not listed', '', '', ''],
+table(af, ['Name', 'Type (Fixed-wing / Multirotor / Hybrid VTOL)', 'Wingspan (m)', 'Wing area (m²)', 'Length (m)', 'Wheelbase (mm)', 'Layout (Quad X, Hexa, ...)', 'Max prop (in)', 'Weight (g)', 'Notes', 'Link', 'Unit cost', 'Buy link'], [30, 18, 14, 15, 12, 14, 16, 13, 12, 30, 42, 11, 42], [
+    ['AtomRC Dolphin Pro', 'Fixed-wing', 0.845, 0.1696, 0.826, '', '', '', 790, '', '', '', ''],
+    ['HEEWING T2 Cruza', 'Fixed-wing', 1.2, '', '', '', '', '', 1200, 'wing area not listed', '', '', ''],
+    ['Example 500 mm quad frame', 'Multirotor', '', '', '', 500, 'Quad X', 13, 450, 'multirotor: wheelbase, layout and max prop instead of a wing', '', '', ''],
 ])
 
 wb.move_sheet('Lists', offset=10)

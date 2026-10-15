@@ -70,16 +70,16 @@
   ];
 
   const airframes = [
-    { id: 'heewing-t2', name: 'HEEWING T2 Cruza', span: 1.2, area: 0, length: 0, g: 1200, notes: 'Wing area not listed', link: 'https://www.rcgroups.com/forums/showthread.php?4411511-Heewing-T2-Cruza/page7' },
-    { id: 'zmo-v2', name: 'ZMO V2 VTOL', span: 1.2, area: 0, length: 0, g: 1000, notes: '' },
-    { id: 'zohd-altus', name: 'ZOHD Altus VTOL', span: 0.98, area: 0, length: 0, g: 545, notes: '' },
-    { id: 'reptile-dragon2', name: 'Reptile DRAGON V2', span: 1.2, area: 0, length: 0.7, g: 480, notes: '>90 mm internal length' },
-    { id: 'heewing-t1', name: 'HEEWING T-1 Ranger', span: 0.73, area: 0, length: 0.645, g: 205, notes: '' },
-    { id: 'dolphin-pro', name: 'AtomRC Dolphin Pro', span: 0.845, area: 0.1696, length: 0.826, g: 790, notes: '' },
-    { id: 'dolphin-v11', name: 'AtomRC Dolphin V1.1', span: 0.845, area: 0.1696, length: 0.71, g: 360, notes: '' },
-    { id: 'talon-gt', name: 'ZOHD Talon GT Rebel', span: 1.0, area: 0, length: 0.66, g: 0, notes: '' },
-    { id: 'stallion', name: 'Flightory Stallion VTOL', span: 1.34, area: 0, length: 0.99, g: 0, notes: '3D printed' },
-    { id: 'mojito', name: 'TBS Mojito', span: 0, area: 0, length: 0, g: 1130, notes: '' },
+    { id: 'heewing-t2', name: 'HEEWING T2 Cruza', type: 'fixedwing', span: 1.2, area: 0, length: 0, g: 1200, notes: 'Wing area not listed', link: 'https://www.rcgroups.com/forums/showthread.php?4411511-Heewing-T2-Cruza/page7' },
+    { id: 'zmo-v2', name: 'ZMO V2 VTOL', type: 'vtol', span: 1.2, area: 0, length: 0, g: 1000, notes: '' },
+    { id: 'zohd-altus', name: 'ZOHD Altus VTOL', type: 'vtol', span: 0.98, area: 0, length: 0, g: 545, notes: '' },
+    { id: 'reptile-dragon2', name: 'Reptile DRAGON V2', type: 'fixedwing', span: 1.2, area: 0, length: 0.7, g: 480, notes: '>90 mm internal length' },
+    { id: 'heewing-t1', name: 'HEEWING T-1 Ranger', type: 'fixedwing', span: 0.73, area: 0, length: 0.645, g: 205, notes: '' },
+    { id: 'dolphin-pro', name: 'AtomRC Dolphin Pro', type: 'fixedwing', span: 0.845, area: 0.1696, length: 0.826, g: 790, notes: '' },
+    { id: 'dolphin-v11', name: 'AtomRC Dolphin V1.1', type: 'fixedwing', span: 0.845, area: 0.1696, length: 0.71, g: 360, notes: '' },
+    { id: 'talon-gt', name: 'ZOHD Talon GT Rebel', type: 'fixedwing', span: 1.0, area: 0, length: 0.66, g: 0, notes: '' },
+    { id: 'stallion', name: 'Flightory Stallion VTOL', type: 'vtol', span: 1.34, area: 0, length: 0.99, g: 0, notes: '3D printed' },
+    { id: 'mojito', name: 'TBS Mojito', type: 'fixedwing', span: 0, area: 0, length: 0, g: 1130, notes: '' },
   ];
 
   let n = 0;

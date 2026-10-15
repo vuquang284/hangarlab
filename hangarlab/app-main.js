@@ -203,11 +203,8 @@ document.addEventListener('input', (e) => {
   if (k === '_airframe') {
     const a = S.lib.airframes.find((x) => x.id === el.value);
     if (a) {
-      const p = P();
-      if (a.span) p.fw.span = a.span;
-      if (a.area) p.fw.area = a.area;
-      if (a.g && !p.bom.some((r) => r.name === a.name || r.ref === `airframes:${a.id}`)) p.bom.unshift(libToBom('airframes', a));
-      toast(a.area ? `Applied ${a.name}` : `${a.name} has no wing area in the library; set it here.`);
+      applyAirframe(P(), a);
+      toast(a.type === 'multirotor' || a.area ? `Applied ${a.name}` : `${a.name} has no wing area in the library; set it here.`);
     }
     save(); render(); return;
   }
@@ -488,7 +485,7 @@ document.addEventListener('click', (e) => {
       const k = b.dataset.kind, x = S.lib[k][i];
       if (k === 'batteries') { Object.assign(p.batt, { ref: x.id }); delete p.batt.unlinked; }
       if (k === 'printed' || k === 'parts') p.bom.push(libToBom(k, x));
-      if (k === 'airframes') { if (x.span) p.fw.span = x.span; if (x.area) p.fw.area = x.area; if (x.g && !p.bom.some((r) => r.ref === `airframes:${x.id}`)) p.bom.unshift(libToBom(k, x)); }
+      if (k === 'airframes') { if (!afFits(x, p.type)) return toast(`${x.name} is a ${x.type === 'multirotor' ? 'multirotor frame' : 'wing'}; ${p.name} is a ${p.type === 'multirotor' ? 'multirotor' : 'winged'} design.`); applyAirframe(p, x); }
       syncLib();
       save(); toast(`Applied to ${p.name}`); break;
     }

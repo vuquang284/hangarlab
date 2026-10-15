@@ -29,7 +29,7 @@ function wizard(step) {
      <label class="f"><span>Prop</span><select id="wz-prop">${opt(S.lib.props, wiz.prop, 'Keep the example prop')}</select></label>
      <p class="hint">With the box ticked, every motor + prop pair in the library is tried on the finished design and the longest-flying one within its limits is used. Your picks above are then ignored.</p>`,
     `<label class="f"><span>Payload mass (g)</span><input type="number" id="wz-payload" value="${wiz.payload}" min="0" step="10"></label>
-     ${wiz.type !== 'multirotor' ? `<label class="f"><span>Airframe</span><select id="wz-af">${opt(S.lib.airframes, wiz.airframe, 'Keep the example wing')}</select></label>` : ''}
+     <label class="f"><span>${wiz.type === 'multirotor' ? 'Frame' : 'Airframe'}</span><select id="wz-af">${opt(S.lib.airframes.filter((a) => afFits(a, wiz.type)), wiz.airframe, wiz.type === 'multirotor' ? 'Keep the example frame' : 'Keep the example wing')}</select></label>
      <p class="hint">Everything can be changed afterwards on the Performance tab.</p>`,
   ][st];
   openDlg(`New design · ${st + 1} of 4: ${WIZ_STEPS[st]}`, `<div class="wiz-dots">${WIZ_STEPS.map((s, i) => `<span class="${i === st ? 'on' : i < st ? 'done' : ''}">${i + 1}. ${s}</span>`).join('')}</div>${body}`,
@@ -52,7 +52,7 @@ function wizardCreate() {
   base.payload = Object.assign({}, base.payload, { g: Math.max(0, w.payload || 0) });
   const role = w.type === 'fixedwing' ? 'fw' : 'mr';
   if (!w.auto) { if (w.motor) base[role].motor = w.motor; if (w.prop) base[role].prop = w.prop; }
-  if (w.airframe && base.fw) { const a = S.lib.airframes.find((x) => x.id === w.airframe); if (a) { if (a.span) base.fw.span = a.span; if (a.area) base.fw.area = a.area; if (a.g) base.bom.unshift(libToBom('airframes', a)); } }
+  if (w.airframe) { const a = S.lib.airframes.find((x) => x.id === w.airframe); if (a && afFits(a, w.type)) applyAirframe(base, a); }
   snapshot();
   S.projects.push(base); S.active = base.id; syncLib();
   let note = '';
