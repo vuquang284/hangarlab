@@ -239,7 +239,7 @@ function renderSettings(el) {
       <div class="card"><h2>New designs</h2><div class="fields" style="padding:10px 0 0">
         ${txt('settings.currency', 'Currency symbol', { st: true })}
         ${num('settings.newDesign.usable', 'Usable battery', { st: true, unit: '%' })}
-        ${num('settings.newDesign.alt', 'Field altitude', { st: true, unit: 'm' })}
+        ${num('settings.newDesign.alt', `Field elevation (MSL) ${tip('Height of the take-off site **above sea level (MSL)**, not above the ground. It sets the air density: thinner air at high sites means more power to hover and a higher stall speed.\n\n**0 m**  sea level\n**300 m**  typical inland field\n**1600 m**  Denver\n\nHow high you fly above the field is set in the Mission and Radio Link inputs.')}`, { st: true, unit: 'm' })}
         ${num('settings.newDesign.temp', 'Air temperature', { st: true, unit: '°C' })}
         <p class="hint">Applied when you click New. Existing designs keep their values.</p></div></div>
 

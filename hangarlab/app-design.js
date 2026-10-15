@@ -25,7 +25,7 @@ function designInputs() {
       <button class="btn sm" data-act="ver-save" style="margin-top:6px">Save version</button></div>
     <div class="f wide"><span>Configuration</span><div class="seg" role="group">${Object.entries(TYPE_LABEL).map(([k, l]) => `<button data-settype="${k}" aria-pressed="${t === k}">${l}</button>`).join('')}</div></div>
     ${t === 'vtol' ? sel('vtol.kind', 'VTOL type', [['quadplane', 'Quadplane (separate lift + cruise)'], ['tiltrotor', 'Tilt-rotor (shared motors)'], ['tailsitter', 'Tailsitter (shared motors)']], { wide: true, rebuild: true }) : ''}`);
-  h += group('Environment', `${num('env.alt', 'Field altitude', { unit: 'm' })}${num('env.temp', 'Air temperature', { unit: '°C' })}<p class="hint" id="rhoHint"></p>`);
+  h += group('Environment', `${num('env.alt', `Field elevation (MSL) ${tip('Height of the take-off site **above sea level (MSL)**, not above the ground. It sets the air density: thinner air at high sites means more power to hover and a higher stall speed.\n\n**0 m**  sea level\n**300 m**  typical inland field\n**1600 m**  Denver\n\nHow high you fly above the field is set in the Mission and Radio Link inputs.')}`, { unit: 'm' })}${num('env.temp', 'Air temperature', { unit: '°C' })}<p class="hint" id="rhoHint"></p>`);
   h += '%%PROP%%'; // propulsion groups land right under Environment
   let prop = '';
   h += group('Battery', `
