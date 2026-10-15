@@ -40,7 +40,7 @@ assert.strictEqual(lib.tests.length, 16);
 const atom = U.combo(lib, dol.fw.motor, dol.fw.prop, 22.2);
 assert(atom.physics && atom.rows.length === 10, 'physics fallback');
 // physics estimate within 20% of the HW4120 16x8 bench max thrust
-const hwM = lib.motors.find((m) => m.name === 'Hobbywing 4120 250KV'), hwP = lib.props.find((x) => x.name === 'APC 16x8E');
+const hwM = lib.motors.find((m) => m.name === 'Hobbywing 4120 250KV'), hwP = lib.props.find((x) => x.name === 'APC 16x8');
 const phys = U.drive(hwM, Object.assign({}, hwP, { data: null }), 44.4).solve(1, 0);
 near((phys.T / U.g0) * 1000, 7694, 7694 * 0.2, 'physics max thrust');
 // payload input changes AUW and endurance
@@ -53,7 +53,7 @@ const cons = U.consolidate([quad, projects[2]], lib);
 assert(cons.find((r) => r.name.startsWith('Cube Orange')).qty.join() === '1,1', 'consolidated BOM');
 
 // APC data: 16x8E static thrust at 6000 rpm from the file is 8.33 lbf-ish; check Ct interpolation stays sane
-const p16 = lib.props.find((x) => x.name === 'APC 16x8E');
+const p16 = lib.props.find((x) => x.name === 'APC 16x8');
 assert(p16.data && p16.data.rpm.length > 10, 'apc seed attached');
 const [ct0] = U.propCoef(p16.data, 0, 6000);
 assert(ct0 > 0.07 && ct0 < 0.12, 'apc static Ct ' + ct0);

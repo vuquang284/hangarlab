@@ -135,7 +135,7 @@ table(mo, ['Name', 'kV', 'Rm (mΩ)', 'I0 (A)', 'I0 voltage (V)', 'Max current (A
 # ---------- Motor thrust data (one row per measurement; motor/prop names match the Motors and Props sheets) ----------
 mt = wb.create_sheet('Motor thrust data')
 table(mt, ['Motor', 'Prop', 'Throttle (%)', 'Thrust (g)', 'Voltage (V)', 'Current (A)', 'Power (W)'], [30, 18, 13, 12, 12, 12, 12],
-      [['Hobbywing 4120 250KV', 'APC 16x8E', t, g, 44.4, a] for t, g, a in [(33, 1029, 2.3), (42, 1642, 4.2), (51, 2272, 7.0), (60, 3108, 11.3), (72, 4488, 19.5), (81, 5560, 28.4), (90, 6575, 39.9), (100, 7694, 55.3)]]
+      [['Hobbywing 4120 250KV', 'APC 16x8', t, g, 44.4, a] for t, g, a in [(33, 1029, 2.3), (42, 1642, 4.2), (51, 2272, 7.0), (60, 3108, 11.3), (72, 4488, 19.5), (81, 5560, 28.4), (90, 6575, 39.9), (100, 7694, 55.3)]]
       + [['T-Motor MN5008 340KV', 'APC 15x5.5MR', t, g, 22.2, a] for t, g, a in [(50, 1150, 4.1), (75, 2210, 10.6), (100, 3150, 20.3)]])
 for r in range(2, mt.max_row + 1):
     mt.cell(row=r, column=7, value=f'=E{r}*F{r}').font = EX_FONT
@@ -145,7 +145,7 @@ dropdown(mt, 'B', '=Props!$A$2:$A$500')
 # ---------- Props ----------
 pr = wb.create_sheet('Props')
 table(pr, ['Name', 'Diameter (in)', 'Pitch (in)', 'Weight (g)', 'Link', 'Unit cost', 'Buy link'], [26, 14, 12, 12, 42, 11, 42], [
-    ['APC 16x8E', 16, 8, 51.87, 'https://www.apcprop.com/', 12, 'https://www.apcprop.com/'],
+    ['APC 16x8', 16, 8, 51.87, 'https://www.apcprop.com/', 12, 'https://www.apcprop.com/'],
     ['HQ 8x4.5x3', 8, 4.5, '', '', '', ''],
     ['APC 15x5.5MR', 15, 5.5, 42, '', '', ''],
 ])
