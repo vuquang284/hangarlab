@@ -4,7 +4,11 @@
 
 # HangarLab
 
-Plan a multirotor, fixed-wing or VTOL drone in the browser: size the motors, props and battery, check the power system and radio links, then compare the plan with real ArduPilot flight logs. No account, no install. Designs are saved in the browser, with export and backups built in.
+**HangarLab is a free web app for planning drones.** Size the motors, props and battery for a multirotor, fixed-wing or VTOL aircraft, check the power system and radio links, then compare the plan with real ArduPilot flight logs.
+
+**[Open HangarLab →](https://hangarlab.pages.dev)**
+
+No account and nothing to install: it runs in your browser, and your designs are saved there, with export and backups built in. A short guided tour shows you around on your first visit.
 
 ## Features
 
@@ -15,7 +19,7 @@ Plan a multirotor, fixed-wing or VTOL drone in the browser: size the motors, pro
 - VTOL transitions (time and energy), hover thrust penalty per VTOL type, and tailsitter hover wind limit.
 - Mission profile with climb, cruise, loiter, hover and transition segments, wind and reserve.
 - Part finders that try every motor + prop pair or battery pack in your library and rank them by endurance within limits.
-- **Simple / Detailed** input modes and a 4-step **New design** wizard.
+- **Simple / Detailed** input modes, and a guided **New design** setup.
 
 **Compare**: designs side by side, with the best value in each row highlighted.
 
@@ -50,32 +54,13 @@ Everything runs in the browser. Designs, the parts library and opened logs stay 
 
 HangarLab gives planning estimates, not guarantees. Check the numbers against bench tests and test flights, and follow your local aviation rules; the regulation notes are an orientation, not legal advice.
 
-## Running it
+## Using it
 
-The app is static files with nothing to install.
+Open **[hangarlab.pages.dev](https://hangarlab.pages.dev)** in any modern browser, on a computer, tablet or phone.
 
-- **Single file:** open `hangarlab/HangarLab.html` in a browser. Libraries for the 3D views, maps and spreadsheet imports load from a CDN the first time they are used.
-- **From the sources:** serve the `hangarlab/` folder, for example:
-
-  ```bash
-  python -m http.server 8000 --directory hangarlab
-  ```
-
-  then open <http://localhost:8000>.
-
-## Deploying (Cloudflare Pages)
-
-1. In the Cloudflare dashboard, go to **Workers & Pages → Create → Pages → Connect to Git** and pick this repository.
-2. Use these build settings:
-   - Framework preset: **None**
-   - Build command: *(empty)*
-   - Build output directory: `hangarlab`
-3. Deploy. Every push to `main` updates the site; other branches get preview URLs.
-4. Optional: add a custom domain under **Custom domains**.
-
-`hangarlab/_headers` makes browsers re-check the app files on each visit, so a new deploy shows up right away.
-
-The **Team library** (shared parts library) only works when the app runs inside claude.ai, so it is hidden on other hosts.
+- **Your work stays on your device.** Back it up with **Export → Workspace backup**, and import it on another browser or computer.
+- **Offline copy:** download `hangarlab/HangarLab.html` from this repository and open it; it works without the website. Maps, terrain and 3D views still need an internet connection.
+- **New versions** appear automatically the next time you open the site. Your saved designs are upgraded, never lost. The version is shown at the bottom right.
 
 ## Versions
 
@@ -83,7 +68,15 @@ HangarLab is in development (0.x versions; 1.0.0 will be the first public releas
 
 ## Development
 
-Requires Node.js (any current LTS). Run these from `hangarlab/`:
+The app is static files with nothing to install. To run it locally, serve the `hangarlab/` folder:
+
+```bash
+python -m http.server 8000 --directory hangarlab
+```
+
+then open <http://localhost:8000>. Pushes to `main` update the live site; `hangarlab/_headers` makes browsers re-check the app files so a new version shows up right away.
+
+Requires Node.js (any current LTS) for the tools below. Run them from `hangarlab/`:
 
 | Command | What it does |
 | --- | --- |
