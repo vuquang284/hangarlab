@@ -10,6 +10,10 @@ Numbering ([semantic versioning](https://semver.org), major.minor.patch):
 
 To record an update: bump `APP_VERSION` at the top of `hangarlab/app-core.js`, add an entry here, run `node build.js` in `hangarlab/`, commit, then tag it (`git tag v0.1.1-dev && git push --tags`). The version shows at the bottom right of every page.
 
+## 0.5.0-dev (2026-10-15)
+
+- ESCs have a **For** column: Multirotor, Plane or Either. The ESC picker shows it, a plane ESC on lift motors gets a warning, and a multirotor ESC on a cruise motor gets a note to turn braking off. Excel import, the template and Add from link read it too.
+
 ## 0.4.1-dev (2026-10-15)
 
 - Built-in library: TBS Lucid 12S 90A ESC moved from Components to ESCs (90 A continuous, up to 12S, 20 g).

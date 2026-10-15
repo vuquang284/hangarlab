@@ -9,7 +9,7 @@ const LIB_COLS = {
   batteries: [['name', 'Pack', 'text', 240], ['brand', 'Brand', 'text', 110], ['chem', 'Chem', 'chem'], ['s', 'Cells S', 'number', 54], ['p', 'Cells P', 'number', 54], ['cellMah', 'Cell mAh', 'number', 76], ['g', 'Pack g', 'number', 70, 'g>oz'], ['c', 'Cont. C', 'number', 54], ['cPeak', 'Peak C', 'number', 54], ['link', 'Link', 'text', 120], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
   printed: [['name', 'Part', 'text', 190], ['mat', 'Material', 'mat'], ['vol', 'Volume cm³', 'number', 70, 'cm³>in³'], ['area', 'Area cm²', 'number', 70, 'cm²>in²'], ['walls', 'Walls', 'number', 50], ['tb', 'Top/bot layers', 'number', 56], ['infill', 'Infill %', 'number', 56], ['g', 'Mass g', 'number', 66, 'g>oz'], ['notes', 'Notes', 'text', 140], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
   parts: [['name', 'Name', 'text', 220], ['sub', 'Subsystem', 'sub', 110], ['g', 'g', 'number', 70, 'g>oz'], ['rail', 'Rail', 'rail'], ['w', 'Avg W', 'number', 60], ['pw', 'Peak W', 'number', 60], ['rf', 'RF Freq', 'rf'], ['link', 'Link', 'text', 140], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
-  escs: [['name', 'ESC', 'text', 210], ['brand', 'Brand', 'text', 100], ['a', 'Cont. A', 'number', 62], ['burst', 'Burst A', 'number', 62], ['sMin', 'Min S', 'number', 54], ['sMax', 'Max S', 'number', 54], ['g', 'Weight g', 'number', 66, 'g>oz'], ['link', 'Link', 'text', 120], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
+  escs: [['name', 'ESC', 'text', 210], ['brand', 'Brand', 'text', 100], ['use', 'For', 'escUse'], ['a', 'Cont. A', 'number', 62], ['burst', 'Burst A', 'number', 62], ['sMin', 'Min S', 'number', 54], ['sMax', 'Max S', 'number', 54], ['g', 'Weight g', 'number', 66, 'g>oz'], ['link', 'Link', 'text', 120], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
   airframes: [['name', 'Name', 'text', 200], ['span', 'Span m', 'number', 70, 'm>in'], ['area', 'Wing m²', 'number', 80, 'm²>ft²'], ['length', 'Length m', 'number', 70, 'm>in'], ['g', 'Weight g', 'number', 80, 'g>oz'], ['notes', 'Notes', 'text', 160], ['link', 'Link', 'text', 140], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
 };
 const LIB_BLANK = {
@@ -18,7 +18,7 @@ const LIB_BLANK = {
   batteries: { name: 'New pack', chem: 'lipo', s: 6, p: 1, cellMah: 5000, g: 700, c: 25, cPeak: 0, link: '', cost: 0, buy: '' },
   printed: { name: 'New printed part', mat: 'petg', vol: 10, area: 0, walls: 3, tb: 4, infill: 25, g: 0, sub: '3D printed', notes: '', cost: 0, buy: '' },
   parts: { name: 'New component', sub: 'Avionics', g: 10, rail: '5V', w: 1, pw: 1, rf: '', link: '', cost: 0, buy: '' },
-  escs: { name: 'New ESC', brand: '', a: 40, burst: 0, sMin: 2, sMax: 6, g: 30, link: '', cost: 0, buy: '' },
+  escs: { name: 'New ESC', brand: '', use: '', a: 40, burst: 0, sMin: 2, sMax: 6, g: 30, link: '', cost: 0, buy: '' },
   airframes: { name: 'New airframe', span: 1, area: 0.2, length: 0.8, g: 500, notes: '', link: '', cost: 0, buy: '' },
 };
 // brand: guessed once from the name (usually its first word), then editable. Some product lines don't carry the maker's name.
@@ -48,6 +48,7 @@ function libVal(x, c) {
   if (c[2] === 'sub') return subName(v);
   if (c[2] === 'rail') return (RAILS.find((r) => r[0] === v) || [, v])[1];
   if (c[2] === 'rf') return (RF_OPTS.find((r) => r[0] === v) || [, v])[1];
+  if (c[2] === 'escUse') return (ESC_USE.find((r) => r[0] === v) || [, v])[1];
   return String(v);
 }
 function libOrder(t, cols) {
@@ -111,6 +112,7 @@ function renderLibrary(el) {
       if (c[2] === 'rail') return `<select data-lib="${k}">${opt(RAILS, v)}</select>`;
       if (c[2] === 'mat') return `<select data-lib="${k}">${opt(U.MATERIALS.map((m) => [m.id, m.name]), v)}</select>`;
       if (c[2] === 'rf') return `<select data-lib="${k}">${opt(RF_OPTS, v)}</select>`;
+      if (c[2] === 'escUse') return `<select data-lib="${k}">${opt(ESC_USE, v)}</select>`;
       if (c[2] === 'sub') {
         // every known subsystem plus any custom ones already in use; each option in its own color
         const all = subKeys().concat(v && !subKeys().includes(v) ? [v] : []);
@@ -237,8 +239,8 @@ async function importWorkbook(file) {
         tally('batteries', upsert('batteries', 'batteries-', Object.assign({ name: String(o.name).trim(), chem: chemIn(o.chem), s: numOr(o.s, 1), p: numOr(o.p, 1), cellMah: numOr(o.cellMah), g: numOr(o.g), c: numOr(o.c, 1), cPeak: numOr(o.cPeak) }, o.link ? { link: String(o.link) } : {}, buyOf(o))));
       }
     } else if (name === 'escs' || name === 'esc') {
-      for (const o of sheetObjects(sh.rows, [['name', /^name|esc/i], ['brand', /brand|make/i], ['burst', /burst|peak/i], ['a', /cont|current|amps?\b|\(a\)/i], ['sMin', /min/i], ['sMax', /max/i], ['g', /weight|mass/i], ...BUY_COLS, ['link', /link|url/i]])) {
-        tally('ESCs', upsert('escs', 'esc-', Object.assign({ name: String(o.name).trim(), brand: o.brand ? String(o.brand).trim() : '', a: numOr(o.a), burst: numOr(o.burst), sMin: numOr(o.sMin), sMax: numOr(o.sMax), g: numOr(o.g) }, o.link ? { link: String(o.link) } : {}, buyOf(o))));
+      for (const o of sheetObjects(sh.rows, [['name', /^name|esc/i], ['brand', /brand|make/i], ['use', /^for\b|use|type|aircraft/i], ['burst', /burst|peak/i], ['a', /cont|current|amps?\b|\(a\)/i], ['sMin', /min/i], ['sMax', /max/i], ['g', /weight|mass/i], ...BUY_COLS, ['link', /link|url/i]])) {
+        tally('ESCs', upsert('escs', 'esc-', Object.assign({ name: String(o.name).trim(), brand: o.brand ? String(o.brand).trim() : '', use: /multi|copter|quad|^mr$/i.test(o.use || '') ? 'mr' : /plane|fixed|wing/i.test(o.use || '') ? 'plane' : '', a: numOr(o.a), burst: numOr(o.burst), sMin: numOr(o.sMin), sMax: numOr(o.sMax), g: numOr(o.g) }, o.link ? { link: String(o.link) } : {}, buyOf(o))));
       }
     } else if (name === 'airframes') {
       for (const o of sheetObjects(sh.rows, [['name', /^name|airframe/i], ['span', /span/i], ['area', /area/i], ['length', /length/i], ['g', /weight|mass/i], ['notes', /note/i], ...BUY_COLS, ['link', /link|url/i]])) {
@@ -715,11 +717,12 @@ async function linkRead(paste) {
   if (!f.brand && (k === 'motors' || k === 'props')) { const b = brandGuess(f.name || ''); if (b) f.brand = b; }
   if (url) f.buy = url;
   linkState.found = f;
-  const cols = LIB_COLS[k].filter((c) => c[2] === 'text' || c[2] === 'number' || c[0] === 'chem');
+  const cols = LIB_COLS[k].filter((c) => c[2] === 'text' || c[2] === 'number' || c[0] === 'chem' || c[2] === 'escUse');
   const n = Object.keys(f).filter((x) => x !== 'buy' && x !== 'name').length;
   msg.textContent = n ? `Found ${n} value${n > 1 ? 's' : ''} (highlighted). Check them and fill in the rest.` : 'No specs found on that page. Fill them in below, or paste the page text.';
   $('#link-form').innerHTML = `<div class="fields" style="padding:8px 0 0">${cols.map(([key, label, type]) => {
     const v = f[key] ?? LIB_BLANK[k][key] ?? '', cls = key in f ? ' found' : '';
+    if (key === 'use') return `<label class="f${cls}"><span>${label}</span><select data-link="use">${ESC_USE.map(([ck, lab]) => `<option value="${ck}"${ck === v ? ' selected' : ''}>${lab}</option>`).join('')}</select></label>`;
     if (key === 'chem') return `<label class="f${cls}"><span>${label}</span><select data-link="chem">${Object.entries(U.CELL).map(([ck, c]) => `<option value="${ck}"${ck === v ? ' selected' : ''}>${c.label}</option>`).join('')}</select></label>`;
     return `<label class="f${cls}${key === 'name' || key === 'buy' || key === 'link' ? ' wide' : ''}"><span>${esc(label)}</span><input data-link="${key}" type="${type === 'number' ? 'number' : 'text'}" step="any" value="${esc(v)}"></label>`;
   }).join('')}</div>`;

@@ -4,7 +4,7 @@
 'use strict';
 
 // app version: bump on every update and add a CHANGELOG.md entry. 0.x + '-dev' while in development; 1.0.0 = first public release
-const APP_VERSION = '0.4.1-dev';
+const APP_VERSION = '0.5.0-dev';
 const U = window.UAS;
 const KEY = 'uas-workbench.v1'; // storage key kept from the old name so saved work still loads
 const $ = (s, el = document) => el.querySelector(s);
@@ -18,6 +18,7 @@ const cssv = (n) => getComputedStyle(document.documentElement).getPropertyValue(
 const PRN = () => (S.lib.printer || { lineW: 0.45, layerH: 0.2 });
 const SUBS = ['Structures', '3D printed', 'Propulsion', 'Power', 'Avionics', 'Sensors', 'Comms', 'Compute', 'Payload', 'Wiring', 'Hardware', 'Other'];
 const RAILS = [['', '—'], ['VBAT', 'VBAT'], ['3.3V', '3.3 V'], ['5V', '5 V'], ['9V', '9 V'], ['12V', '12 V'], ['24V', '24 V'], ['Separate', 'Own supply']];
+const ESC_USE = [['', 'Either'], ['mr', 'Multirotor'], ['plane', 'Plane']];
 const RF_OPTS = [['', '—']].concat(Object.entries(U.BANDS).filter(([k]) => k !== 'gnss').map(([k, b]) => [k, b.label]));
 const TYPE_LABEL = { multirotor: 'Multirotor', fixedwing: 'Fixed-wing', vtol: 'Hybrid VTOL' };
 
@@ -343,7 +344,7 @@ const propOpts = () => S.lib.props.map((x) => [x.id, `${x.name}${x.diam ? ` · $
 // ESC picker for a propulsion group: a library ESC, or a typed rating and cell limit
 function escPick(base) {
   const o = getPath(P(), base), e = (S.lib.escs || []).find((x) => x.id === o.esc);
-  return `${sel(base + '.esc', `ESC ${tip('Pick one from Parts Library → ESCs, or type its rating. Full-throttle current is checked against it, and the pack against its cell limit.')}`, [['', 'Type the rating']].concat((S.lib.escs || []).map((x) => [x.id, `${x.name} · ${x.a} A${x.sMax ? ` · ${x.sMin ? x.sMin + '–' : '≤'}${x.sMax}S` : ''}`])), { wide: true, rebuild: true })}
+  return `${sel(base + '.esc', `ESC ${tip('Pick one from Parts Library → ESCs, or type its rating. Full-throttle current is checked against it, and the pack against its cell limit.')}`, [['', 'Type the rating']].concat((S.lib.escs || []).map((x) => [x.id, `${x.name} · ${x.a} A${x.use ? ` · ${x.use === 'mr' ? 'multirotor' : 'plane'}` : ''}${x.sMax ? ` · ${x.sMin ? x.sMin + '–' : '≤'}${x.sMax}S` : ''}`])), { wide: true, rebuild: true })}
     ${e ? `<p class="hint wide">${fmt(e.a, 0)} A continuous${e.burst ? `, ${fmt(e.burst, 0)} A burst` : ''}${e.sMax ? `, ${e.sMin ? e.sMin + '–' : 'up to '}${e.sMax}S` : ''}${e.g ? `, ${fmt(e.g, 0)} g each (added to the BOM)` : ''}.</p>` : `${num(base + '.escA', 'ESC rating', { unit: 'A', min: 0 })}${num(base + '.escS', 'ESC max cells', { unit: 'S', min: 0, step: 1 })}`}`;
 }
 function propPick(base, V) {

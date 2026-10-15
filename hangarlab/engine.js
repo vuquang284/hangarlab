@@ -406,13 +406,15 @@
 
   function escOf(lib, o) {
     const e = o && o.esc && (lib.escs || []).find((x) => x.id === o.esc);
-    if (e) return { name: e.name, a: +e.a || 0, burst: +e.burst || 0, sMin: +e.sMin || 0, sMax: +e.sMax || 0, g: +e.g || 0, lib: e };
+    if (e) return { name: e.name, use: e.use || '', a: +e.a || 0, burst: +e.burst || 0, sMin: +e.sMin || 0, sMax: +e.sMax || 0, g: +e.g || 0, lib: e };
     return o && (+o.escA > 0 || +o.escS > 0) ? { name: 'ESC', a: +o.escA || 0, burst: 0, sMin: 0, sMax: +o.escS || 0 } : null;
   }
   // full-throttle current and power of one motor against its ESC and its own ratings; problems also go to R.overload
-  function driveChk(chk, R, bat, lib, o, motorId, iMax, label) {
+  function driveChk(chk, R, bat, lib, o, motorId, iMax, label, lift) {
     const e = escOf(lib, o), m = (lib.motors || []).find((x) => x.id === motorId), L = label ? `${label} motor` : 'Motor', ov = (R.overload = R.overload || []);
     if (!isFinite(iMax) || iMax <= 0) return;
+    if (e && lift && e.use === 'plane') chk('warn', `${e.name} is a plane ESC driving ${label ? 'lift ' : ''}motors. Multirotor ESCs respond faster to the flight controller, which hover stability needs.`);
+    if (e && !lift && e.use === 'mr') chk('info', `${e.name} is a multirotor ESC on the ${label ? 'cruise ' : ''}motor. It works; check that braking is off so the prop can windmill.`);
     if (e && e.a) {
       if (iMax > (e.burst || e.a)) { chk('crit', `${L} full-throttle current ${iMax.toFixed(1)} A exceeds the ESC's ${e.burst ? 'burst' : 'continuous'} rating ${(e.burst || e.a).toFixed(0)} A (${e.name}).`); ov.push(`over ${label ? label.toLowerCase() + ' ' : ''}ESC`); }
       else if (iMax > e.a) chk('warn', `${L} full-throttle current ${iMax.toFixed(1)} A is above the ESC's continuous ${e.a.toFixed(0)} A but within its ${e.burst.toFixed(0)} A burst: fine for short bursts, not sustained full throttle.`);
@@ -552,7 +554,7 @@
         else if (h.tw < twWarn) chk('warn', `Thrust-to-weight ${h.tw.toFixed(2)} is marginal (aim ≥ ${twWarn}).`);
         if (h.thr > 80) chk('crit', `Hover throttle ${h.thr.toFixed(0)}% leaves no margin.`);
         else if (h.thr > 65) chk('warn', `Hover throttle ${h.thr.toFixed(0)}% is high (aim 40–60%).`);
-        driveChk(chk, R, bat, lib, p.mr, p.mr.motor, h.iMaxMotor, p.type === 'vtol' ? 'Lift' : '');
+        driveChk(chk, R, bat, lib, p.mr, p.mr.motor, h.iMaxMotor, p.type === 'vtol' ? 'Lift' : '', true);
         if (p.type === 'multirotor') battChk(R.maxI, R.hoverI, 'hover');
         if (p.type === 'multirotor' && !o.lite && h.diskM2) {
           const ff = mrForward(WN, rho, h.diskM2, p.mr.cda, h.pMotors, (h.tmaxTot / 1000) * g0, p.mr.lean, p.mr.n * h.iMaxMotor * bat.V);
@@ -669,7 +671,7 @@
       R.cruiseSet = cset;
       if (!c) chk('crit', 'Pick a cruise motor and prop (with kV and prop size, or bench data).');
       else if (c.estimated && !cset.physics) chk('warn', `${cset.name}: only one data point, thrust curve is estimated.`);
-      if (c && !shared) driveChk(chk, R, bat, lib, f, f.motor, c.imax, p.type === 'vtol' ? 'Cruise' : '');
+      if (c && !shared) driveChk(chk, R, bat, lib, f, f.motor, c.imax, p.type === 'vtol' ? 'Cruise' : '', false);
       if (pc == null) chk('crit', `The cruise motor and prop cannot hold ${vc} m/s at this weight.`);
       if (R.fwCurve && R.fwCurve.length) R.LDmax = Math.max(...R.fwCurve.map((x) => R.WN / x.D));
       R.LDcruise = R.WN / fwDrag(vc, WN, rho, S, AR, cd0, eOsw).D;
@@ -1416,6 +1418,8 @@
       const b = after('burst current|peak current|burst|peak', 'a\\b'); if (b && b.v > (o.a || 0)) o.burst = b.v;
       const s = all.match(/\b(\d{1,2})\s*(?:S\s*)?(?:-|–|~|to)\s*(\d{1,2})\s*S\b/i);
       if (s) { o.sMin = +s[1]; o.sMax = +s[2]; } else { const m = all.match(/\b(\d{1,2})\s*S\b/); if (m) o.sMax = +m[1]; }
+      const mr = /multi-?rotor|multi-?copter|quad-?copter|\bdrones?\b|\bUAV\b|agricultur/i.test(all), pl = /air-?plane|fixed[- ]wing|\bplanes?\b|glider/i.test(all);
+      if (mr !== pl) o.use = mr ? 'mr' : 'plane';
     } else if (kind === 'airframes') {
       const sp = len('wing ?span|span'); if (sp) o.span = +sp.toFixed(3);
       const l = len('length'); if (l) o.length = +l.toFixed(3);

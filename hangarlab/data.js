@@ -170,7 +170,7 @@
   const escs = [
     { id: 'esc-6s-40', name: 'Generic 6S 40A ESC', brand: '', a: 40, burst: 50, sMin: 2, sMax: 6, g: 35 },
     { id: 'esc-6s-60', name: 'Generic 6S 60A ESC', brand: '', a: 60, burst: 80, sMin: 3, sMax: 6, g: 60 },
-    { id: 'esc-12s-80', name: 'Generic 12S 80A ESC', brand: '', a: 80, burst: 100, sMin: 6, sMax: 12, g: 90 },
+    { id: 'esc-12s-80', name: 'Generic 12S 80A ESC', brand: '', use: 'mr', a: 80, burst: 100, sMin: 6, sMax: 12, g: 90 },
   ];
   const printer = { lineW: 0.45, layerH: 0.2 };
   const printed = [

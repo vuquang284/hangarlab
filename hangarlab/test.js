@@ -213,6 +213,9 @@ assert(big.iMax === 99 && big.vibeMax === 42 && big.vMin > 49 && big.vMin < 49.0
   ex.mr.esc = 'esc-6s-40';
   const o = U.compute(ex, L).overload;
   assert(o.includes('over ESC') && o.includes('ESC voltage'), 'ESC overload ' + o);
+  // a plane ESC driving lift motors is flagged
+  const L2 = JSON.parse(JSON.stringify(L)); L2.escs.find((e) => e.id === 'esc-12s-80').use = 'plane'; ex.mr.esc = 'esc-12s-80';
+  assert(U.compute(ex, L2).checks.some((c) => c.level === 'warn' && /plane ESC/.test(c.msg)), 'plane ESC on lift motors');
 }
 
 // product pages: structured data plus "label | value unit" spec tables

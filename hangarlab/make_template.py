@@ -152,10 +152,10 @@ table(pr, ['Name', 'Diameter (in)', 'Pitch (in)', 'Weight (g)', 'Link', 'Unit co
 
 # ---------- ESCs ----------
 es = wb.create_sheet('ESCs')
-table(es, ['Name', 'Brand', 'Continuous current (A)', 'Burst current (A)', 'Min cells (S)', 'Max cells (S)', 'Weight (g)', 'Link', 'Unit cost', 'Buy link'],
-      [28, 14, 20, 17, 13, 13, 11, 42, 11, 42], [
-          ['Generic 6S 60A ESC', '', 60, 80, 3, 6, 60, '', '', ''],
-          ['Generic 12S 80A ESC', '', 80, 100, 6, 12, 90, '', '', ''],
+table(es, ['Name', 'Brand', 'For (Multirotor / Plane / Either)', 'Continuous current (A)', 'Burst current (A)', 'Min cells (S)', 'Max cells (S)', 'Weight (g)', 'Link', 'Unit cost', 'Buy link'],
+      [28, 14, 16, 20, 17, 13, 13, 11, 42, 11, 42], [
+          ['Generic 6S 60A ESC', '', 'Either', 60, 80, 3, 6, 60, '', '', ''],
+          ['Generic 12S 80A ESC', '', 'Multirotor', 80, 100, 6, 12, 90, '', '', ''],
       ])
 
 # ---------- Batteries ----------
