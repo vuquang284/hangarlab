@@ -16,7 +16,7 @@ function renderMass(el) {
   el.innerHTML = `<div class="stack">
     <div class="readouts" id="massRo"></div>
     <div class="card"><div class="card-h"><h2>Mass by subsystem</h2><p>Motors, props, pack and payload come from the Performance tab</p></div><div id="massBar"></div></div>
-    <div class="card"><div class="card-h"><h2>Balance</h2><p>Fill the X column: distance aft of a datum (${p.type === 'multirotor' ? 'frame centre, forward is negative' : 'the nose'}), in ${imperial() ? 'inches' : 'mm'}</p></div>
+    <div class="card"><div class="card-h"><h2>Balance</h2><p>Fill the X column: distance aft of a datum (${p.type === 'multirotor' ? 'frame center, forward is negative' : 'the nose'}), in ${imperial() ? 'inches' : 'mm'}</p></div>
       ${p.type === 'multirotor' ? '' : `<div class="fields" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin-bottom:8px">${num('cg.le', 'Wing leading edge (at root)', { unit: 'mm', imp: 'in' })}${num('cg.mac', `Mean chord ${tip('0 = wing area ÷ span. For a tapered or swept wing enter the MAC and the leading edge where the MAC sits.')}`, { unit: 'mm', imp: 'in', min: 0 })}</div>`}
       <div id="cgOut"></div></div>
     <div class="row"><div class="seg" role="group" aria-label="BOM view">
@@ -122,7 +122,7 @@ function liveMass() {
   const co = $('#cgOut');
   if (co) co.innerHTML = cg.x == null ? '<p class="faint">No positions yet. Enter X for the heavy items first: battery, motors, payload, airframe.</p>'
     : `<div class="cgbar${fwCg ? '' : ' mr'}">${fwCg ? `<i class="win" style="left:${(25 / 60) * 100}%;width:${(8 / 60) * 100}%"></i><b style="left:${Math.min(100, Math.max(0, ((cg.pct + 10) / 60) * 100))}%"></b>` : `<i class="win" style="left:${50 - 10}%;width:20%"></i><b style="left:${Math.min(100, Math.max(0, 50 + cg.x))}%"></b>`}</div>
-      <p class="hint">${fwCg ? `CG <b>${fmt(cg.pct, 1)} % MAC</b> (${fmt(cg.x - (+p.cg.le || 0), 0)} mm behind the leading edge, MAC ${fmt(cg.mac, 0)} mm). Most planes fly well at 25–33 %; start near 25 % for the first flight.` : `CG <b>${fmt(cg.x, 0)} mm</b> ${cg.x > 0 ? 'aft of' : cg.x < 0 ? 'ahead of' : 'at'} the frame centre. Keep it within ~10 mm so no motor works much harder than the others.`}
+      <p class="hint">${fwCg ? `CG <b>${fmt(cg.pct, 1)} % MAC</b> (${fmt(cg.x - (+p.cg.le || 0), 0)} mm behind the leading edge, MAC ${fmt(cg.mac, 0)} mm). Most planes fly well at 25–33 %; start near 25 % for the first flight.` : `CG <b>${fmt(cg.x, 0)} mm</b> ${cg.x > 0 ? 'aft of' : cg.x < 0 ? 'ahead of' : 'at'} the frame center. Keep it within ~10 mm so no motor works much harder than the others.`}
       ${cg.missing ? ` <b>${cg.missing} item${cg.missing > 1 ? 's' : ''} without X</b> (${fmt((1 - cg.g / m.total) * 100, 0)} % of the weight) not counted.` : ''}</p>`;
   const payload = m.bySub.Payload || 0;
   const subs = Object.entries(m.bySub).sort((a, b) => b[1] - a[1]);
@@ -131,7 +131,7 @@ function liveMass() {
     + ro('Battery fraction', fmt((R.bat.g / m.total) * 100, 0), '%', 'multirotors 25–40 %, planes 30–45 %')
     + ro('Empty weight', fmt((m.total - payload - R.bat.g) / 1000, 2), 'kg', 'no payload, no pack')
     + ro('Parts cost', cost ? `${esc(S.settings.currency || '$')}${fmt(cost, 0)}` : '—', '', cost ? `${U.fullBom(p, S.lib).filter((r) => !r.cost && r.auto !== 'payload').length} items without a price` : 'add costs in Parts Library or the BOM')
-    + ro('Balance', cg.x == null ? '—' : fwCg ? fmt(cg.pct, 0) : fmt(cg.x, 0), cg.x == null ? '' : fwCg ? '% MAC' : 'mm', cg.x == null ? 'enter X positions' : fwCg ? 'aim 25–33 %' : 'from frame centre', cgState)
+    + ro('Balance', cg.x == null ? '—' : fwCg ? fmt(cg.pct, 0) : fmt(cg.x, 0), cg.x == null ? '' : fwCg ? '% MAC' : 'mm', cg.x == null ? 'enter X positions' : fwCg ? 'aim 25–33 %' : 'from frame center', cgState)
     + ro('Items', String(p.bom.length + m.auto.length), '', `${subs.length} subsystems`);
   $('#massBar').innerHTML = `<div class="massbar">${subs.map(([s, g]) => `<span title="${esc(subName(s))}: ${fmt(g, 0)} g" style="width:${(g / m.total) * 100}%;background:${subColor(s)}"></span>`).join('')}</div>
     <div class="legend">${subs.map(([s, g]) => `<span><i style="background:${subColor(s)}"></i>${esc(subName(s))} <span class="faint num">${fmt(g, 0)} g · ${fmt((g / m.total) * 100, 1)}%</span></span>`).join('')}</div>`;
@@ -139,7 +139,7 @@ function liveMass() {
 
 function pasteDialog() {
   openDlg('Paste rows from a spreadsheet', `
-    <p class="note">Copy rows from Excel or Google Sheets and paste. Columns in your "Weight Breakdown" order are recognised: <b>Component, Unit g, Qty, Total, Link, Subsystem</b>. Shorter rows work too: <b>Component, Unit g, Qty, Subsystem</b>. Header rows are skipped. Starting from scratch? <a href="#" data-act="tpl-download">Download the component template</a>.</p>
+    <p class="note">Copy rows from Excel or Google Sheets and paste. Columns in your "Weight Breakdown" order are recognized: <b>Component, Unit g, Qty, Total, Link, Subsystem</b>. Shorter rows work too: <b>Component, Unit g, Qty, Subsystem</b>. Header rows are skipped. Starting from scratch? <a href="#" data-act="tpl-download">Download the component template</a>.</p>
     <textarea id="pasteBox" rows="10" placeholder="Cube Orange+ Mini\t53\t1\t53\thttps://…\tAvionics"></textarea>`,
     `<button class="btn" data-act="dlg-close">Cancel</button><button class="btn primary" data-act="paste-go">Add rows</button>`);
 }
@@ -280,11 +280,13 @@ function renderRF(el) {
       <button class="btn" data-act="rf-add">Add a link manually</button>
     </aside>
     <section class="stack">
+      ${rfMapCard(p)}
       <div class="card"><div class="card-h"><h2>Link margin vs distance</h2><p>Dashed line is your required fade margin</p></div><div class="chart" id="chRF"></div></div>
       ${conf.length ? `<div class="card"><h2 style="margin-bottom:8px">Interference checks</h2><div class="checks">${conf.map((c) => `<div class="chk"><span class="pill warn">Check</span><span>${esc(c)}</span></div>`).join('')}</div></div>` : ''}
       ${links.length ? links.map(linkCard).join('') : '<div class="card empty">No radios yet. Set an RF band on BOM items (Parts &amp; Weight tab) or add a link manually.</div>'}
     </section></div>`;
   liveRF();
+  rfMapDraw();
 }
 function liveRF() {
   const p = P(), links = rfLinks(p), d = p.rf;
@@ -317,7 +319,7 @@ function liveRF() {
       geo.push([elev > 60 ? 'crit' : 'info', `Aircraft omni antenna: weak straight down/up (null). Within ${fmt(r60, 0)} m of the ground station at ${fmt(h, 0)} m height the drone is more than 60° overhead and the link can fade; avoid passing directly over it.`]);
     }
     const pl = U.polLoss(ta && ta.pol, ra && ra.pol);
-    if (pl != null && pl !== (U.POL[x.l.pol] || U.POL.same).db) geo.push(['warn', `Antenna polarisations (${ta.pol.toUpperCase()} ↔ ${ra.pol.toUpperCase()}) mean a ${pl} dB loss; the Polarization field says ${(U.POL[x.l.pol] || U.POL.same).db} dB.`]);
+    if (pl != null && pl !== (U.POL[x.l.pol] || U.POL.same).db) geo.push(['warn', `Antenna polarizations (${ta.pol.toUpperCase()} ↔ ${ra.pol.toUpperCase()}) mean a ${pl} dB loss; the Polarization field says ${(U.POL[x.l.pol] || U.POL.same).db} dB.`]);
     if (x.l.mhz > 2000) {
       const other = x.l.mhz > 4000 ? 2440 : 5800, ro2 = U.link(Object.assign({}, x.l, { mhz: other }), d);
       geo.push(['info', `Same radio and antennas at ${other > 4000 ? '5.8' : '2.4'} GHz: ${fmt(ro2.margin, 1)} dB margin (${ro2.margin >= r.margin ? '+' : ''}${fmt(ro2.margin - r.margin, 1)} dB), max range ${fmt(ro2.maxKm, 1)} km. 2.4 GHz reaches further and gets through obstacles better; 5.8 GHz has more channel bandwidth for video.`]);
@@ -335,7 +337,7 @@ function liveRF() {
       <dt><b>Free-space path loss</b></dt><dd><b>${fmt(t1 + t2 + t3, 2)} dB</b></dd>
       <dt>− TX antenna gain</dt><dd>−${fmt(x.l.txG, 2)} dB</dd><dt>− RX antenna gain</dt><dd>−${fmt(x.l.rxG, 2)} dB</dd>
       <dt>Net path loss</dt><dd>${fmt(t1 + t2 + t3 - x.l.txG - x.l.rxG, 2)} dB</dd>
-      <dt>TX power − cable − polarisation</dt><dd>${fmt(x.l.tx, 1)} − ${fmt(x.l.loss, 1)} − ${fmt(r.polDb, 1)} dBm</dd>
+      <dt>TX power − cable − polarization</dt><dd>${fmt(x.l.tx, 1)} − ${fmt(x.l.loss, 1)} − ${fmt(r.polDb, 1)} dBm</dd>
       <dt>Received level</dt><dd>${fmt(x.l.tx - x.l.loss - r.polDb - (t1 + t2 + t3 - x.l.txG - x.l.rxG), 2)} dBm</dd>
       <dt>Sensitivity</dt><dd>${fmt(x.l.sens, 1)} dBm</dd><dt><b>Margin</b></dt><dd><b>${fmt(r.margin, 2)} dB</b></dd></dl>`;
     data.push(xs.map((km) => U.link(x.l, { dist: km, alt: d.alt, gndH: d.gndH, fade: d.fade }).margin));
@@ -345,4 +347,5 @@ function liveRF() {
   data.push(xs.map(() => d.fade));
   ser.push({ label: 'Required', color: cssv('--faint'), dash: [5, 5], w: 1 });
   chart('chRF', { xLabel: 'Distance (km)', u: ['km'], xLog: true, xDec: 2, data, yLabel: 'Link margin (dB)', series: ser, marks: [{ x: d.dist, label: 'mission', color: cssv('--accent') }], h: 280 });
+  if (typeof rfMapSoon === 'function') rfMapSoon();
 }

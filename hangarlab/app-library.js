@@ -414,7 +414,7 @@ function specDialog(kind) {
   const cols = kind === 'motors' ? 'Name, kV, Rm (Ω or mΩ), I0 (A), I0 voltage, Max A, Max W, Weight g, Link' : 'Name, Diameter in, Pitch in, Weight g, Link';
   const ph = kind === 'motors' ? 'Motor\tkV\tRm (mΩ)\tI0 (A)\tWeight (g)&#10;T-Motor MN5008\t340\t89\t0.8\t135' : 'Prop\tDiameter\tPitch\tWeight (g)&#10;APC 15x5.5MR\t15\t5.5\t42';
   openDlg(`Import ${kind === 'motors' ? 'motor specs' : 'prop list'}`, `
-    <p class="note">Paste rows from a spreadsheet or datasheet, or load a CSV / Excel file. A header row is needed; these columns are recognised in any order: <b>${cols}</b>. Existing ${kind} with the same name are updated.</p>
+    <p class="note">Paste rows from a spreadsheet or datasheet, or load a CSV / Excel file. A header row is needed; these columns are recognized in any order: <b>${cols}</b>. Existing ${kind} with the same name are updated.</p>
     <div class="row"><label class="btn">Choose file<input type="file" id="spec-file" accept=".xlsx,.xls,.ods,.csv,.tsv,.txt" hidden></label><span class="hint" id="spec-src"></span></div>
     <textarea id="spec-box" rows="7" placeholder="${ph}"></textarea>
     <div id="spec-prev"></div>`,
@@ -425,7 +425,7 @@ function specPreview(rows) {
   specState.items = items;
   const keys = SPEC_RX[specState.kind].map(([k]) => k).filter((k) => map[k] != null);
   $('#spec-prev').innerHTML = items.length ? `<p class="hint">${items.length} row(s). Columns: ${keys.map((k) => `${k} ← “${esc(hdr[map[k]])}”`).join(' · ')}</p>
-    <div class="tbl-wrap" style="max-height:220px"><table><thead><tr>${keys.map((k) => `<th>${k}</th>`).join('')}</tr></thead><tbody>${items.slice(0, 50).map((o) => `<tr>${keys.map((k) => `<td>${esc(o[k] ?? '')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : '<p class="hint">No rows recognised yet. Include a header row.</p>';
+    <div class="tbl-wrap" style="max-height:220px"><table><thead><tr>${keys.map((k) => `<th>${k}</th>`).join('')}</tr></thead><tbody>${items.slice(0, 50).map((o) => `<tr>${keys.map((k) => `<td>${esc(o[k] ?? '')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : '<p class="hint">No rows recognized yet. Include a header row.</p>';
 }
 function specGo() {
   const { kind, items } = specState;
@@ -506,7 +506,7 @@ function propDataDialog(i) {
 function pdParse() {
   const pr = S.lib.props[+$('#pd-i').value];
   const d = U.parsePropTable($('#pd-box').value, pr.diam);
-  $('#pd-out').innerHTML = d ? `Read <b>${d.rpm.length}</b> RPM table(s), ${d.tab.reduce((a, t) => a + t.length, 0)} points (${esc(d.src)}).` : $('#pd-box').value.trim() ? '<span style="color:var(--crit)">Not recognised. Check the header names, and set the prop diameter for static tables.</span>' : '';
+  $('#pd-out').innerHTML = d ? `Read <b>${d.rpm.length}</b> RPM table(s), ${d.tab.reduce((a, t) => a + t.length, 0)} points (${esc(d.src)}).` : $('#pd-box').value.trim() ? '<span style="color:var(--crit)">Not recognized. Check the header names, and set the prop diameter for static tables.</span>' : '';
   return d;
 }
 

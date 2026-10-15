@@ -2,7 +2,7 @@
 // The app-*.js files share one global scope and load in the order listed in build.js.
 'use strict';
 
-// ---------- LOGS (layout and features modelled on ArduPilot UAV Log Viewer; independent code) ----------
+// ---------- LOGS (layout and features modeled on ArduPilot UAV Log Viewer; independent code) ----------
 let LOG = null, LV = null, logErr = '';
 const lvs = { side: 'plot', view: '3d', filter: '', paramQ: '', evKinds: { mode: true, msg: true, err: true, ev: true }, sel: [], exprs: [], cursor: null, playing: false, speed: 10, cam: { yaw: -0.7, pitch: 0.6, zoom: 1 } };
 const PRESET_GROUPS = [

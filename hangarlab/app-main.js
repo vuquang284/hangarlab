@@ -45,7 +45,7 @@ const QS_STEPS = [
     <p>In <b>Flight Logs</b>, drop an ArduPilot <b>.bin</b> or <b>.log</b>.</p>
     <ul class="qs-list">
       <li>Plot presets, any field, or expressions such as <code>BAT.Volt * BAT.Curr</code>.</li>
-      <li>3D path or map coloured by flight mode, with play/pause.</li>
+      <li>3D path or map colored by flight mode, with play/pause.</li>
       <li>Parameters and events (modes, errors, arm/disarm).</li>
       <li><b>Design vs log</b> compares the logged power with your design’s prediction.</li>
       <li>The flight-mode table shows cruise speed and current per mode: <b>Calibrate</b> a design from it, or <b>build its mission profile</b> from the flight.</li>

@@ -130,7 +130,7 @@ function stlBuild() {
   const { T, scene } = sv;
   for (const o of [sv.mesh, sv.plate, sv.edges]) if (o) { scene.remove(o); o.traverse((c) => { if (c.geometry) c.geometry.dispose(); if (c.material) c.material.dispose(); }); }
   const k = UNIT_MM[P().mat.stlUnit || 'mm'], t = stlMesh, n = t.length / 3;
-  // place on the plate: centred in X/Y, lowest point at Z = 0
+  // place on the plate: centered in X/Y, lowest point at Z = 0
   const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
   for (let i = 0; i < t.length; i++) { const c = i % 3; lo[c] = Math.min(lo[c], t[i]); hi[c] = Math.max(hi[c], t[i]); }
   const off = [-(lo[0] + hi[0]) / 2, -(lo[1] + hi[1]) / 2, -lo[2]];

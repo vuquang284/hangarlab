@@ -917,7 +917,7 @@
     'bullet-ac': { label: 'Ubiquiti Bullet AC (airMAX ac)', mhz: 5800, airmax: 25 },
     'vtx58': { label: 'Analog 5.8 GHz video, 400 mW', mhz: 5800, tx: 26, sens: -90 },
   };
-  // antennas: gain, polarisation (lin / rhcp / lhcp) and beamwidth (deg; 360 = omni)
+  // antennas: gain, polarization (lin / rhcp / lhcp) and beamwidth (deg; 360 = omni)
   const ANTENNAS = {
     'dipole': { label: 'Dipole / whip, 2 dBi', g: 2, pol: 'lin', bw: 360 },
     'collinear': { label: 'Collinear omni, 5 dBi', g: 5, pol: 'lin', bw: 360 },
@@ -927,7 +927,7 @@
     'helical12': { label: 'Helical, RHCP, 12 dBi, 40° beam', g: 12, pol: 'rhcp', bw: 40 },
     'yagi15': { label: 'Yagi, 15 dBi, 30° beam', g: 15, pol: 'lin', bw: 30 },
   };
-  // polarisation loss between two antennas
+  // polarization loss between two antennas
   const polLoss = (a, b) => (!a || !b ? null : a === b ? 0 : a === 'lin' || b === 'lin' ? 3 : 25);
   const fspl = (km, mhz) => 20 * Math.log10(km) + 20 * Math.log10(mhz) + 32.44;
   function link(l, d) {
@@ -1521,7 +1521,7 @@
     return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  // flight path in local metres (east, north, up) from the first fix
+  // flight path in local meters (east, north, up) from the first fix
   function logTrack(log) {
     const g = findMsg(log, 'POS') && findMsg(log, 'POS').cols.includes('Lat') ? findMsg(log, 'POS') : findMsg(log, 'GPS');
     if (!g || !g.cols.includes('Lat')) return null;

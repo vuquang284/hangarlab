@@ -119,7 +119,7 @@ function designInputs() {
           ${sg.type === 'cruise' ? `<select data-k="mission.segs.${j}.dir" aria-label="Wind direction">${dirs.map(([k2, l]) => `<option value="${k2}"${k2 === (sg.dir || 'none') ? ' selected' : ''}>${l}</option>`).join('')}</select>` : ''}
           <button class="btn ghost sm" data-act="seg-up" data-i="${j}" aria-label="Move up"${j ? '' : ' disabled'}>↑</button><button class="btn ghost sm danger" data-act="seg-del" data-i="${j}" aria-label="Remove">×</button></div>`; }).join('')}
         <button class="btn sm" data-act="seg-add" style="margin-top:6px">+ Add segment</button></div>
-      <p class="hint">Climb and descend are in metres of height. Energy available = battery usable capacity (its unused part is the landing reserve), minus any extra reserve.</p>`, false);
+      <p class="hint">Climb and descend are in meters of height. Energy available = battery usable capacity (its unused part is the landing reserve), minus any extra reserve.</p>`, false);
   }
   if (!isSimple()) h += group('Electronics', `${num('becEff', 'BEC / regulator efficiency', { unit: '%' })}<p class="hint" id="avHint"></p>`, false);
   return h.replace('%%PROP%%', prop);
@@ -205,7 +205,7 @@ function misStatus(mp) {
   const cons = mp.consK > 1, lN = mp.avail - mp.total, lC = mp.avail - mp.totalCons, err = mp.rows.some((r) => r.err);
   if (err) return { st: 'crit', pill: 'Cannot fly', text: 'a segment is impossible (see the table)' };
   if (mp.ok) return { st: 'good', pill: 'Fits', text: `${leftTxt(cons ? lC : lN, mp.avail)} at landing${cons ? ', even with conservative power' : ''}` };
-  if (mp.okNominal) return { st: 'warn', pill: 'Tight', text: `${leftTxt(lN, mp.avail)} at landing; ${fmt(-lC, 0)} Wh short if power is ${fmt((mp.consK - 1) * 100, 0)} % higher than modelled` };
+  if (mp.okNominal) return { st: 'warn', pill: 'Tight', text: `${leftTxt(lN, mp.avail)} at landing; ${fmt(-lC, 0)} Wh short if power is ${fmt((mp.consK - 1) * 100, 0)} % higher than modeled` };
   return { st: 'crit', pill: 'Does not fit', text: `${leftTxt(lN, mp.avail)}: shorten the mission, fly slower or add battery` };
 }
 // logged cruise current vs what the model predicts at the same speed and weight
@@ -283,8 +283,8 @@ function finderDialog(kind, role) {
     rows.length ? `<p class="note" style="margin-top:0">Ranked by ${p.type === 'multirotor' ? 'hover' : p.type === 'vtol' ? 'mission cruise' : 'cruise'} endurance; now ${fmt(now, 1)} min. Options that break a limit are listed last with the reason.</p>
     <div class="tbl-wrap"><table class="mis"><thead><tr><th>Option</th><th class="n">Endurance</th><th class="n">AUW</th><th class="n"></th><th>Limits</th><th></th></tr></thead><tbody>
     ${rows.map((r, i) => `<tr${r.ok ? '' : ' style="opacity:.6"'}><td>${esc(r.label)}</td><td class="n">${fmt(r.end, 1)} min</td><td class="n">${fmt(r.auw / 1000, 2)} kg</td><td class="n">${r.info}</td><td>${r.ok ? '<span class="pill good">OK</span>' : `<span class="pill warn">${esc(r.why)}</span>`}</td><td><button class="btn sm" data-act="find-use" data-i="${i}">Use</button></td></tr>`).join('')}</tbody></table></div>
-    <p class="hint">${kind === 'mp' ? 'Pairs need a thrust test, or motor kV with prop size, to be modelled.' : 'Packs are tried 1–4 in parallel.'} Use applies it to the design (Undo works).</p>`
-      : '<p class="note">Nothing in the library can be modelled for this yet. Add motors with kV and props with a size, thrust tests, or battery packs.</p>',
+    <p class="hint">${kind === 'mp' ? 'Pairs need a thrust test, or motor kV with prop size, to be modeled.' : 'Packs are tried 1–4 in parallel.'} Use applies it to the design (Undo works).</p>`
+      : '<p class="note">Nothing in the library can be modeled for this yet. Add motors with kV and props with a size, thrust tests, or battery packs.</p>',
     '<button class="btn" data-act="dlg-close">Close</button>');
 }
 function regsDialog() {
@@ -299,7 +299,7 @@ function regsDialog() {
     : g < 900 ? 'C1 class (under 900 g): open category A1; operator registration, online pilot test, Remote ID.'
     : g < 4000 ? 'C2 class (under 4 kg): open category A2 with the A2 certificate, or A3 away from people; Remote ID.'
     : g < 25000 ? 'C3/C4 class (under 25 kg): open category A3 only (far from people and built-up areas); Remote ID for C3.'
-    : 'Over 25 kg: specific category with an operational authorisation (SORA).';
+    : 'Over 25 kg: specific category with an operational authorization (SORA).';
   openDlg(`Regulations for ${esc(p.name)}`, `<dl class="kv" style="margin-top:0"><dt>All-up weight</dt><dd>${fmt(g, 0)} g (${fmt(g / 453.592, 2)} lb)</dd>
     <dt>USA (FAA)</dt><dd><b>${us[0]}</b>: ${us[1]}</dd>
     <dt>EU (EASA)</dt><dd>${eu}</dd>

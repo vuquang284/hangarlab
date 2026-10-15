@@ -1,4 +1,4 @@
-// Flight Logs "3D map", modelled on Mission Planner / TitanPlanner's Map3D (re-implemented with three.js, no code copied):
+// Flight Logs "3D map", modeled on Mission Planner / TitanPlanner's Map3D (re-implemented with three.js, no code copied):
 // satellite imagery in rings of detail around home out to a hazy sky-blue horizon, terrain heights from the free AWS
 // Terrarium elevation tiles, a chase camera behind the vehicle, and an orange vehicle model that follows playback.
 
@@ -51,7 +51,7 @@ function m3Model(T, kind) {
   return g;
 }
 
-// CSS colour (hsl/rgb/hex) → '#rrggbb' that three understands
+// CSS color (hsl/rgb/hex) → '#rrggbb' that three understands
 const m3Css = (() => { let c; return (s) => { c = c || document.createElement('canvas').getContext('2d'); c.fillStyle = '#888'; c.fillStyle = s; return c.fillStyle; }; })();
 
 // ---- web-mercator tile maths ----
@@ -90,7 +90,7 @@ async function m3Terrain(la0, la1, lo0, lo1) {
   };
 }
 
-// one ring of imagery: an n×n block of tiles at zoom z centred on home, draped on the terrain and pushed back in
+// one ring of imagery: an n×n block of tiles at zoom z centered on home, draped on the terrain and pushed back in
 // depth by `level`, so the sharper rings win where they overlap
 async function m3Ring(T, ctx, z, n, level) {
   const { lat0, lng0, kx } = ctx;
@@ -142,7 +142,7 @@ function m3Detail(lat, lng) {
 }
 
 const M3_SKY = 0xaed9e6;
-let m3Aniso = 8; // hazy sky blue, the horizon colour Mission Planner fades its map into
+let m3Aniso = 8; // hazy sky blue, the horizon color Mission Planner fades its map into
 
 async function m3Build(host) {
   const T = await loadThree();
@@ -156,7 +156,7 @@ async function m3Build(host) {
   m3Aniso = renderer.capabilities.getMaxAnisotropy();
   host.innerHTML = ''; host.appendChild(renderer.domElement);
   const camera = new T.PerspectiveCamera(60, 1, 1, 400000);
-  // flight path coloured by mode
+  // flight path colored by mode
   const n = tr.e.length, step = Math.max(1, Math.floor(n / 6000)), pts = [], cols = [];
   let span = 20;
   for (let i = 0; i < n; i += step) {
