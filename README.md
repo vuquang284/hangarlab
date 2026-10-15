@@ -107,7 +107,7 @@ Requires Node.js (any current LTS) for the tools below. Run them from `hangarlab
 | `app-tour.js` | First-visit guided tour. |
 | `app-export.js` | Dialogs, export, checklist and Settings. |
 | `app-main.js` | Quick start, Compare tab, events and start-up. |
-| `_headers` | Cache headers for Cloudflare Pages. |
+| `_headers` | Cache headers for the live site. |
 | `test-fixtures.json` | Reference designs `test.js` checks the model against (not shipped in the app). |
 
 The `app-*.js` files are plain scripts that share one global scope, so their load order matters. It is listed in both `index.html` and `build.js`, and `app-main.js` must come last.
