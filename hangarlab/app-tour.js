@@ -17,22 +17,28 @@ const TOUR = [
 let tourStep = -1;
 
 function tourStart() {
+  // wait until the page is on screen and laid out (a background tab or a pane still opening has no sizes yet)
+  const head = document.querySelector('#projSel');
+  if (document.visibilityState !== 'visible' || !head || !head.getBoundingClientRect().width) {
+    if ((tourStart.tries = (tourStart.tries || 0) + 1) < 40) setTimeout(tourStart, 250);
+    return;
+  }
   if (S.tab !== 'design') { S.tab = 'design'; save(); render(); }
   document.querySelectorAll('details.group').forEach((d) => { d.open = true; });
   tourShow(0);
 }
-function tourEnd() {
+function tourEnd(seen = true) {
   tourStep = -1;
   $('#tourLayer')?.remove();
-  S.settings.tourDone = true; save();
+  if (seen) { S.settings.tourDone = true; save(); } // only once someone has actually gone through or skipped it
 }
 function tourShow(i) {
   if (i < 0) i = 0;
-  if (i >= TOUR.length) return tourEnd();
+  if (i >= TOUR.length) return tourEnd(tourStep >= 0);
   // skip steps whose control is not on screen (e.g. a narrow window)
   let st = TOUR[i], el = document.querySelector(st.sel);
   if (el && st.parent) el = el.parentElement;
-  if (!el || !el.getClientRects().length) return tourShow(i + (i >= tourStep ? 1 : -1));
+  if (!el || !el.getBoundingClientRect().width) return tourShow(i + (i >= tourStep ? 1 : -1));
   tourStep = i;
   el.scrollIntoView({ block: 'center', behavior: 'instant' });
   let layer = $('#tourLayer');
