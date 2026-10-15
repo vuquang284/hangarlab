@@ -411,6 +411,14 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
   dialog { width: calc(100vw - 16px) !important; max-width: none !important; }
 }
 
+.more-ro { margin-top: 10px; }
+.more-ro > summary { cursor: pointer; font: 600 14px var(--display); color: var(--muted); padding: 4px 0 8px; }
+.more-ro > summary:hover { color: var(--accent); }
+.wiz-dots { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.wiz-dots span { font: 600 12px var(--body); color: var(--faint); padding: 3px 8px; border-radius: 10px; border: 1px solid var(--line); }
+.wiz-dots span.on { color: var(--accent); border-color: var(--accent); }
+.wiz-dots span.done { color: var(--muted); }
+
 /* flight log viewer */
 #lvMap { position: relative; z-index: 0; isolation: isolate; } /* keeps Leaflet's panes under the sticky header */
 .lv { display: grid; grid-template-columns: minmax(240px, 300px) minmax(0, 1fr); gap: 16px; align-items: start; }
@@ -1407,6 +1415,37 @@ var uPlot=function(){"use strict";const l="u-off",e="u-label",t="width",n="heigh
   };
   const POL = { same: { label: 'Matched', db: 0 }, cl: { label: 'Circular ↔ linear', db: 3 }, cross: { label: 'Linear, 90° misaligned', db: 20 }, lr: { label: 'LHCP ↔ RHCP', db: 25 } };
 
+  // radio presets: datasheet TX power and sensitivity (check yours: firmware and air rate change them)
+  const AIRMAX = [ // Ubiquiti airMAX ac (Rocket 5AC Lite datasheet): data rate trades sensitivity
+    ['1x BPSK 1/2', 27, -96], ['2x QPSK 1/2', 27, -95], ['2x QPSK 3/4', 27, -92], ['4x 16QAM 1/2', 27, -90], ['4x 16QAM 3/4', 27, -86],
+    ['6x 64QAM 2/3', 27, -83], ['6x 64QAM 3/4', 26, -77], ['6x 64QAM 5/6', 25, -74], ['8x 256QAM 3/4', 23, -69], ['8x 256QAM 5/6', 22, -65],
+  ];
+  const RADIOS = {
+    'rfd900x': { label: 'RFD900x (64 kbps air rate)', mhz: 915, tx: 30, sens: -121 },
+    'elrs24-500': { label: 'ExpressLRS 2.4 GHz, 500 Hz', mhz: 2440, tx: 24, sens: -105 },
+    'elrs24-250': { label: 'ExpressLRS 2.4 GHz, 250 Hz', mhz: 2440, tx: 24, sens: -108 },
+    'elrs24-150': { label: 'ExpressLRS 2.4 GHz, 150 Hz', mhz: 2440, tx: 24, sens: -112 },
+    'elrs24-50': { label: 'ExpressLRS 2.4 GHz, 50 Hz', mhz: 2440, tx: 24, sens: -115 },
+    'elrs24-1w': { label: 'ExpressLRS 2.4 GHz, 1 W module (e.g. Ranger Micro), 150 Hz', mhz: 2440, tx: 30, sens: -112 },
+    'elrs900-200': { label: 'ExpressLRS 900 MHz, 200 Hz', mhz: 915, tx: 27, sens: -112 },
+    'elrs900-50': { label: 'ExpressLRS 900 MHz, 50 Hz', mhz: 915, tx: 27, sens: -123 },
+    'crossfire': { label: 'TBS Crossfire, 150 Hz', mhz: 915, tx: 30, sens: -117 },
+    'rocket-ac': { label: 'Ubiquiti Rocket 5AC Lite (airMAX ac)', mhz: 5800, airmax: 27 },
+    'bullet-ac': { label: 'Ubiquiti Bullet AC (airMAX ac)', mhz: 5800, airmax: 25 },
+    'vtx58': { label: 'Analog 5.8 GHz video, 400 mW', mhz: 5800, tx: 26, sens: -90 },
+  };
+  // antennas: gain, polarisation (lin / rhcp / lhcp) and beamwidth (deg; 360 = omni)
+  const ANTENNAS = {
+    'dipole': { label: 'Dipole / whip, 2 dBi', g: 2, pol: 'lin', bw: 360 },
+    'collinear': { label: 'Collinear omni, 5 dBi', g: 5, pol: 'lin', bw: 360 },
+    'mushroom': { label: 'Mushroom (cloverleaf) omni, RHCP, 3.7 dBi', g: 3.71, pol: 'rhcp', bw: 360 },
+    'patch8': { label: 'Patch, 8 dBi, 60° beam', g: 8, pol: 'lin', bw: 60 },
+    'panel14cp': { label: 'Flat panel, RHCP, 14 dBi, 40° beam', g: 14, pol: 'rhcp', bw: 40 },
+    'helical12': { label: 'Helical, RHCP, 12 dBi, 40° beam', g: 12, pol: 'rhcp', bw: 40 },
+    'yagi15': { label: 'Yagi, 15 dBi, 30° beam', g: 15, pol: 'lin', bw: 30 },
+  };
+  // polarisation loss between two antennas
+  const polLoss = (a, b) => (!a || !b ? null : a === b ? 0 : a === 'lin' || b === 'lin' ? 3 : 25);
   const fspl = (km, mhz) => 20 * Math.log10(km) + 20 * Math.log10(mhz) + 32.44;
   function link(l, d) {
     const pol = (POL[l.pol] || POL.same).db;
@@ -2102,7 +2141,7 @@ var uPlot=function(){"use strict";const l="u-off",e="u-label",t="width",n="heigh
   G.UAS = {
     g0, RHO0, CELL, LAYOUTS, BANDS, POL, MATERIALS, RAIL_V, COAX_THRUST,
     rhoAt, battery, packOf, curve, dragBuildup, oswald, FINISH, CONSERVATIVE, DEFAULT_K, motorCanMm, combo, parseAPC, parsePropTable, propCoef, drive, drivePower, sizeOf, splitSets, propulsion, payloadSweep, fullBom, consolidate, costOf, cgOf, missionPlan, SEG, enduranceOf, fwDrag, mrForward, massOf, autoRows, avionicsPower, compute, batterySweep,
-    powerPlan, pickWire, pickConn, CONNECTORS, WIRE, link, fspl, radioHorizonKm, rfConflicts,
+    powerPlan, pickWire, pickConn, AIRMAX, RADIOS, ANTENNAS, polLoss, CONNECTORS, WIRE, link, fspl, radioHorizonKm, rfConflicts,
     rankMaterials, partMass, partShell, parseSTL, stlStats,
     parseBin, parseText, parseCSV, logModes, logSummary, logFirmware, logHealth, apParams, modeCruise, VTOL_DEF, missionFromLog, coldFactor, gpsTrack, sampleLog, findMsg, interp, logEvents, logParams, logTrack, evalExpr, idxAt, ERR_SUBSYS, EV_IDS,
   };
@@ -2437,7 +2476,8 @@ function migrate(s) {
   }
   for (const p of s.projects) if (p.fw && p.fw.drag && !p.fw.drag.finish) p.fw.drag.finish = 'foam';
   for (const p of s.projects) if (p.fw && p.fw.drag && !p.fw.drag.pods) p.fw.drag.pods = { mode: 'auto' };
-  s.settings = Object.assign({ calc: { cons: 1.2, defK: 1.25, learn: true }, logs: { speed: 10, view: '3d' }, backups: { on: true }, quickstart: true, currency: '$', adv: { on: false, conns: '', wire: '' }, newDesign: { usable: 80, alt: 0, temp: 15 } }, s.settings || {});
+  const hadSettings = !!s.settings && s.settings.detail == null && s.projects.length > 0; // existing users keep every input
+  s.settings = Object.assign({ calc: { cons: 1.2, defK: 1.25, learn: true }, logs: { speed: 10, view: '3d' }, backups: { on: true }, quickstart: true, detail: 'simple', currency: '$', adv: { on: false, conns: '', wire: '' }, newDesign: { usable: 80, alt: 0, temp: 15 } }, s.settings || {});
   s.projects.forEach(fixDesign);
   for (const r of (s.lib.parts || []).concat(...s.projects.map((p) => p.bom || []))) if (r.rf === 'gnss') r.rf = '';
   const ad = s.settings.adv = s.settings.adv || { on: false };
@@ -2450,6 +2490,7 @@ function migrate(s) {
   for (const p of s.projects) delete p.servos; // servo sizing was removed
   // the built-in example packs were trimmed to three; drop the retired ones once (designs keep their own pack values)
   if (!s.lib.batPruned) { const old = ['6s5000', '4s5000', '6s4000', 'p45b-6s2p', 'p45b-6s4p']; s.lib.batteries = (s.lib.batteries || []).filter((x) => !old.includes(x.id)); s.lib.batPruned = 1; }
+  if (hadSettings) s.settings.detail = 'detailed';
   s.massView = s.massView || 'edit';
   s.bomSel = s.bomSel || [];
   return s;
@@ -2804,6 +2845,9 @@ function finderRow(p, key) {
   const prev = finderPrev[`${p.id}:${key}`];
   return `<div class="row wide" style="gap:6px"><button class="btn sm" data-act="${key === 'bat' ? 'find-bat' : 'find-mp'}" data-role="${key}" title="Tries every option in your library on this design">${label}</button>${prev ? `<button class="btn sm ghost" data-act="find-undo" data-key="${key}" title="Back to ${esc(prev.label)}">Undo pick</button>` : ''}</div>`;
 }
+// in Simple mode only the inputs most designs need are shown; everything else keeps its value
+const isSimple = () => S.settings.detail === 'simple';
+const adv = (html) => (isSimple() ? '' : html);
 function designInputs() {
   const p = P(), t = p.type;
   const bat = U.battery(p.batt);
@@ -2829,10 +2873,10 @@ function designInputs() {
     ${num('batt.cellMah', 'Cell capacity', { unit: 'mAh', step: 100, min: 1 })}
     ${num('batt.g', 'Weight per pack', { unit: 'g', min: 1 })}
     ${num('batt.c', 'Continuous C', { unit: 'C' })}
-    ${num('batt.cPeak', `Peak C ${tip('Burst rating from the datasheet (usually for ~10 s). Leave 0 if unknown: full throttle is then checked against the continuous rating.')}`, { unit: 'C', min: 0 })}
-    ${num('batt.usable', 'Usable capacity', { unit: '%', min: 10, max: 100 })}
+    ${adv(num('batt.cPeak', `Peak C ${tip('Burst rating from the datasheet (usually for ~10 s). Leave 0 if unknown: full throttle is then checked against the continuous rating.')}`, { unit: 'C', min: 0 }))}
+    ${adv(num('batt.usable', 'Usable capacity', { unit: '%', min: 10, max: 100 }))}
     ${num('batt.packs', 'Packs on board', { min: 1, step: 1 })}
-    ${sel('batt.conn', 'Packs wired in', [['parallel', 'Parallel (more capacity)'], ['series', 'Series (more voltage)']])}
+    ${adv(sel('batt.conn', 'Packs wired in', [['parallel', 'Parallel (more capacity)'], ['series', 'Series (more voltage)']]))}
     <p class="hint" id="batHint"></p>
     ${finderRow(p, 'bat')}`);
   h += group('Payload', `
@@ -2846,19 +2890,20 @@ function designInputs() {
       ${num('mr.n', 'Motors', { step: 1, min: 1 })}
       ${propPick('mr', bat.V)}
       ${finderRow(p, 'mr')}
-      ${num('mr.escA', 'ESC rating', { unit: 'A' })}
+      ${adv(`${num('mr.escA', 'ESC rating', { unit: 'A' })}
       ${num('mr.maxThr', `Payload limit ${tip('Extra payload is counted until hover throttle reaches this value.')}`, { unit: '% thr' })}
       ${t === 'multirotor' ? num('mr.cda', 'Frame drag area CdA', { unit: 'm²', step: 0.01 }) : ''}
-      ${t === 'multirotor' ? num('mr.lean', `Max lean angle ${tip('ArduPilot ANGLE_MAX (default 30°). Top speed and wind limit stop where the frame would need to tilt further than this.')}`, { unit: '°', step: 1, min: 5 }) : ''}
+      ${t === 'multirotor' ? num('mr.lean', `Max lean angle ${tip('ArduPilot ANGLE_MAX (default 30°). Top speed and wind limit stop where the frame would need to tilt further than this.')}`, { unit: '°', step: 1, min: 5 }) : ''}`)}
 `);
   }
   if (t === 'fixedwing' || t === 'vtol') {
     const shared = t === 'vtol' && p.vtol.kind !== 'quadplane';
     h += group('Wing & aero', `
       ${sel('_airframe', 'Load airframe', [['', 'Choose an airframe…']].concat(S.lib.airframes.map((a) => [a.id, a.name + (a.area ? '' : ' (no area)')])), { wide: true })}
+      ${num('fw.vc', 'Cruise speed', { unit: 'm/s', min: 1 })}
       ${num('fw.span', 'Wingspan', { unit: 'm', imp: 'in', step: 0.01, min: 0.05 })}
       ${num('fw.area', 'Wing area', { unit: 'm²', step: 0.001, min: 0.005 })}
-      ${sel('fw.drag.mode', 'Parasite drag', [['buildup', 'Build up from geometry'], ['cd0', 'Fixed CD0']], { wide: true, rebuild: true })}
+      ${adv(`${sel('fw.drag.mode', 'Parasite drag', [['buildup', 'Build up from geometry'], ['cd0', 'Fixed CD0']], { wide: true, rebuild: true })}
       ${(p.fw.drag || {}).mode === 'buildup' ? `
         ${sel('fw.drag.finish', 'Construction / surface', Object.entries(U.FINISH).map(([k, v]) => [k, v.label]), { wide: true })}
         ${sel('fw.drag.mount', `Cruise motor placement ${tip('Sets which drag the motors add. On the wing: each motor gets a pod (sized from the motor in Motor pods), and the wing behind each prop sits in faster prop wash, adding friction drag. In the nose or as a pusher: no pods, and only part of the fuselage is in the wash. Auto picks on the wing for 2 or more cruise motors, nose for 1.')}`, [['auto', 'Auto (2+ motors on wing, 1 in nose)'], ['wing', 'Tractor on wing'], ['nose', 'Tractor in nose'], ['pusher', 'Pusher']], { wide: true })}
@@ -2875,30 +2920,29 @@ function designInputs() {
         ${p.fw.drag.eAuto === false ? num('fw.e', 'Oswald efficiency e', { step: 0.01 }) : ''}
         <p class="hint" id="dragHint"></p>` : `${num('fw.cd0', 'Parasite drag CD0', { step: 0.001 })}${num('fw.e', 'Oswald efficiency e', { step: 0.01 })}`}
       ${num('fw.clmax', 'CL max', { step: 0.05 })}
-      ${num('fw.vc', 'Cruise speed', { unit: 'm/s', min: 1 })}
       ${num('fw.etaP', 'Prop efficiency', { unit: '%' })}
-      ${num('fw.etaD', 'Motor + ESC eff.', { unit: '%' })}
+      ${num('fw.etaD', 'Motor + ESC eff.', { unit: '%' })}`)}
       ${t === 'fixedwing' ? num('fw.vsMax', 'Max stall speed', { unit: 'm/s' }) : ''}
       ${(p.fw.drag || {}).mode === 'buildup' ? '' : '<p class="hint">Typical CD0: glider 0.02, FPV wing 0.03, ISR plane 0.05–0.07.</p>'}`);
-    if (!shared) prop += group(t === 'fixedwing' ? 'Propulsion' : 'Cruise propulsion', `${propPick('fw', bat.V)}${finderRow(p, 'fw')}${num('fw.n', 'Cruise motors', { step: 1, min: 1 })}${chk('fw.propOther', 'My actual prop differs from this data (−15 % prop efficiency)')}`);
-    h += group('Calibrate from flight', `
+    if (!shared) prop += group(t === 'fixedwing' ? 'Propulsion' : 'Cruise propulsion', `${propPick('fw', bat.V)}${finderRow(p, 'fw')}${num('fw.n', 'Cruise motors', { step: 1, min: 1 })}${adv(chk('fw.propOther', 'My actual prop differs from this data (−15 % prop efficiency)'))}`);
+    if (!isSimple()) h += group('Calibrate from flight', `
       ${chk('fw.cal.on', 'Scale the drag model to a measured cruise point', { rebuild: true })}
       ${p.fw.cal.on ? `${chk('fw.cal.learn', 'Real measurement of this aircraft: use it to improve estimates for other designs')}${num('fw.cal.v', 'Measured airspeed', { unit: 'm/s' })}${num('fw.cal.a', 'Propulsion current', { unit: 'A' })}${num('fw.cal.g', 'Weight at test', { unit: 'g' })}<p class="hint" id="calHint"></p>` : '<p class="hint">Optional: anchor the model to a measured cruise point.</p>'}`, p.fw.cal.on);
   }
   if (t === 'vtol') {
     h += group('VTOL mission', `
       ${num('vtol.hoverS', `Hover time per sortie ${tip('Vertical take-off, landing and any hovering. Transitions are counted separately below.')}`, { unit: 's' })}
-      ${num('vtol.transitions', `Transitions per sortie ${tip('Usually 2: one to forward flight after take-off and one back before landing.')}`, { step: 1, min: 0 })}
+      ${adv(`${num('vtol.transitions', `Transitions per sortie ${tip('Usually 2: one to forward flight after take-off and one back before landing.')}`, { step: 1, min: 0 })}
       ${num('vtol.accel', `Transition acceleration ${tip('How fast it speeds up from hover to flying speed. Typical: quadplane 1 m/s², tilt-rotor 1.5, tailsitter 2.5. Faster = less energy spent half-hovering.')}`, { unit: 'm/s²', min: 0.1, step: 0.1 })}
       ${num('vtol.hoverPen', `Hover thrust penalty ${tip('Extra thrust needed in hover because the airframe sits in the prop wash. Typical: quadplane 3 % (booms), tilt-rotor 8 % (wing under the rotors), tailsitter 6 % (wash along the wing).')}`, { unit: '%', min: 0, step: 1 })}
       ${num('vtol.reserve', `Extra reserve ${tip('On top of the battery usable capacity, which already keeps a landing reserve. Usually 0.')}`, { unit: '%', min: 0 })}
-      ${p.vtol.kind === 'quadplane' ? num('vtol.dcd0', 'Stopped-rotor ΔCD0', { step: 0.001 }) : ''}
+      ${p.vtol.kind === 'quadplane' ? num('vtol.dcd0', 'Stopped-rotor ΔCD0', { step: 0.001 }) : ''}`)}
       <p class="hint" id="vtolHint"></p>`);
   }
   {
     const M = p.mission, mu = (u) => (u === 'm' ? 'm>ft' : u === 'km' ? 'km>mi' : '');
     const dirs = [['none', 'Still air'], ['head', 'Headwind'], ['tail', 'Tailwind'], ['cross', 'Crosswind']];
-    h += group('Mission & wind', `
+    if (!isSimple()) h += group('Mission & wind', `
       ${num('mission.wind', 'Wind speed', { unit: 'm/s', min: 0 })}
       ${num('mission.reserve', `Extra reserve ${tip('On top of the battery usable capacity, which already keeps a landing reserve. Usually 0.')}`, { unit: '%', min: 0, max: 90 })}
       ${num('mission.climb', 'Climb rate', { unit: 'm/s', min: 0.1 })}
@@ -2912,7 +2956,7 @@ function designInputs() {
         <button class="btn sm" data-act="seg-add" style="margin-top:6px">+ Add segment</button></div>
       <p class="hint">Climb and descend are in metres of height. Energy available = battery usable capacity (its unused part is the landing reserve), minus any extra reserve.</p>`, false);
   }
-  h += group('Electronics', `${num('becEff', 'BEC / regulator efficiency', { unit: '%' })}<p class="hint" id="avHint"></p>`, false);
+  if (!isSimple()) h += group('Electronics', `${num('becEff', 'BEC / regulator efficiency', { unit: '%' })}<p class="hint" id="avHint"></p>`, false);
   return h.replace('%%PROP%%', prop);
 }
 
@@ -3101,9 +3145,9 @@ function regsDialog() {
     '<button class="btn" data-act="dlg-close">Close</button>');
 }
 function renderDesign(el) {
-  el.innerHTML = `<div class="bench"><aside class="side">${sideTools}${designInputs()}</aside>
+  el.innerHTML = `<div class="bench"><aside class="side"><div class="row" style="justify-content:space-between;margin-bottom:8px"><div class="seg" role="group" aria-label="Input detail"><button data-detail="simple" aria-pressed="${isSimple()}" title="The inputs most designs need">Simple</button><button data-detail="detailed" aria-pressed="${!isSimple()}" title="Every input: drag build-up, calibration, mission, electronics">Detailed</button></div>${sideTools}</div>${designInputs()}</aside>
     <section class="stack">
-      <div class="readouts" id="readouts"></div>
+      <div id="readouts"></div>
       <div class="card"><div class="card-h"><h2>Checks</h2><div class="row"><p id="chkCount" style="margin:0">Updated as you type</p><button class="btn sm ghost" data-act="regs">Regulations</button></div></div><div class="checks" id="checks"></div></div>
       <div class="card"><div class="card-h"><h2>Flight history</h2><p>Save flights from the Flight Logs tab</p></div><div id="flights"></div></div>
       <div class="card"><div class="card-h"><h2>Mission profile</h2><p id="misNote">Set segments under Mission &amp; wind</p></div><div id="mission"></div></div>
@@ -3121,7 +3165,13 @@ function renderDesign(el) {
 function liveDesign() {
   const p = P(), R = U.compute(p, S.lib);
   const mp = U.missionPlan(p, S.lib, R);
-  $('#readouts').innerHTML = designReadouts(p, R) + missionReadouts(p, R, mp);
+  {
+    // key results in one row; the rest under "More results" (open/closed is remembered)
+    const tmp = document.createElement('div'); tmp.innerHTML = designReadouts(p, R) + missionReadouts(p, R, mp);
+    const all = [...tmp.children], key = all.filter((x) => x.classList.contains('key')), rest = all.filter((x) => !x.classList.contains('key'));
+    const open = !!(S.ui && S.ui.moreRo);
+    $('#readouts').innerHTML = `<div class="readouts">${key.map((x) => x.outerHTML).join('')}</div>${rest.length ? `<details class="more-ro"${open ? ' open' : ''}><summary>More results <span class="faint">(${rest.length})</span></summary><div class="readouts">${rest.map((x) => x.outerHTML).join('')}</div></details>` : ''}`;
+  }
   missionCard(p, mp);
   flightsCard(p, R);
   const nBad = R.checks.filter((c) => c.level === 'crit').length, nWarn = R.checks.filter((c) => c.level === 'warn').length;
@@ -3254,6 +3304,9 @@ function syncLib() {
 }
 const money = (v, d = 2) => (fin(v) && v ? `${esc(S.settings.currency || '$')}${fmt(v, d)}` : '<span class="faint">—</span>');
 const libPill = (i) => `<button class="libpill" data-act="bom-unlink" data-i="${i}" title="Linked to the library: values come from the library item, and edits here update it (and every design that uses it). Click to unlink this row.">LIB</button>`;
+
+// remember whether "More results" is open
+document.addEventListener('toggle', (e) => { if (e.target.classList && e.target.classList.contains('more-ro')) { S.ui = S.ui || {}; S.ui.moreRo = e.target.open; save(); } }, true);
 
 </script>
 <script>
@@ -3483,8 +3536,16 @@ function renderRF(el) {
         ${num(`${k}.loss`, 'Cable + connector', { unit: 'dB' })}${num(`${k}.sens`, 'RX sensitivity', { unit: 'dBm' })}
         ${sel(`${k}.pol`, 'Polarization', Object.entries(U.POL).map(([a, b]) => [a, b.label]))}
       </div>
+      <div class="fields" style="grid-template-columns:repeat(auto-fill,minmax(210px,1fr));padding:8px 0 0">
+        ${sel(`${k}.preset`, `Radio preset ${tip('Fills frequency, TX power and sensitivity from the datasheet. Edit them afterwards if your firmware or air rate differs.')}`, [['', 'Custom']].concat(Object.entries(U.RADIOS).map(([a, b]) => [a, b.label])), { rebuild: true })}
+        ${U.RADIOS[x.l.preset] && U.RADIOS[x.l.preset].airmax ? sel(`${k}.rate`, `Data rate ${tip('airMAX ac: higher data rates need a stronger signal (worse sensitivity) and the radio lowers its TX power. Pick the rate you need for video.')}`, U.AIRMAX.map((r, i) => [String(i), `${r[0]} · ${Math.min(r[1], U.RADIOS[x.l.preset].airmax)} dBm · ${r[2]} dBm`]), { rebuild: true }) : ''}
+        ${sel(`${k}.txAnt`, 'Aircraft antenna', [['', 'Custom']].concat(Object.entries(U.ANTENNAS).map(([a, b]) => [a, b.label])), { rebuild: true })}
+        ${sel(`${k}.rxAnt`, 'Ground antenna', [['', 'Custom']].concat(Object.entries(U.ANTENNAS).map(([a, b]) => [a, b.label])), { rebuild: true })}
+      </div>
       <dl class="kv" style="margin-top:12px" id="${k}-out"></dl>
       <p class="note" id="${k}-ant" style="margin:10px 0 0"></p>
+      <div class="checks" id="${k}-geo" style="margin-top:8px"></div>
+      <details class="rf-math" style="margin-top:8px"><summary>Path loss, step by step</summary><div id="${k}-math"></div></details>
       ${x.manual != null ? `<button class="btn ghost sm danger" data-act="rf-del" data-i="${x.manual}" style="margin-top:8px">Remove link</button>` : ''}
     </div>`;
   };
@@ -3522,6 +3583,39 @@ function liveRF() {
       <dt>λ/4 monopole · λ/2 dipole</dt><dd>${fmt(r.quarterMm, 1)} · ${fmt(r.halfMm, 1)} mm</dd>`;
     const ant = document.getElementById(`${x.key}-ant`);
     if (ant) ant.innerHTML = `<b>Antenna:</b> ${esc(r.ant)}${r.fres60 > d.gndH ? ` Fresnel zone (${fmt(r.fres60, 1)} m) is larger than the ground antenna height; raise it or expect ground losses.` : ''}`;
+    // geometry checks: directional ground antenna beam, omni nulls overhead, the other band for comparison
+    const geo = [], h = d.alt - d.gndH, elev = (Math.atan2(h, d.dist * 1000) * 180) / Math.PI;
+    const ra = U.ANTENNAS[x.l.rxAnt], ta = U.ANTENNAS[x.l.txAnt];
+    if (ra && ra.bw < 360) {
+      const wide = 2 * d.dist * 1000 * Math.tan((ra.bw / 2) * Math.PI / 180), inside = elev <= ra.bw / 2;
+      const near = h / Math.tan((ra.bw / 2) * Math.PI / 180);
+      geo.push([inside ? 'good' : 'warn', `Ground ${ra.label.split(',')[0].toLowerCase()} (${ra.bw}° beam): ${fmt(wide, 0)} m wide at ${fmt(d.dist, 1)} km, so the drone must stay in that corridor or the antenna needs a tracker. Closer than ${fmt(near, 0)} m at ${fmt(h, 0)} m height it is above the beam.`]);
+    }
+    if ((!ta || ta.bw === 360) && h > 0) {
+      const r60 = h / Math.tan(Math.PI / 3);
+      geo.push([elev > 60 ? 'crit' : 'info', `Aircraft omni antenna: weak straight down/up (null). Within ${fmt(r60, 0)} m of the ground station at ${fmt(h, 0)} m height the drone is more than 60° overhead and the link can fade; avoid passing directly over it.`]);
+    }
+    const pl = U.polLoss(ta && ta.pol, ra && ra.pol);
+    if (pl != null && pl !== (U.POL[x.l.pol] || U.POL.same).db) geo.push(['warn', `Antenna polarisations (${ta.pol.toUpperCase()} ↔ ${ra.pol.toUpperCase()}) mean a ${pl} dB loss; the Polarization field says ${(U.POL[x.l.pol] || U.POL.same).db} dB.`]);
+    if (x.l.mhz > 2000) {
+      const other = x.l.mhz > 4000 ? 2440 : 5800, ro2 = U.link(Object.assign({}, x.l, { mhz: other }), d);
+      geo.push(['info', `Same radio and antennas at ${other > 4000 ? '5.8' : '2.4'} GHz: ${fmt(ro2.margin, 1)} dB margin (${ro2.margin >= r.margin ? '+' : ''}${fmt(ro2.margin - r.margin, 1)} dB), max range ${fmt(ro2.maxKm, 1)} km. 2.4 GHz reaches further and gets through obstacles better; 5.8 GHz has more channel bandwidth for video.`]);
+    }
+    const ge = document.getElementById(`${x.key}-geo`);
+    if (ge) ge.innerHTML = geo.map(([lv, msg]) => `<div class="chk"><span class="pill ${lv}">${{ good: 'OK', warn: 'Check', crit: 'Fix', info: 'Note' }[lv]}</span><span>${esc(msg)}</span></div>`).join('');
+    // FSPL = 20·log10(d) + 20·log10(f) + 20·log10(4π/c), then the link budget around it
+    const slm = r.slant * 1000, fHz = x.l.mhz * 1e6, t1 = 20 * Math.log10(slm), t2 = 20 * Math.log10(fHz), t3 = 20 * Math.log10((4 * Math.PI) / 299792458);
+    const mt = document.getElementById(`${x.key}-math`);
+    if (mt) mt.innerHTML = `<dl class="kv" style="margin-top:8px;font-size:12.5px">
+      <dt>20·log₁₀(d), d = ${fmt(slm, 0)} m slant</dt><dd>${fmt(t1, 2)} dB</dd>
+      <dt>20·log₁₀(f), f = ${fmt(x.l.mhz, 0)} MHz</dt><dd>${fmt(t2, 2)} dB</dd>
+      <dt>20·log₁₀(4π/c)</dt><dd>${fmt(t3, 2)} dB</dd>
+      <dt><b>Free-space path loss</b></dt><dd><b>${fmt(t1 + t2 + t3, 2)} dB</b></dd>
+      <dt>− TX antenna gain</dt><dd>−${fmt(x.l.txG, 2)} dB</dd><dt>− RX antenna gain</dt><dd>−${fmt(x.l.rxG, 2)} dB</dd>
+      <dt>Net path loss</dt><dd>${fmt(t1 + t2 + t3 - x.l.txG - x.l.rxG, 2)} dB</dd>
+      <dt>TX power − cable − polarisation</dt><dd>${fmt(x.l.tx, 1)} − ${fmt(x.l.loss, 1)} − ${fmt(r.polDb, 1)} dBm</dd>
+      <dt>Received level</dt><dd>${fmt(x.l.tx - x.l.loss - r.polDb - (t1 + t2 + t3 - x.l.txG - x.l.rxG), 2)} dBm</dd>
+      <dt>Sensitivity</dt><dd>${fmt(x.l.sens, 1)} dBm</dd><dt><b>Margin</b></dt><dd><b>${fmt(r.margin, 2)} dB</b></dd></dl>`;
     data.push(xs.map((km) => U.link(x.l, { dist: km, alt: d.alt, gndH: d.gndH, fade: d.fade }).margin));
     ser.push({ label: x.name, color: cssv(`--c${(i % 8) + 1}`) });
   });
@@ -5158,6 +5252,75 @@ document.addEventListener('dblclick', (e) => { if (!m3 || e.target !== m3.render
 
 </script>
 <script>
+// HangarLab UI: "New design" wizard: type → battery → motor + prop → payload & airframe.
+// Starts from the matching example design (so every advanced field has a sensible value) and applies the choices.
+'use strict';
+
+let wiz = null;
+const WIZ_STEPS = ['Type', 'Battery', 'Motor + prop', 'Payload'];
+function wizRead() {
+  const v = (id) => { const el = $('#' + id); return el ? (el.type === 'checkbox' ? el.checked : el.value) : undefined; };
+  for (const [k, id, num] of [['name', 'wz-name'], ['kind', 'wz-kind'], ['bat', 'wz-bat'], ['packs', 'wz-packs', 1], ['motor', 'wz-motor'], ['prop', 'wz-prop'], ['auto', 'wz-auto'], ['payload', 'wz-payload', 1], ['airframe', 'wz-af']]) {
+    const x = v(id);
+    if (x !== undefined) wiz[k] = num ? +x || 0 : x;
+  }
+}
+function wizard(step) {
+  if (!wiz) return;
+  if ($('#dlg').open) wizRead();
+  wiz.step = Math.max(0, Math.min(3, step));
+  const opt = (list, cur, none) => (none ? `<option value="">${none}</option>` : '') + list.map((x) => `<option value="${esc(x.id)}"${x.id === cur ? ' selected' : ''}>${esc(x.name)}</option>`).join('');
+  const st = wiz.step;
+  const body = [
+    `<label class="f"><span>Name</span><input type="text" id="wz-name" value="${esc(wiz.name)}"></label>
+     <div class="f"><span>What are you building?</span><div class="seg" role="group">${Object.entries(TYPE_LABEL).map(([k, l]) => `<button data-wiztype="${k}" aria-pressed="${wiz.type === k}">${l}</button>`).join('')}</div></div>
+     ${wiz.type === 'vtol' ? `<label class="f"><span>VTOL type</span><select id="wz-kind">${[['quadplane', 'Quadplane (separate lift + cruise motors)'], ['tiltrotor', 'Tilt-rotor'], ['tailsitter', 'Tailsitter']].map(([k, l]) => `<option value="${k}"${k === wiz.kind ? ' selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}`,
+    `<label class="f"><span>Battery pack</span><select id="wz-bat">${opt(S.lib.batteries, wiz.bat, 'Keep the example pack')}</select></label>
+     <label class="f"><span>Packs on board (in parallel)</span><input type="number" id="wz-packs" value="${wiz.packs}" min="1" step="1"></label>
+     <p class="hint">Packs come from Parts Library → Battery packs. Add yours there first, or keep the example and edit it later.</p>`,
+    `<label class="f check"><input type="checkbox" id="wz-auto"${wiz.auto ? ' checked' : ''}> Pick the best motor + prop from my library for me</label>
+     <label class="f"><span>Motor</span><select id="wz-motor">${opt(S.lib.motors, wiz.motor, 'Keep the example motor')}</select></label>
+     <label class="f"><span>Prop</span><select id="wz-prop">${opt(S.lib.props, wiz.prop, 'Keep the example prop')}</select></label>
+     <p class="hint">With the box ticked, every motor + prop pair in the library is tried on the finished design and the longest-flying one within its limits is used. Your picks above are then ignored.</p>`,
+    `<label class="f"><span>Payload mass (g)</span><input type="number" id="wz-payload" value="${wiz.payload}" min="0" step="10"></label>
+     ${wiz.type !== 'multirotor' ? `<label class="f"><span>Airframe</span><select id="wz-af">${opt(S.lib.airframes, wiz.airframe, 'Keep the example wing')}</select></label>` : ''}
+     <p class="hint">Everything can be changed afterwards on the Performance tab.</p>`,
+  ][st];
+  openDlg(`New design · ${st + 1} of 4: ${WIZ_STEPS[st]}`, `<div class="wiz-dots">${WIZ_STEPS.map((s, i) => `<span class="${i === st ? 'on' : i < st ? 'done' : ''}">${i + 1}. ${s}</span>`).join('')}</div>${body}`,
+    `<button class="btn" data-act="dlg-close">Cancel</button>${st ? `<button class="btn" data-act="wiz" data-step="${st - 1}">Back</button>` : ''}${st < 3 ? `<button class="btn primary" data-act="wiz" data-step="${st + 1}">Next</button>` : '<button class="btn primary" data-act="wiz-go">Create design</button>'}`);
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-wiztype]');
+  if (!b || !wiz) return;
+  wizRead(); wiz.type = b.dataset.wiztype; wizard(wiz.step);
+});
+function wizardCreate() {
+  wizRead();
+  const w = wiz, base = clone(window.UAS_SEED.projects.find((x) => x.type === w.type) || window.UAS_SEED.projects[0]);
+  base.id = 'p-' + uid(); base.name = w.name || 'New design'; delete base.versions; delete base.flights;
+  if (w.type === 'vtol') { base.vtol.kind = w.kind; const vd = U.VTOL_DEF[w.kind]; if (vd) Object.assign(base.vtol, { accel: vd.acc, hoverPen: vd.pen }); }
+  fixDesign(base);
+  Object.assign(base.batt, { usable: S.settings.newDesign.usable }); Object.assign(base.env, { alt: S.settings.newDesign.alt, temp: S.settings.newDesign.temp });
+  if (w.bat) { base.batt.ref = w.bat; delete base.batt.unlinked; }
+  base.batt.packs = Math.max(1, w.packs || 1); base.batt.conn = 'parallel';
+  base.payload = Object.assign({}, base.payload, { g: Math.max(0, w.payload || 0) });
+  const role = w.type === 'fixedwing' ? 'fw' : 'mr';
+  if (!w.auto) { if (w.motor) base[role].motor = w.motor; if (w.prop) base[role].prop = w.prop; }
+  if (w.airframe && base.fw) { const a = S.lib.airframes.find((x) => x.id === w.airframe); if (a) { if (a.span) base.fw.span = a.span; if (a.area) base.fw.area = a.area; if (a.g) base.bom.unshift(libToBom('airframes', a)); } }
+  snapshot();
+  S.projects.push(base); S.active = base.id; syncLib();
+  let note = '';
+  if (w.auto) {
+    const r = finderRows(base, 'mp', role).rows.find((x) => x.ok);
+    if (r) { base[role].motor = r.apply.motor; base[role].prop = r.apply.prop; note = ` with ${r.label}`; }
+    else note = ' (no library motor + prop fits its limits yet; kept the example pair)';
+  }
+  wiz = null; closeDlg(); S.tab = 'design'; save(); render(); window.scrollTo(0, 0);
+  toast(`Created ${base.name}${note}`, { label: 'Undo', fn: undo });
+}
+
+</script>
+<script>
 // HangarLab UI: dialogs, export and Settings.
 // The app-*.js files share one global scope and load in the order listed in build.js.
 'use strict';
@@ -5670,6 +5833,17 @@ document.addEventListener('input', (e) => {
     if (bt && P().batt.ref && BAT_LINKED.includes(bt[1])) { const x = S.lib.batteries.find((y) => y.id === P().batt.ref); if (x) x[bt[1]] = P().batt[bt[1]]; }
     if (k === 'mat.area' || k === 'mat.vol') { delete P().mat.areaSide; delete P().mat.areaTB; delete P().mat.stlName; delete P().mat.stlSize; stlMesh = null; }
     if (k === 'mr.layout') P().mr.n = U.LAYOUTS[el.value].n;
+    // radio link presets fill the numbers they stand for
+    const rfm = k.match(/^(rf\.(?:links|manual)\.[^.]+)\.(preset|rate|txAnt|rxAnt)$/);
+    if (rfm) {
+      const l = getPath(P(), rfm[1]), rad = U.RADIOS[l.preset];
+      if (rfm[2] === 'preset' && rad) { l.mhz = rad.mhz; if (rad.airmax) { if (l.rate == null || l.rate === '') l.rate = '0'; } else { l.tx = rad.tx; l.sens = rad.sens; } }
+      if (rad && rad.airmax && (rfm[2] === 'preset' || rfm[2] === 'rate')) { const rr = U.AIRMAX[+l.rate || 0]; l.tx = Math.min(rr[1], rad.airmax); l.sens = rr[2]; }
+      const ta = U.ANTENNAS[l.txAnt], ra = U.ANTENNAS[l.rxAnt];
+      if (rfm[2] === 'txAnt' && ta) l.txG = ta.g;
+      if (rfm[2] === 'rxAnt' && ra) l.rxG = ra.g;
+      if ((rfm[2] === 'txAnt' || rfm[2] === 'rxAnt') && ta && ra) { const pl = U.polLoss(ta.pol, ra.pol); l.pol = pl === 0 ? 'same' : pl === 3 ? 'cl' : 'lr'; }
+    }
     if (k === 'vtol.kind') { const vd = U.VTOL_DEF[el.value]; if (vd) Object.assign(P().vtol, { accel: vd.acc, hoverPen: vd.pen }); } // switch to that type's typical values
     if (k === 'name') renderHeader();
   } else {
@@ -5691,22 +5865,23 @@ document.addEventListener('input', (e) => {
 document.addEventListener('click', (e) => {
   const sb = e.target.closest('[data-stlview],[data-stlrot]');
   if (sb) { if (sb.dataset.stlview) stlView(sb.dataset.stlview); else rotateStl(sb.dataset.stlrot); return; }
-  const b = e.target.closest('[data-act],[data-tab],[data-settype],[data-libtab],[data-massview],[data-units]');
+  const b = e.target.closest('[data-act],[data-tab],[data-settype],[data-libtab],[data-massview],[data-units],[data-detail]');
   if (!b) return;
   if (b.tagName === 'A' && b.getAttribute('href') === '#') e.preventDefault();
   if (b.dataset.units) { S.units = b.dataset.units; save(); render(); toast(S.units === 'imperial' ? 'Imperial units (stored in metric; exports stay metric)' : 'Metric units'); return; }
   if (b.dataset.tab) { lvs.playing = false; if (lmap) { lmap.remove(); lmap = null; } S.tab = b.dataset.tab; save(); render(); window.scrollTo(0, 0); return; }
   if (b.dataset.settype) { P().type = b.dataset.settype; save(); render(); return; }
   if (b.dataset.libtab) { S.libTab = b.dataset.libtab; save(); render(); return; }
+  if (b.dataset.detail) { S.settings.detail = b.dataset.detail; save(); render(); return; }
   if (b.dataset.massview) { S.massView = b.dataset.massview; save(); render(); return; }
   const p = P(), i = +b.dataset.i;
   switch (b.dataset.act) {
     case 'theme': S.theme = S.theme === 'dark' ? 'light' : 'dark'; save(); render(); break;
+    case 'wiz': wizard(+b.dataset.step); break;
+    case 'wiz-go': wizardCreate(); break;
     case 'new':
-      openDlg('New design', `<label class="f"><span>Name</span><input type="text" id="nd-name" value="New design"></label>
-        <label class="f"><span>Configuration</span><select id="nd-type">${Object.entries(TYPE_LABEL).map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select></label>
-        <p class="hint">Starts from the matching example design so every field has a sensible value. Edit or clear its BOM.</p>`,
-        `<button class="btn" data-act="dlg-close">Cancel</button><button class="btn primary" data-act="new-go">Create</button>`);
+      wiz = { step: 0, name: 'New design', type: 'fixedwing', kind: 'quadplane', bat: (S.lib.batteries[0] || {}).id || '', packs: 1, motor: '', prop: '', auto: true, payload: 0, airframe: '' };
+      wizard(0);
       break;
     case 'new-go': {
       const type = $('#nd-type').value;

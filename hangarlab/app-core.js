@@ -117,7 +117,8 @@ function migrate(s) {
   }
   for (const p of s.projects) if (p.fw && p.fw.drag && !p.fw.drag.finish) p.fw.drag.finish = 'foam';
   for (const p of s.projects) if (p.fw && p.fw.drag && !p.fw.drag.pods) p.fw.drag.pods = { mode: 'auto' };
-  s.settings = Object.assign({ calc: { cons: 1.2, defK: 1.25, learn: true }, logs: { speed: 10, view: '3d' }, backups: { on: true }, quickstart: true, currency: '$', adv: { on: false, conns: '', wire: '' }, newDesign: { usable: 80, alt: 0, temp: 15 } }, s.settings || {});
+  const hadSettings = !!s.settings && s.settings.detail == null && s.projects.length > 0; // existing users keep every input
+  s.settings = Object.assign({ calc: { cons: 1.2, defK: 1.25, learn: true }, logs: { speed: 10, view: '3d' }, backups: { on: true }, quickstart: true, detail: 'simple', currency: '$', adv: { on: false, conns: '', wire: '' }, newDesign: { usable: 80, alt: 0, temp: 15 } }, s.settings || {});
   s.projects.forEach(fixDesign);
   for (const r of (s.lib.parts || []).concat(...s.projects.map((p) => p.bom || []))) if (r.rf === 'gnss') r.rf = '';
   const ad = s.settings.adv = s.settings.adv || { on: false };
@@ -130,6 +131,7 @@ function migrate(s) {
   for (const p of s.projects) delete p.servos; // servo sizing was removed
   // the built-in example packs were trimmed to three; drop the retired ones once (designs keep their own pack values)
   if (!s.lib.batPruned) { const old = ['6s5000', '4s5000', '6s4000', 'p45b-6s2p', 'p45b-6s4p']; s.lib.batteries = (s.lib.batteries || []).filter((x) => !old.includes(x.id)); s.lib.batPruned = 1; }
+  if (hadSettings) s.settings.detail = 'detailed';
   s.massView = s.massView || 'edit';
   s.bomSel = s.bomSel || [];
   return s;

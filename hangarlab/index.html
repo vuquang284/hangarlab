@@ -408,6 +408,14 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
   dialog { width: calc(100vw - 16px) !important; max-width: none !important; }
 }
 
+.more-ro { margin-top: 10px; }
+.more-ro > summary { cursor: pointer; font: 600 14px var(--display); color: var(--muted); padding: 4px 0 8px; }
+.more-ro > summary:hover { color: var(--accent); }
+.wiz-dots { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.wiz-dots span { font: 600 12px var(--body); color: var(--faint); padding: 3px 8px; border-radius: 10px; border: 1px solid var(--line); }
+.wiz-dots span.on { color: var(--accent); border-color: var(--accent); }
+.wiz-dots span.done { color: var(--muted); }
+
 /* flight log viewer */
 #lvMap { position: relative; z-index: 0; isolation: isolate; } /* keeps Leaflet's panes under the sticky header */
 .lv { display: grid; grid-template-columns: minmax(240px, 300px) minmax(0, 1fr); gap: 16px; align-items: start; }
@@ -511,5 +519,6 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
 <script src="app-library.js"></script>
 <script src="app-logs.js"></script>
 <script src="app-map3d.js"></script>
+<script src="app-wizard.js"></script>
 <script src="app-export.js"></script>
 <script src="app-main.js"></script>

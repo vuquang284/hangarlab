@@ -10,6 +10,9 @@ function finderRow(p, key) {
   const prev = finderPrev[`${p.id}:${key}`];
   return `<div class="row wide" style="gap:6px"><button class="btn sm" data-act="${key === 'bat' ? 'find-bat' : 'find-mp'}" data-role="${key}" title="Tries every option in your library on this design">${label}</button>${prev ? `<button class="btn sm ghost" data-act="find-undo" data-key="${key}" title="Back to ${esc(prev.label)}">Undo pick</button>` : ''}</div>`;
 }
+// in Simple mode only the inputs most designs need are shown; everything else keeps its value
+const isSimple = () => S.settings.detail === 'simple';
+const adv = (html) => (isSimple() ? '' : html);
 function designInputs() {
   const p = P(), t = p.type;
   const bat = U.battery(p.batt);
@@ -35,10 +38,10 @@ function designInputs() {
     ${num('batt.cellMah', 'Cell capacity', { unit: 'mAh', step: 100, min: 1 })}
     ${num('batt.g', 'Weight per pack', { unit: 'g', min: 1 })}
     ${num('batt.c', 'Continuous C', { unit: 'C' })}
-    ${num('batt.cPeak', `Peak C ${tip('Burst rating from the datasheet (usually for ~10 s). Leave 0 if unknown: full throttle is then checked against the continuous rating.')}`, { unit: 'C', min: 0 })}
-    ${num('batt.usable', 'Usable capacity', { unit: '%', min: 10, max: 100 })}
+    ${adv(num('batt.cPeak', `Peak C ${tip('Burst rating from the datasheet (usually for ~10 s). Leave 0 if unknown: full throttle is then checked against the continuous rating.')}`, { unit: 'C', min: 0 }))}
+    ${adv(num('batt.usable', 'Usable capacity', { unit: '%', min: 10, max: 100 }))}
     ${num('batt.packs', 'Packs on board', { min: 1, step: 1 })}
-    ${sel('batt.conn', 'Packs wired in', [['parallel', 'Parallel (more capacity)'], ['series', 'Series (more voltage)']])}
+    ${adv(sel('batt.conn', 'Packs wired in', [['parallel', 'Parallel (more capacity)'], ['series', 'Series (more voltage)']]))}
     <p class="hint" id="batHint"></p>
     ${finderRow(p, 'bat')}`);
   h += group('Payload', `
@@ -52,19 +55,20 @@ function designInputs() {
       ${num('mr.n', 'Motors', { step: 1, min: 1 })}
       ${propPick('mr', bat.V)}
       ${finderRow(p, 'mr')}
-      ${num('mr.escA', 'ESC rating', { unit: 'A' })}
+      ${adv(`${num('mr.escA', 'ESC rating', { unit: 'A' })}
       ${num('mr.maxThr', `Payload limit ${tip('Extra payload is counted until hover throttle reaches this value.')}`, { unit: '% thr' })}
       ${t === 'multirotor' ? num('mr.cda', 'Frame drag area CdA', { unit: 'm²', step: 0.01 }) : ''}
-      ${t === 'multirotor' ? num('mr.lean', `Max lean angle ${tip('ArduPilot ANGLE_MAX (default 30°). Top speed and wind limit stop where the frame would need to tilt further than this.')}`, { unit: '°', step: 1, min: 5 }) : ''}
+      ${t === 'multirotor' ? num('mr.lean', `Max lean angle ${tip('ArduPilot ANGLE_MAX (default 30°). Top speed and wind limit stop where the frame would need to tilt further than this.')}`, { unit: '°', step: 1, min: 5 }) : ''}`)}
 `);
   }
   if (t === 'fixedwing' || t === 'vtol') {
     const shared = t === 'vtol' && p.vtol.kind !== 'quadplane';
     h += group('Wing & aero', `
       ${sel('_airframe', 'Load airframe', [['', 'Choose an airframe…']].concat(S.lib.airframes.map((a) => [a.id, a.name + (a.area ? '' : ' (no area)')])), { wide: true })}
+      ${num('fw.vc', 'Cruise speed', { unit: 'm/s', min: 1 })}
       ${num('fw.span', 'Wingspan', { unit: 'm', imp: 'in', step: 0.01, min: 0.05 })}
       ${num('fw.area', 'Wing area', { unit: 'm²', step: 0.001, min: 0.005 })}
-      ${sel('fw.drag.mode', 'Parasite drag', [['buildup', 'Build up from geometry'], ['cd0', 'Fixed CD0']], { wide: true, rebuild: true })}
+      ${adv(`${sel('fw.drag.mode', 'Parasite drag', [['buildup', 'Build up from geometry'], ['cd0', 'Fixed CD0']], { wide: true, rebuild: true })}
       ${(p.fw.drag || {}).mode === 'buildup' ? `
         ${sel('fw.drag.finish', 'Construction / surface', Object.entries(U.FINISH).map(([k, v]) => [k, v.label]), { wide: true })}
         ${sel('fw.drag.mount', `Cruise motor placement ${tip('Sets which drag the motors add. On the wing: each motor gets a pod (sized from the motor in Motor pods), and the wing behind each prop sits in faster prop wash, adding friction drag. In the nose or as a pusher: no pods, and only part of the fuselage is in the wash. Auto picks on the wing for 2 or more cruise motors, nose for 1.')}`, [['auto', 'Auto (2+ motors on wing, 1 in nose)'], ['wing', 'Tractor on wing'], ['nose', 'Tractor in nose'], ['pusher', 'Pusher']], { wide: true })}
@@ -81,30 +85,29 @@ function designInputs() {
         ${p.fw.drag.eAuto === false ? num('fw.e', 'Oswald efficiency e', { step: 0.01 }) : ''}
         <p class="hint" id="dragHint"></p>` : `${num('fw.cd0', 'Parasite drag CD0', { step: 0.001 })}${num('fw.e', 'Oswald efficiency e', { step: 0.01 })}`}
       ${num('fw.clmax', 'CL max', { step: 0.05 })}
-      ${num('fw.vc', 'Cruise speed', { unit: 'm/s', min: 1 })}
       ${num('fw.etaP', 'Prop efficiency', { unit: '%' })}
-      ${num('fw.etaD', 'Motor + ESC eff.', { unit: '%' })}
+      ${num('fw.etaD', 'Motor + ESC eff.', { unit: '%' })}`)}
       ${t === 'fixedwing' ? num('fw.vsMax', 'Max stall speed', { unit: 'm/s' }) : ''}
       ${(p.fw.drag || {}).mode === 'buildup' ? '' : '<p class="hint">Typical CD0: glider 0.02, FPV wing 0.03, ISR plane 0.05–0.07.</p>'}`);
-    if (!shared) prop += group(t === 'fixedwing' ? 'Propulsion' : 'Cruise propulsion', `${propPick('fw', bat.V)}${finderRow(p, 'fw')}${num('fw.n', 'Cruise motors', { step: 1, min: 1 })}${chk('fw.propOther', 'My actual prop differs from this data (−15 % prop efficiency)')}`);
-    h += group('Calibrate from flight', `
+    if (!shared) prop += group(t === 'fixedwing' ? 'Propulsion' : 'Cruise propulsion', `${propPick('fw', bat.V)}${finderRow(p, 'fw')}${num('fw.n', 'Cruise motors', { step: 1, min: 1 })}${adv(chk('fw.propOther', 'My actual prop differs from this data (−15 % prop efficiency)'))}`);
+    if (!isSimple()) h += group('Calibrate from flight', `
       ${chk('fw.cal.on', 'Scale the drag model to a measured cruise point', { rebuild: true })}
       ${p.fw.cal.on ? `${chk('fw.cal.learn', 'Real measurement of this aircraft: use it to improve estimates for other designs')}${num('fw.cal.v', 'Measured airspeed', { unit: 'm/s' })}${num('fw.cal.a', 'Propulsion current', { unit: 'A' })}${num('fw.cal.g', 'Weight at test', { unit: 'g' })}<p class="hint" id="calHint"></p>` : '<p class="hint">Optional: anchor the model to a measured cruise point.</p>'}`, p.fw.cal.on);
   }
   if (t === 'vtol') {
     h += group('VTOL mission', `
       ${num('vtol.hoverS', `Hover time per sortie ${tip('Vertical take-off, landing and any hovering. Transitions are counted separately below.')}`, { unit: 's' })}
-      ${num('vtol.transitions', `Transitions per sortie ${tip('Usually 2: one to forward flight after take-off and one back before landing.')}`, { step: 1, min: 0 })}
+      ${adv(`${num('vtol.transitions', `Transitions per sortie ${tip('Usually 2: one to forward flight after take-off and one back before landing.')}`, { step: 1, min: 0 })}
       ${num('vtol.accel', `Transition acceleration ${tip('How fast it speeds up from hover to flying speed. Typical: quadplane 1 m/s², tilt-rotor 1.5, tailsitter 2.5. Faster = less energy spent half-hovering.')}`, { unit: 'm/s²', min: 0.1, step: 0.1 })}
       ${num('vtol.hoverPen', `Hover thrust penalty ${tip('Extra thrust needed in hover because the airframe sits in the prop wash. Typical: quadplane 3 % (booms), tilt-rotor 8 % (wing under the rotors), tailsitter 6 % (wash along the wing).')}`, { unit: '%', min: 0, step: 1 })}
       ${num('vtol.reserve', `Extra reserve ${tip('On top of the battery usable capacity, which already keeps a landing reserve. Usually 0.')}`, { unit: '%', min: 0 })}
-      ${p.vtol.kind === 'quadplane' ? num('vtol.dcd0', 'Stopped-rotor ΔCD0', { step: 0.001 }) : ''}
+      ${p.vtol.kind === 'quadplane' ? num('vtol.dcd0', 'Stopped-rotor ΔCD0', { step: 0.001 }) : ''}`)}
       <p class="hint" id="vtolHint"></p>`);
   }
   {
     const M = p.mission, mu = (u) => (u === 'm' ? 'm>ft' : u === 'km' ? 'km>mi' : '');
     const dirs = [['none', 'Still air'], ['head', 'Headwind'], ['tail', 'Tailwind'], ['cross', 'Crosswind']];
-    h += group('Mission & wind', `
+    if (!isSimple()) h += group('Mission & wind', `
       ${num('mission.wind', 'Wind speed', { unit: 'm/s', min: 0 })}
       ${num('mission.reserve', `Extra reserve ${tip('On top of the battery usable capacity, which already keeps a landing reserve. Usually 0.')}`, { unit: '%', min: 0, max: 90 })}
       ${num('mission.climb', 'Climb rate', { unit: 'm/s', min: 0.1 })}
@@ -118,7 +121,7 @@ function designInputs() {
         <button class="btn sm" data-act="seg-add" style="margin-top:6px">+ Add segment</button></div>
       <p class="hint">Climb and descend are in metres of height. Energy available = battery usable capacity (its unused part is the landing reserve), minus any extra reserve.</p>`, false);
   }
-  h += group('Electronics', `${num('becEff', 'BEC / regulator efficiency', { unit: '%' })}<p class="hint" id="avHint"></p>`, false);
+  if (!isSimple()) h += group('Electronics', `${num('becEff', 'BEC / regulator efficiency', { unit: '%' })}<p class="hint" id="avHint"></p>`, false);
   return h.replace('%%PROP%%', prop);
 }
 
@@ -307,9 +310,9 @@ function regsDialog() {
     '<button class="btn" data-act="dlg-close">Close</button>');
 }
 function renderDesign(el) {
-  el.innerHTML = `<div class="bench"><aside class="side">${sideTools}${designInputs()}</aside>
+  el.innerHTML = `<div class="bench"><aside class="side"><div class="row" style="justify-content:space-between;margin-bottom:8px"><div class="seg" role="group" aria-label="Input detail"><button data-detail="simple" aria-pressed="${isSimple()}" title="The inputs most designs need">Simple</button><button data-detail="detailed" aria-pressed="${!isSimple()}" title="Every input: drag build-up, calibration, mission, electronics">Detailed</button></div>${sideTools}</div>${designInputs()}</aside>
     <section class="stack">
-      <div class="readouts" id="readouts"></div>
+      <div id="readouts"></div>
       <div class="card"><div class="card-h"><h2>Checks</h2><div class="row"><p id="chkCount" style="margin:0">Updated as you type</p><button class="btn sm ghost" data-act="regs">Regulations</button></div></div><div class="checks" id="checks"></div></div>
       <div class="card"><div class="card-h"><h2>Flight history</h2><p>Save flights from the Flight Logs tab</p></div><div id="flights"></div></div>
       <div class="card"><div class="card-h"><h2>Mission profile</h2><p id="misNote">Set segments under Mission &amp; wind</p></div><div id="mission"></div></div>
@@ -327,7 +330,13 @@ function renderDesign(el) {
 function liveDesign() {
   const p = P(), R = U.compute(p, S.lib);
   const mp = U.missionPlan(p, S.lib, R);
-  $('#readouts').innerHTML = designReadouts(p, R) + missionReadouts(p, R, mp);
+  {
+    // key results in one row; the rest under "More results" (open/closed is remembered)
+    const tmp = document.createElement('div'); tmp.innerHTML = designReadouts(p, R) + missionReadouts(p, R, mp);
+    const all = [...tmp.children], key = all.filter((x) => x.classList.contains('key')), rest = all.filter((x) => !x.classList.contains('key'));
+    const open = !!(S.ui && S.ui.moreRo);
+    $('#readouts').innerHTML = `<div class="readouts">${key.map((x) => x.outerHTML).join('')}</div>${rest.length ? `<details class="more-ro"${open ? ' open' : ''}><summary>More results <span class="faint">(${rest.length})</span></summary><div class="readouts">${rest.map((x) => x.outerHTML).join('')}</div></details>` : ''}`;
+  }
   missionCard(p, mp);
   flightsCard(p, R);
   const nBad = R.checks.filter((c) => c.level === 'crit').length, nWarn = R.checks.filter((c) => c.level === 'warn').length;
@@ -460,3 +469,6 @@ function syncLib() {
 }
 const money = (v, d = 2) => (fin(v) && v ? `${esc(S.settings.currency || '$')}${fmt(v, d)}` : '<span class="faint">—</span>');
 const libPill = (i) => `<button class="libpill" data-act="bom-unlink" data-i="${i}" title="Linked to the library: values come from the library item, and edits here update it (and every design that uses it). Click to unlink this row.">LIB</button>`;
+
+// remember whether "More results" is open
+document.addEventListener('toggle', (e) => { if (e.target.classList && e.target.classList.contains('more-ro')) { S.ui = S.ui || {}; S.ui.moreRo = e.target.open; save(); } }, true);

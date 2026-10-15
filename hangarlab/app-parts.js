@@ -224,8 +224,16 @@ function renderRF(el) {
         ${num(`${k}.loss`, 'Cable + connector', { unit: 'dB' })}${num(`${k}.sens`, 'RX sensitivity', { unit: 'dBm' })}
         ${sel(`${k}.pol`, 'Polarization', Object.entries(U.POL).map(([a, b]) => [a, b.label]))}
       </div>
+      <div class="fields" style="grid-template-columns:repeat(auto-fill,minmax(210px,1fr));padding:8px 0 0">
+        ${sel(`${k}.preset`, `Radio preset ${tip('Fills frequency, TX power and sensitivity from the datasheet. Edit them afterwards if your firmware or air rate differs.')}`, [['', 'Custom']].concat(Object.entries(U.RADIOS).map(([a, b]) => [a, b.label])), { rebuild: true })}
+        ${U.RADIOS[x.l.preset] && U.RADIOS[x.l.preset].airmax ? sel(`${k}.rate`, `Data rate ${tip('airMAX ac: higher data rates need a stronger signal (worse sensitivity) and the radio lowers its TX power. Pick the rate you need for video.')}`, U.AIRMAX.map((r, i) => [String(i), `${r[0]} · ${Math.min(r[1], U.RADIOS[x.l.preset].airmax)} dBm · ${r[2]} dBm`]), { rebuild: true }) : ''}
+        ${sel(`${k}.txAnt`, 'Aircraft antenna', [['', 'Custom']].concat(Object.entries(U.ANTENNAS).map(([a, b]) => [a, b.label])), { rebuild: true })}
+        ${sel(`${k}.rxAnt`, 'Ground antenna', [['', 'Custom']].concat(Object.entries(U.ANTENNAS).map(([a, b]) => [a, b.label])), { rebuild: true })}
+      </div>
       <dl class="kv" style="margin-top:12px" id="${k}-out"></dl>
       <p class="note" id="${k}-ant" style="margin:10px 0 0"></p>
+      <div class="checks" id="${k}-geo" style="margin-top:8px"></div>
+      <details class="rf-math" style="margin-top:8px"><summary>Path loss, step by step</summary><div id="${k}-math"></div></details>
       ${x.manual != null ? `<button class="btn ghost sm danger" data-act="rf-del" data-i="${x.manual}" style="margin-top:8px">Remove link</button>` : ''}
     </div>`;
   };
@@ -263,6 +271,39 @@ function liveRF() {
       <dt>λ/4 monopole · λ/2 dipole</dt><dd>${fmt(r.quarterMm, 1)} · ${fmt(r.halfMm, 1)} mm</dd>`;
     const ant = document.getElementById(`${x.key}-ant`);
     if (ant) ant.innerHTML = `<b>Antenna:</b> ${esc(r.ant)}${r.fres60 > d.gndH ? ` Fresnel zone (${fmt(r.fres60, 1)} m) is larger than the ground antenna height; raise it or expect ground losses.` : ''}`;
+    // geometry checks: directional ground antenna beam, omni nulls overhead, the other band for comparison
+    const geo = [], h = d.alt - d.gndH, elev = (Math.atan2(h, d.dist * 1000) * 180) / Math.PI;
+    const ra = U.ANTENNAS[x.l.rxAnt], ta = U.ANTENNAS[x.l.txAnt];
+    if (ra && ra.bw < 360) {
+      const wide = 2 * d.dist * 1000 * Math.tan((ra.bw / 2) * Math.PI / 180), inside = elev <= ra.bw / 2;
+      const near = h / Math.tan((ra.bw / 2) * Math.PI / 180);
+      geo.push([inside ? 'good' : 'warn', `Ground ${ra.label.split(',')[0].toLowerCase()} (${ra.bw}° beam): ${fmt(wide, 0)} m wide at ${fmt(d.dist, 1)} km, so the drone must stay in that corridor or the antenna needs a tracker. Closer than ${fmt(near, 0)} m at ${fmt(h, 0)} m height it is above the beam.`]);
+    }
+    if ((!ta || ta.bw === 360) && h > 0) {
+      const r60 = h / Math.tan(Math.PI / 3);
+      geo.push([elev > 60 ? 'crit' : 'info', `Aircraft omni antenna: weak straight down/up (null). Within ${fmt(r60, 0)} m of the ground station at ${fmt(h, 0)} m height the drone is more than 60° overhead and the link can fade; avoid passing directly over it.`]);
+    }
+    const pl = U.polLoss(ta && ta.pol, ra && ra.pol);
+    if (pl != null && pl !== (U.POL[x.l.pol] || U.POL.same).db) geo.push(['warn', `Antenna polarisations (${ta.pol.toUpperCase()} ↔ ${ra.pol.toUpperCase()}) mean a ${pl} dB loss; the Polarization field says ${(U.POL[x.l.pol] || U.POL.same).db} dB.`]);
+    if (x.l.mhz > 2000) {
+      const other = x.l.mhz > 4000 ? 2440 : 5800, ro2 = U.link(Object.assign({}, x.l, { mhz: other }), d);
+      geo.push(['info', `Same radio and antennas at ${other > 4000 ? '5.8' : '2.4'} GHz: ${fmt(ro2.margin, 1)} dB margin (${ro2.margin >= r.margin ? '+' : ''}${fmt(ro2.margin - r.margin, 1)} dB), max range ${fmt(ro2.maxKm, 1)} km. 2.4 GHz reaches further and gets through obstacles better; 5.8 GHz has more channel bandwidth for video.`]);
+    }
+    const ge = document.getElementById(`${x.key}-geo`);
+    if (ge) ge.innerHTML = geo.map(([lv, msg]) => `<div class="chk"><span class="pill ${lv}">${{ good: 'OK', warn: 'Check', crit: 'Fix', info: 'Note' }[lv]}</span><span>${esc(msg)}</span></div>`).join('');
+    // FSPL = 20·log10(d) + 20·log10(f) + 20·log10(4π/c), then the link budget around it
+    const slm = r.slant * 1000, fHz = x.l.mhz * 1e6, t1 = 20 * Math.log10(slm), t2 = 20 * Math.log10(fHz), t3 = 20 * Math.log10((4 * Math.PI) / 299792458);
+    const mt = document.getElementById(`${x.key}-math`);
+    if (mt) mt.innerHTML = `<dl class="kv" style="margin-top:8px;font-size:12.5px">
+      <dt>20·log₁₀(d), d = ${fmt(slm, 0)} m slant</dt><dd>${fmt(t1, 2)} dB</dd>
+      <dt>20·log₁₀(f), f = ${fmt(x.l.mhz, 0)} MHz</dt><dd>${fmt(t2, 2)} dB</dd>
+      <dt>20·log₁₀(4π/c)</dt><dd>${fmt(t3, 2)} dB</dd>
+      <dt><b>Free-space path loss</b></dt><dd><b>${fmt(t1 + t2 + t3, 2)} dB</b></dd>
+      <dt>− TX antenna gain</dt><dd>−${fmt(x.l.txG, 2)} dB</dd><dt>− RX antenna gain</dt><dd>−${fmt(x.l.rxG, 2)} dB</dd>
+      <dt>Net path loss</dt><dd>${fmt(t1 + t2 + t3 - x.l.txG - x.l.rxG, 2)} dB</dd>
+      <dt>TX power − cable − polarisation</dt><dd>${fmt(x.l.tx, 1)} − ${fmt(x.l.loss, 1)} − ${fmt(r.polDb, 1)} dBm</dd>
+      <dt>Received level</dt><dd>${fmt(x.l.tx - x.l.loss - r.polDb - (t1 + t2 + t3 - x.l.txG - x.l.rxG), 2)} dBm</dd>
+      <dt>Sensitivity</dt><dd>${fmt(x.l.sens, 1)} dBm</dd><dt><b>Margin</b></dt><dd><b>${fmt(r.margin, 2)} dB</b></dd></dl>`;
     data.push(xs.map((km) => U.link(x.l, { dist: km, alt: d.alt, gndH: d.gndH, fade: d.fade }).margin));
     ser.push({ label: x.name, color: cssv(`--c${(i % 8) + 1}`) });
   });

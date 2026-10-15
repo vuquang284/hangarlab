@@ -898,6 +898,37 @@
   };
   const POL = { same: { label: 'Matched', db: 0 }, cl: { label: 'Circular ↔ linear', db: 3 }, cross: { label: 'Linear, 90° misaligned', db: 20 }, lr: { label: 'LHCP ↔ RHCP', db: 25 } };
 
+  // radio presets: datasheet TX power and sensitivity (check yours: firmware and air rate change them)
+  const AIRMAX = [ // Ubiquiti airMAX ac (Rocket 5AC Lite datasheet): data rate trades sensitivity
+    ['1x BPSK 1/2', 27, -96], ['2x QPSK 1/2', 27, -95], ['2x QPSK 3/4', 27, -92], ['4x 16QAM 1/2', 27, -90], ['4x 16QAM 3/4', 27, -86],
+    ['6x 64QAM 2/3', 27, -83], ['6x 64QAM 3/4', 26, -77], ['6x 64QAM 5/6', 25, -74], ['8x 256QAM 3/4', 23, -69], ['8x 256QAM 5/6', 22, -65],
+  ];
+  const RADIOS = {
+    'rfd900x': { label: 'RFD900x (64 kbps air rate)', mhz: 915, tx: 30, sens: -121 },
+    'elrs24-500': { label: 'ExpressLRS 2.4 GHz, 500 Hz', mhz: 2440, tx: 24, sens: -105 },
+    'elrs24-250': { label: 'ExpressLRS 2.4 GHz, 250 Hz', mhz: 2440, tx: 24, sens: -108 },
+    'elrs24-150': { label: 'ExpressLRS 2.4 GHz, 150 Hz', mhz: 2440, tx: 24, sens: -112 },
+    'elrs24-50': { label: 'ExpressLRS 2.4 GHz, 50 Hz', mhz: 2440, tx: 24, sens: -115 },
+    'elrs24-1w': { label: 'ExpressLRS 2.4 GHz, 1 W module (e.g. Ranger Micro), 150 Hz', mhz: 2440, tx: 30, sens: -112 },
+    'elrs900-200': { label: 'ExpressLRS 900 MHz, 200 Hz', mhz: 915, tx: 27, sens: -112 },
+    'elrs900-50': { label: 'ExpressLRS 900 MHz, 50 Hz', mhz: 915, tx: 27, sens: -123 },
+    'crossfire': { label: 'TBS Crossfire, 150 Hz', mhz: 915, tx: 30, sens: -117 },
+    'rocket-ac': { label: 'Ubiquiti Rocket 5AC Lite (airMAX ac)', mhz: 5800, airmax: 27 },
+    'bullet-ac': { label: 'Ubiquiti Bullet AC (airMAX ac)', mhz: 5800, airmax: 25 },
+    'vtx58': { label: 'Analog 5.8 GHz video, 400 mW', mhz: 5800, tx: 26, sens: -90 },
+  };
+  // antennas: gain, polarisation (lin / rhcp / lhcp) and beamwidth (deg; 360 = omni)
+  const ANTENNAS = {
+    'dipole': { label: 'Dipole / whip, 2 dBi', g: 2, pol: 'lin', bw: 360 },
+    'collinear': { label: 'Collinear omni, 5 dBi', g: 5, pol: 'lin', bw: 360 },
+    'mushroom': { label: 'Mushroom (cloverleaf) omni, RHCP, 3.7 dBi', g: 3.71, pol: 'rhcp', bw: 360 },
+    'patch8': { label: 'Patch, 8 dBi, 60° beam', g: 8, pol: 'lin', bw: 60 },
+    'panel14cp': { label: 'Flat panel, RHCP, 14 dBi, 40° beam', g: 14, pol: 'rhcp', bw: 40 },
+    'helical12': { label: 'Helical, RHCP, 12 dBi, 40° beam', g: 12, pol: 'rhcp', bw: 40 },
+    'yagi15': { label: 'Yagi, 15 dBi, 30° beam', g: 15, pol: 'lin', bw: 30 },
+  };
+  // polarisation loss between two antennas
+  const polLoss = (a, b) => (!a || !b ? null : a === b ? 0 : a === 'lin' || b === 'lin' ? 3 : 25);
   const fspl = (km, mhz) => 20 * Math.log10(km) + 20 * Math.log10(mhz) + 32.44;
   function link(l, d) {
     const pol = (POL[l.pol] || POL.same).db;
@@ -1593,7 +1624,7 @@
   G.UAS = {
     g0, RHO0, CELL, LAYOUTS, BANDS, POL, MATERIALS, RAIL_V, COAX_THRUST,
     rhoAt, battery, packOf, curve, dragBuildup, oswald, FINISH, CONSERVATIVE, DEFAULT_K, motorCanMm, combo, parseAPC, parsePropTable, propCoef, drive, drivePower, sizeOf, splitSets, propulsion, payloadSweep, fullBom, consolidate, costOf, cgOf, missionPlan, SEG, enduranceOf, fwDrag, mrForward, massOf, autoRows, avionicsPower, compute, batterySweep,
-    powerPlan, pickWire, pickConn, CONNECTORS, WIRE, link, fspl, radioHorizonKm, rfConflicts,
+    powerPlan, pickWire, pickConn, AIRMAX, RADIOS, ANTENNAS, polLoss, CONNECTORS, WIRE, link, fspl, radioHorizonKm, rfConflicts,
     rankMaterials, partMass, partShell, parseSTL, stlStats,
     parseBin, parseText, parseCSV, logModes, logSummary, logFirmware, logHealth, apParams, modeCruise, VTOL_DEF, missionFromLog, coldFactor, gpsTrack, sampleLog, findMsg, interp, logEvents, logParams, logTrack, evalExpr, idxAt, ERR_SUBSYS, EV_IDS,
   };

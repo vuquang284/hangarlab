@@ -227,6 +227,17 @@ document.addEventListener('input', (e) => {
     if (bt && P().batt.ref && BAT_LINKED.includes(bt[1])) { const x = S.lib.batteries.find((y) => y.id === P().batt.ref); if (x) x[bt[1]] = P().batt[bt[1]]; }
     if (k === 'mat.area' || k === 'mat.vol') { delete P().mat.areaSide; delete P().mat.areaTB; delete P().mat.stlName; delete P().mat.stlSize; stlMesh = null; }
     if (k === 'mr.layout') P().mr.n = U.LAYOUTS[el.value].n;
+    // radio link presets fill the numbers they stand for
+    const rfm = k.match(/^(rf\.(?:links|manual)\.[^.]+)\.(preset|rate|txAnt|rxAnt)$/);
+    if (rfm) {
+      const l = getPath(P(), rfm[1]), rad = U.RADIOS[l.preset];
+      if (rfm[2] === 'preset' && rad) { l.mhz = rad.mhz; if (rad.airmax) { if (l.rate == null || l.rate === '') l.rate = '0'; } else { l.tx = rad.tx; l.sens = rad.sens; } }
+      if (rad && rad.airmax && (rfm[2] === 'preset' || rfm[2] === 'rate')) { const rr = U.AIRMAX[+l.rate || 0]; l.tx = Math.min(rr[1], rad.airmax); l.sens = rr[2]; }
+      const ta = U.ANTENNAS[l.txAnt], ra = U.ANTENNAS[l.rxAnt];
+      if (rfm[2] === 'txAnt' && ta) l.txG = ta.g;
+      if (rfm[2] === 'rxAnt' && ra) l.rxG = ra.g;
+      if ((rfm[2] === 'txAnt' || rfm[2] === 'rxAnt') && ta && ra) { const pl = U.polLoss(ta.pol, ra.pol); l.pol = pl === 0 ? 'same' : pl === 3 ? 'cl' : 'lr'; }
+    }
     if (k === 'vtol.kind') { const vd = U.VTOL_DEF[el.value]; if (vd) Object.assign(P().vtol, { accel: vd.acc, hoverPen: vd.pen }); } // switch to that type's typical values
     if (k === 'name') renderHeader();
   } else {
@@ -248,22 +259,23 @@ document.addEventListener('input', (e) => {
 document.addEventListener('click', (e) => {
   const sb = e.target.closest('[data-stlview],[data-stlrot]');
   if (sb) { if (sb.dataset.stlview) stlView(sb.dataset.stlview); else rotateStl(sb.dataset.stlrot); return; }
-  const b = e.target.closest('[data-act],[data-tab],[data-settype],[data-libtab],[data-massview],[data-units]');
+  const b = e.target.closest('[data-act],[data-tab],[data-settype],[data-libtab],[data-massview],[data-units],[data-detail]');
   if (!b) return;
   if (b.tagName === 'A' && b.getAttribute('href') === '#') e.preventDefault();
   if (b.dataset.units) { S.units = b.dataset.units; save(); render(); toast(S.units === 'imperial' ? 'Imperial units (stored in metric; exports stay metric)' : 'Metric units'); return; }
   if (b.dataset.tab) { lvs.playing = false; if (lmap) { lmap.remove(); lmap = null; } S.tab = b.dataset.tab; save(); render(); window.scrollTo(0, 0); return; }
   if (b.dataset.settype) { P().type = b.dataset.settype; save(); render(); return; }
   if (b.dataset.libtab) { S.libTab = b.dataset.libtab; save(); render(); return; }
+  if (b.dataset.detail) { S.settings.detail = b.dataset.detail; save(); render(); return; }
   if (b.dataset.massview) { S.massView = b.dataset.massview; save(); render(); return; }
   const p = P(), i = +b.dataset.i;
   switch (b.dataset.act) {
     case 'theme': S.theme = S.theme === 'dark' ? 'light' : 'dark'; save(); render(); break;
+    case 'wiz': wizard(+b.dataset.step); break;
+    case 'wiz-go': wizardCreate(); break;
     case 'new':
-      openDlg('New design', `<label class="f"><span>Name</span><input type="text" id="nd-name" value="New design"></label>
-        <label class="f"><span>Configuration</span><select id="nd-type">${Object.entries(TYPE_LABEL).map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select></label>
-        <p class="hint">Starts from the matching example design so every field has a sensible value. Edit or clear its BOM.</p>`,
-        `<button class="btn" data-act="dlg-close">Cancel</button><button class="btn primary" data-act="new-go">Create</button>`);
+      wiz = { step: 0, name: 'New design', type: 'fixedwing', kind: 'quadplane', bat: (S.lib.batteries[0] || {}).id || '', packs: 1, motor: '', prop: '', auto: true, payload: 0, airframe: '' };
+      wizard(0);
       break;
     case 'new-go': {
       const type = $('#nd-type').value;
