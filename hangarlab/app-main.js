@@ -591,6 +591,7 @@ document.addEventListener('drop', (e) => {
 window.addEventListener('resize', () => { if (S.tab === 'logs') lvDraw(); });
 
 S = load();
+{ const v = $('#appVer'); if (v) v.textContent = `HangarLab v${APP_VERSION}`; }
 render();
 if (mergedNote) { save(); toast(mergedNote, { label: 'Undo', fn: undo }); }
 // first visit only; the ? button (or the setting) brings it back
