@@ -1,6 +1,21 @@
+<!doctype html>
+<html lang="en">
 <meta charset="utf-8">
-<title>HangarLab</title>
+<title>HangarLab · drone design workbench</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Free web app for planning drones: size motors, props, ESCs and batteries for multirotor, fixed-wing and VTOL aircraft, check power and radio links, and compare with ArduPilot flight logs.">
+<meta name="theme-color" content="#1a1a18">
+<link rel="icon" href="favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="favicon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="HangarLab">
+<meta property="og:title" content="HangarLab · drone design workbench">
+<meta property="og:description" content="Size motors, props, ESCs and batteries, check power and radio links, and compare with ArduPilot flight logs. Free, in your browser.">
+<meta property="og:url" content="https://hangarlab.app/">
+<meta property="og:image" content="https://hangarlab.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap">
@@ -426,6 +441,7 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
 .site-foot { max-width: 1920px; margin: 0 auto; padding: 8px 16px 28px; color: var(--faint); font-size: 12px; line-height: 1.5; }
 .site-foot p { margin: 0 0 4px; max-width: 110ch; }
 .site-foot b { color: var(--muted); }
+.site-foot a { color: var(--muted); }
 .site-foot { position: relative; }
 .site-foot .ver { position: absolute; right: 16px; bottom: 12px; font: 500 11.5px var(--mono, monospace); color: var(--faint); }
 @media (max-width: 600px) { .site-foot .ver { position: static; display: block; margin-top: 6px; } }
@@ -515,7 +531,7 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
   <nav class="tabs" role="tablist" id="tabs">
     <button data-tab="design" role="tab">Performance</button>
     <button data-tab="compare" role="tab">Compare</button>
-    <button data-tab="mass" role="tab">Parts &amp; Weight</button>
+    <button data-tab="mass" role="tab">BOM &amp; Weight</button>
     <button data-tab="power" role="tab">Electrical</button>
     <button data-tab="rf" role="tab">Radio Link</button>
     <button data-tab="materials" role="tab">3D Printing</button>
@@ -529,7 +545,7 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
 <footer class="site-foot">
   <p><b>HangarLab</b> gives planning estimates, not guarantees. Check them against bench tests and test flights, and follow your local aviation rules; the regulation notes are not legal advice.</p>
   <span class="ver" id="appVer"></span>
-  <p>Your designs, library and logs stay in this browser. Nothing is uploaded; map, terrain and parameter data are downloaded from their public sources when you open those views.</p>
+  <p>Your designs, library and logs stay in this browser. Map, terrain and parameter data are downloaded from their public sources when you open those views, and a link you give to Add from link is read through HangarLab's server. Visits are counted anonymously (Cloudflare Web Analytics, no cookies). <a href="https://github.com/vuquang284/hangarlab/issues/new" target="_blank" rel="noopener">Report a problem or suggest a feature</a></p>
 </footer>
 <dialog id="dlg"></dialog>
 <input type="file" id="importFile" accept=".json,application/json" hidden>
@@ -553,3 +569,4 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
 <script src="app-tour.js"></script>
 <script src="app-export.js"></script>
 <script src="app-main.js"></script>
+</html>

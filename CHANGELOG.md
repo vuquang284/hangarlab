@@ -8,7 +8,21 @@ Numbering ([semantic versioning](https://semver.org), major.minor.patch):
 - **minor** (0.**2**.0): new features or changes.
 - **major** (**1**.0.0): first public release; after that, a major bump means saved designs, backups or imports break.
 
-To record an update: bump `APP_VERSION` at the top of `hangarlab/app-core.js`, add an entry here, run `node build.js` in `hangarlab/`, commit, then tag it (`git tag v0.1.1-dev && git push --tags`). The version shows at the bottom right of every page.
+To record an update: bump `APP_VERSION` at the top of `hangarlab/app-core.js`, add an entry here, run `node tools/build.js`, commit, then tag it (`git tag v0.1.1-dev && git push --tags`). The version shows at the bottom right of every page.
+
+## 0.7.0-dev (2026-10-15)
+
+Ready for the public site at hangarlab.app.
+
+- The page now starts with a proper HTML header (`<!doctype html>`, language), so browsers render it in standards mode.
+- Browser icon, page description and a link preview image (shared links show a HangarLab card).
+- "Report a problem or suggest a feature" link (GitHub Issues) in the footer and Settings.
+- The Parts & Weight tab is renamed **BOM & Weight**, so it isn't confused with Parts Library.
+- The app open in two tabs no longer overwrites itself: a tab picks up changes saved in another.
+- Privacy text updated: links given to Add from link are read through HangarLab's server, and visits are counted anonymously (Cloudflare Web Analytics, no cookies).
+- Add from link's server only answers requests from HangarLab's own pages.
+- Example fixed-wing uses the Xing2 3110 900KV + HQ 8x4x3 (bench data, within the motor's ratings); the example VTOL pack has a 15C peak rating. The examples open with no warnings.
+- Development tools moved to `tools/` and README images to `assets/`, so only the app is published. Run `node tools/test.js` and `node tools/build.js` from the repository root.
 
 ## 0.6.0-dev (2026-10-15)
 

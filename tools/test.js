@@ -1,8 +1,8 @@
-// Self-check for engine.js: `node test.js`
-require('./engine.js');
-require('./apc.js');
-require('./library.js');
-require('./data.js');
+// Self-check for engine.js: `node tools/test.js`
+require('../hangarlab/engine.js');
+require('../hangarlab/apc.js');
+require('../hangarlab/library.js');
+require('../hangarlab/data.js');
 const assert = require('assert');
 const U = globalThis.UAS, { lib } = globalThis.UAS_SEED;
 // numeric checks run against fixed reference designs (validated against the team spreadsheet and a measured flight),

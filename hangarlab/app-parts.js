@@ -1,4 +1,4 @@
-// HangarLab UI: Parts & Weight, Electrical and Radio Link tabs.
+// HangarLab UI: BOM & Weight, Electrical and Radio Link tabs.
 // The app-*.js files share one global scope and load in the order listed in build.js.
 'use strict';
 
@@ -191,8 +191,8 @@ function renderPower(el) {
     ${S.lib.pwr ? `<div class="card"><div class="card-h"><h2>Advanced: main connector &amp; leads</h2><p>Auto picks the smallest rated for ${fmt(pl.totalPk, 0)} A peak</p></div><div class="fields" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
       ${sel('power.conn', 'Main connector', [['', 'Auto']].concat(pl.conns.map((c) => [c[0], `${c[0]} · ${c[1]} A`])), { rebuild: true })}
       ${sel('power.awg', 'Main leads', [['', 'Auto']].concat(pl.wires.map((w) => [String(w[0]), `${w[0]} AWG · ${w[1]} A`])), { rebuild: true })}</div></div>` : ''}
-    <div class="card"><div class="card-h"><h2>Power tree</h2><p>Set each item's rail on the Parts &amp; Weight tab</p></div>${tree}</div>
-    <div><h3 style="margin:0 0 10px">Rails &amp; regulators</h3><div class="rails">${railCards || '<p class="faint">No powered items yet. Assign rails on the Parts &amp; Weight tab.</p>'}</div></div>
+    <div class="card"><div class="card-h"><h2>Power tree</h2><p>Set each item's rail on the BOM &amp; Weight tab</p></div>${tree}</div>
+    <div><h3 style="margin:0 0 10px">Rails &amp; regulators</h3><div class="rails">${railCards || '<p class="faint">No powered items yet. Assign rails on the BOM &amp; Weight tab.</p>'}</div></div>
     <p class="note">Regulators: peak load × 1.25, next stock size. Wire and connectors assume short silicone runs with airflow.</p>
   </div>`;
 }
@@ -283,7 +283,7 @@ function renderRF(el) {
       ${rfMapCard(p)}
       <div class="card"><div class="card-h"><h2>Link margin vs distance</h2><p>Dashed line is your required fade margin</p></div><div class="chart" id="chRF"></div></div>
       ${conf.length ? `<div class="card"><h2 style="margin-bottom:8px">Interference checks</h2><div class="checks">${conf.map((c) => `<div class="chk"><span class="pill warn">Check</span><span>${esc(c)}</span></div>`).join('')}</div></div>` : ''}
-      ${links.length ? links.map(linkCard).join('') : '<div class="card empty">No radios yet. Set an RF band on BOM items (Parts &amp; Weight tab) or add a link manually.</div>'}
+      ${links.length ? links.map(linkCard).join('') : '<div class="card empty">No radios yet. Set an RF band on BOM items (BOM &amp; Weight tab) or add a link manually.</div>'}
     </section></div>`;
   liveRF();
   rfMapDraw();

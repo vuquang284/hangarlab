@@ -4,7 +4,7 @@
 'use strict';
 
 // app version: bump on every update and add a CHANGELOG.md entry. 0.x + '-dev' while in development; 1.0.0 = first public release
-const APP_VERSION = '0.6.0-dev';
+const APP_VERSION = '0.7.0-dev';
 const U = window.UAS;
 const KEY = 'uas-workbench.v1'; // storage key kept from the old name so saved work still loads
 const $ = (s, el = document) => el.querySelector(s);
@@ -195,6 +195,20 @@ function save() {
     try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { if (e && e.name === 'QuotaExceededError') toast('Browser storage is full. Export a backup and remove unused prop data.'); }
   }, 250);
 }
+// the app open in two tabs: take the other tab's save, so this tab's next save doesn't overwrite it
+window.addEventListener('storage', (e) => {
+  if (e.key !== KEY || !e.newValue || !S) return;
+  try {
+    const s = migrate(JSON.parse(e.newValue));
+    if (!s || !s.projects || !s.projects.length) return;
+    clearTimeout(saveT);
+    const view = { tab: S.tab, active: S.active, libTab: S.libTab };
+    S = s;
+    if (S.projects.some((p) => p.id === view.active)) Object.assign(S, view);
+    render();
+    toast('Updated with changes made in another tab.');
+  } catch (err) { /* unreadable: keep this tab's copy */ }
+});
 const P = () => S.projects.find((p) => p.id === S.active) || S.projects[0];
 
 function getPath(o, path) { return path.split('.').reduce((a, k) => (a == null ? a : a[k]), o); }

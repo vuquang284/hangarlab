@@ -9,7 +9,7 @@ const QS_STEPS = [
     <ol class="qs-list">
       <li><b>Performance</b> — pick the configuration, motor, prop, battery and payload. Results update as you type.</li>
       <li><b>Compare</b> — designs side by side.</li>
-      <li><b>Parts &amp; Weight</b> — every part with weight, cost, balance, supply rail and radio band.</li>
+      <li><b>BOM &amp; Weight</b> — every part with weight, cost, balance, supply rail and radio band.</li>
       <li><b>Electrical · Radio Link · 3D Printing</b> — regulators and wiring, link budgets, filament choice and printed-part mass.</li>
       <li><b>Parts Library</b> — the motors, props, packs and parts every design draws from.</li>
       <li><b>Flight Logs</b> — open an ArduPilot log and compare it with the design.</li>
@@ -36,7 +36,7 @@ const QS_STEPS = [
     <p class="hint">Without flight data, range and endurance include a ×1.25 drag correction and a conservative case. Calibrate from a real flight on the Performance tab when you have one.</p>` },
   { title: '3 · Parts, power and radios', tab: 'mass', body: `
     <ul class="qs-list">
-      <li><b>Parts &amp; Weight</b>: add parts from the library or paste rows from a spreadsheet. Set each part’s rail (5 V, 12 V, VBAT…), RF band, cost, buy link and position for the balance (CG). <b>Full BOM report</b> combines several designs into one purchase list.</li>
+      <li><b>BOM &amp; Weight</b>: add parts from the library or paste rows from a spreadsheet. Set each part’s rail (5 V, 12 V, VBAT…), RF band, cost, buy link and position for the balance (CG). <b>Full BOM report</b> combines several designs into one purchase list.</li>
       <li><b>Electrical</b>: regulator sizes, PDB rating, connector and wire gauge from those rails.</li>
       <li><b>Radio Link</b>: margin and maximum range for each radio, Fresnel clearance and antenna suggestions.</li>
       <li><b>3D Printing</b>: rank filaments for heat, UV and impacts; load an STL to estimate the printed part’s mass.</li>

@@ -5,8 +5,10 @@ const MAX = 3 * 1024 * 1024;
 
 export async function onRequestGet({ request }) {
   const self = new URL(request.url);
-  const from = request.headers.get('Origin') || request.headers.get('Referer') || '';
-  if (from && new URL(from).host !== self.host) return new Response('Forbidden', { status: 403 });
+  // browsers send Origin or Referer with the app's own requests; scripts calling this directly usually send neither
+  let fromHost = '';
+  try { fromHost = new URL(request.headers.get('Origin') || request.headers.get('Referer') || '').host; } catch (e) { /* missing or malformed */ }
+  if (fromHost !== self.host) return new Response('Forbidden', { status: 403 });
   let target;
   try { target = new URL(self.searchParams.get('url') || ''); } catch (e) { return new Response('Bad url', { status: 400 }); }
   if (!/^https?:$/.test(target.protocol) || /^(localhost|127\.|10\.|192\.168\.|169\.254\.|\[)/.test(target.hostname)) return new Response('Bad url', { status: 400 });
