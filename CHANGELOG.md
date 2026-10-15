@@ -10,6 +10,10 @@ Numbering ([semantic versioning](https://semver.org), major.minor.patch):
 
 To record an update: bump `APP_VERSION` at the top of `hangarlab/app-core.js`, add an entry here, run `node build.js` in `hangarlab/`, commit, then tag it (`git tag v0.1.1-dev && git push --tags`). The version shows at the bottom right of every page.
 
+## 0.2.1-dev (2026-10-15)
+
+- Tour: clearer wording for the "Start your own" step.
+
 ## 0.2.0-dev (2026-10-15)
 
 - First-visit guided tour: a spotlight and arrow walk through the design picker, New, Simple/Detailed, inputs, results, tabs, Parts Library, Flight Logs, Export and Help. Replay it from the quick start guide or Settings.

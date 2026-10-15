@@ -4,7 +4,7 @@
 
 const TOUR = [
   { sel: '#projSel', title: 'Your designs', text: 'Every aircraft you plan is a design. Pick one here; the examples are there to explore.' },
-  { sel: '[data-act="new"]', title: 'Start your own', text: 'New opens a 4-step wizard: type, battery, motor + prop, payload.' },
+  { sel: '[data-act="new"]', title: 'Start your own', text: 'Click New to set up your own aircraft. Pick the type, battery, motor and prop, and payload; you can change any of it later.' },
   { sel: '[data-detail="simple"]', parent: true, title: 'Simple or Detailed', text: 'Simple shows the inputs most designs need. Detailed adds drag build-up, calibration, mission and electronics.' },
   { sel: '.side details.group', title: 'Inputs', text: 'Change anything on the left. Every number on the right updates as you type, and Ctrl+Z undoes.' },
   { sel: '#readouts', title: 'Results', text: 'Weight, endurance, range and the other key numbers. More results are folded underneath, and Checks lists anything to fix.' },
