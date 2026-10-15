@@ -133,3 +133,15 @@ The `app-*.js` files are plain scripts that share one global scope, so their loa
 - ArduPilot parameter descriptions from autotest.ardupilot.org (GPLv3), loaded at run time.
 - APC Propellers PER3 performance files (`apc.js`). Check APC's terms before redistributing them.
 - The flight-log viewer, health check and 3D map follow the ideas of ArduPilot's UAV Log Viewer, LogAnalyzer and Mission Planner, but share no code with them.
+
+## License
+
+Copyright (C) 2026 vuquang284.
+
+HangarLab is free software: you can redistribute it and/or modify it under the terms of the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0). If you run a modified copy as a website, you must offer its source code to the people who use it.
+
+Not covered by that license:
+
+- **The HangarLab name and logos** (`assets/`, `hangarlab/favicon.png`, `hangarlab/og-image.png`). Forks should use their own name and logo.
+- **APC propeller data** (`hangarlab/apc.js`), which remains under APC Propellers' terms.
+- **Third-party libraries** loaded by the app (uPlot, Leaflet, three.js, SheetJS, LZMA-JS), which keep their own licenses as listed under Credits.

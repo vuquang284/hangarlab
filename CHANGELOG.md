@@ -10,6 +10,10 @@ Numbering ([semantic versioning](https://semver.org), major.minor.patch):
 
 To record an update: bump `APP_VERSION` at the top of `hangarlab/app-core.js`, add an entry here, run `node tools/build.js`, commit, then tag it (`git tag v0.1.1-dev && git push --tags`). The version shows at the bottom right of every page.
 
+## 0.7.1-dev (2026-10-15)
+
+- Open source under the GNU AGPL-3.0 (`LICENSE`). The name and logos, the APC prop data and third-party libraries are not covered; see the README. Settings → About links the license and source code.
+
 ## 0.7.0-dev (2026-10-15)
 
 Ready for the public site at hangarlab.app.
