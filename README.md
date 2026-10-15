@@ -18,6 +18,7 @@ No account and nothing to install: it runs in your browser, and your designs are
 - Drag build-up from the airframe geometry, or a fixed CD0. Calibrate from one measured flight to correct the model.
 - VTOL transitions (time and energy), hover thrust penalty per VTOL type, and tailsitter hover wind limit.
 - Mission profile with climb, cruise, loiter, hover and transition segments, wind and reserve.
+- ESC and motor limits: full-throttle current and power against the ESC (current and cell range) and the motor's own ratings.
 - Part finders that try every motor + prop pair or battery pack in your library and rank them by endurance within limits.
 - **Simple / Detailed** input modes, and a guided **New design** setup.
 
@@ -35,7 +36,7 @@ No account and nothing to install: it runs in your browser, and your designs are
 
 **3D Printing**: filament ranking for heat, UV and impact; STL preview with printed-part mass.
 
-**Parts Library**: motors (with thrust-stand data), props (with APC performance data), battery packs, components (with editable subsystems), printed parts and airframes. Import from the Excel template.
+**Parts Library**: motors (with thrust-stand data), props (with APC performance data), battery packs, ESCs, components (with editable subsystems), printed parts and airframes. Import from the Excel template.
 
 **Flight Logs** (ArduPilot `.bin` / `.log`)
 - Plots, presets and expressions, parameters and events.

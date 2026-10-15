@@ -404,6 +404,34 @@
     return out;
   }
 
+  function escOf(lib, o) {
+    const e = o && o.esc && (lib.escs || []).find((x) => x.id === o.esc);
+    if (e) return { name: e.name, a: +e.a || 0, burst: +e.burst || 0, sMin: +e.sMin || 0, sMax: +e.sMax || 0, g: +e.g || 0, lib: e };
+    return o && (+o.escA > 0 || +o.escS > 0) ? { name: 'ESC', a: +o.escA || 0, burst: 0, sMin: 0, sMax: +o.escS || 0 } : null;
+  }
+  // full-throttle current and power of one motor against its ESC and its own ratings; problems also go to R.overload
+  function driveChk(chk, R, bat, lib, o, motorId, iMax, label) {
+    const e = escOf(lib, o), m = (lib.motors || []).find((x) => x.id === motorId), L = label ? `${label} motor` : 'Motor', ov = (R.overload = R.overload || []);
+    if (!isFinite(iMax) || iMax <= 0) return;
+    if (e && e.a) {
+      if (iMax > (e.burst || e.a)) { chk('crit', `${L} full-throttle current ${iMax.toFixed(1)} A exceeds the ESC's ${e.burst ? 'burst' : 'continuous'} rating ${(e.burst || e.a).toFixed(0)} A (${e.name}).`); ov.push(`over ${label ? label.toLowerCase() + ' ' : ''}ESC`); }
+      else if (iMax > e.a) chk('warn', `${L} full-throttle current ${iMax.toFixed(1)} A is above the ESC's continuous ${e.a.toFixed(0)} A but within its ${e.burst.toFixed(0)} A burst: fine for short bursts, not sustained full throttle.`);
+      else if (iMax > 0.85 * e.a) chk('warn', `${L} full-throttle current ${iMax.toFixed(1)} A is within 15 % of the ESC's ${e.a.toFixed(0)} A rating.`);
+    }
+    if (e && e.sMax && bat.S > e.sMax) { chk('crit', `The ${bat.S}S pack is above the ${label ? label.toLowerCase() + ' ' : ''}ESC's ${e.sMax}S limit (${e.name}): it will be damaged.`); ov.push('ESC voltage'); }
+    else if (e && e.sMin && bat.S < e.sMin) chk('warn', `The ${bat.S}S pack is below the ${label ? label.toLowerCase() + ' ' : ''}ESC's ${e.sMin}S minimum (${e.name}).`);
+    if (m && +m.maxA > 0 && iMax > +m.maxA * 1.05) {
+      const bad = iMax > +m.maxA * 1.2;
+      chk(bad ? 'crit' : 'warn', `${L} draws ${iMax.toFixed(1)} A at full throttle, above its ${(+m.maxA).toFixed(0)} A rating (${m.name}). Use a smaller prop, a lower-kV motor or fewer cells.`);
+      if (bad) ov.push('over motor rating');
+    }
+    if (m && +m.maxW > 0 && iMax * bat.V > +m.maxW * 1.05) {
+      const bad = iMax * bat.V > +m.maxW * 1.2;
+      chk(bad ? 'crit' : 'warn', `${L} takes ${(iMax * bat.V).toFixed(0)} W at full throttle, above its ${(+m.maxW).toFixed(0)} W rating (${m.name}).`);
+      if (bad && !ov.includes('over motor rating')) ov.push('over motor rating');
+    }
+  }
+
   function autoRows(p, lib) {
     const bat = battery(p.batt), V = bat.V;
     const rows = [];
@@ -412,6 +440,8 @@
       const M = find('motors', mId), Pr = find('props', pId);
       rows.push({ name: `${c.motor} (${tag})`, sub: 'Propulsion', qty: n, g: c.motorG, link: c.mLink || '', buy: M.buy || '', cost: +M.cost || 0, auto: 'motor', key: 'motor-' + tag });
       rows.push({ name: `${c.prop} prop (${tag})`, sub: 'Propulsion', qty: n, g: c.propG, link: c.pLink || '', buy: Pr.buy || '', cost: +Pr.cost || 0, auto: 'prop', key: 'prop-' + tag });
+      const es = escOf(lib, tag === 'lift' ? p.mr : p.fw);
+      if (es && es.lib) rows.push({ name: `${es.name} (${tag})`, sub: 'Propulsion', qty: n, g: es.g, link: es.lib.link || '', buy: es.lib.buy || '', cost: +es.lib.cost || 0, auto: 'esc', key: 'esc-' + tag });
     }
     rows.push({ name: p.batt.name || 'Flight battery', sub: 'Power', qty: bat.packs, g: +p.batt.g || 0, link: p.batt.link || '', buy: p.batt.buy || '', cost: +p.batt.cost || 0, auto: 'battery', key: 'battery' });
     if (p.payload && +p.payload.g > 0) rows.push({ name: p.payload.name || 'Payload', sub: 'Payload', qty: 1, g: +p.payload.g, auto: 'payload', key: 'payload' });
@@ -522,8 +552,7 @@
         else if (h.tw < twWarn) chk('warn', `Thrust-to-weight ${h.tw.toFixed(2)} is marginal (aim ≥ ${twWarn}).`);
         if (h.thr > 80) chk('crit', `Hover throttle ${h.thr.toFixed(0)}% leaves no margin.`);
         else if (h.thr > 65) chk('warn', `Hover throttle ${h.thr.toFixed(0)}% is high (aim 40–60%).`);
-        if (p.mr.escA && h.iMaxMotor > p.mr.escA) chk('crit', `Motor full-throttle current ${h.iMaxMotor.toFixed(1)} A exceeds ESC rating ${p.mr.escA} A.`);
-        else if (p.mr.escA && h.iMaxMotor > 0.85 * p.mr.escA) chk('warn', `Motor full-throttle current ${h.iMaxMotor.toFixed(1)} A is within 15% of ESC rating.`);
+        driveChk(chk, R, bat, lib, p.mr, p.mr.motor, h.iMaxMotor, p.type === 'vtol' ? 'Lift' : '');
         if (p.type === 'multirotor') battChk(R.maxI, R.hoverI, 'hover');
         if (p.type === 'multirotor' && !o.lite && h.diskM2) {
           const ff = mrForward(WN, rho, h.diskM2, p.mr.cda, h.pMotors, (h.tmaxTot / 1000) * g0, p.mr.lean, p.mr.n * h.iMaxMotor * bat.V);
@@ -640,6 +669,7 @@
       R.cruiseSet = cset;
       if (!c) chk('crit', 'Pick a cruise motor and prop (with kV and prop size, or bench data).');
       else if (c.estimated && !cset.physics) chk('warn', `${cset.name}: only one data point, thrust curve is estimated.`);
+      if (c && !shared) driveChk(chk, R, bat, lib, f, f.motor, c.imax, p.type === 'vtol' ? 'Cruise' : '');
       if (pc == null) chk('crit', `The cruise motor and prop cannot hold ${vc} m/s at this weight.`);
       if (R.fwCurve && R.fwCurve.length) R.LDmax = Math.max(...R.fwCurve.map((x) => R.WN / x.D));
       R.LDcruise = R.WN / fwDrag(vc, WN, rho, S, AR, cd0, eOsw).D;
@@ -1624,7 +1654,7 @@
   G.UAS = {
     g0, RHO0, CELL, LAYOUTS, BANDS, POL, MATERIALS, RAIL_V, COAX_THRUST,
     rhoAt, battery, packOf, curve, dragBuildup, oswald, FINISH, CONSERVATIVE, DEFAULT_K, motorCanMm, combo, parseAPC, parsePropTable, propCoef, drive, drivePower, sizeOf, splitSets, propulsion, payloadSweep, fullBom, consolidate, costOf, cgOf, missionPlan, SEG, enduranceOf, fwDrag, mrForward, massOf, autoRows, avionicsPower, compute, batterySweep,
-    powerPlan, pickWire, pickConn, AIRMAX, RADIOS, ANTENNAS, polLoss, CONNECTORS, WIRE, link, fspl, radioHorizonKm, rfConflicts,
+    powerPlan, pickWire, pickConn, escOf, AIRMAX, RADIOS, ANTENNAS, polLoss, CONNECTORS, WIRE, link, fspl, radioHorizonKm, rfConflicts,
     rankMaterials, partMass, partShell, parseSTL, stlStats,
     parseBin, parseText, parseCSV, logModes, logSummary, logFirmware, logHealth, apParams, modeCruise, VTOL_DEF, missionFromLog, coldFactor, gpsTrack, sampleLog, findMsg, interp, logEvents, logParams, logTrack, evalExpr, idxAt, ERR_SUBSYS, EV_IDS,
   };

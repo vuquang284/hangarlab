@@ -91,7 +91,7 @@
     env: { alt: 300, temp: 25 },
     batt: { name: 'Tattu 6S 7000 25C', chem: 'lipo', s: 6, p: 1, cellMah: 7000, g: 870, c: 25, cPeak: 50, packs: 2, conn: 'series', usable: 80 },
     becEff: 90,
-    mr: { layout: 'quadx', set: 'hw4120-1608', n: 4, escA: 90, maxThr: 70, cda: 0.12, lean: 30 },
+    mr: { layout: 'quadx', set: 'hw4120-1608', n: 4, esc: 'esc-12s-80', escA: 0, maxThr: 70, cda: 0.12, lean: 30 },
     fw: { span: 2, area: 0.5, cd0: 0.03, e: 0.8, clmax: 1.2, etaP: 65, etaD: 85, vc: 18, set: 'atom2807-8x4', n: 1, vsMax: 12, cal: { on: false, v: 0, a: 0, g: 0 },
       drag: { mode: 'buildup', finish: 'foam', fusL: 1.2, fusD: 0.14, tailPct: 22, tc: 0.12, booms: { n: 0, L: 0, d: 0 }, extras: [], misc: 20, eAuto: true } },
     vtol: { kind: 'quadplane', hoverS: 90, reserve: 0, dcd0: 0.008 },
@@ -101,7 +101,6 @@
       row('RC receiver (ELRS 2.4 GHz)', 'Comms', 1, 4, '5V', 0.5, 0.6, '2400'),
       row('Telemetry radio (900 MHz)', 'Comms', 1, 20, '5V', 5, 5, '915'),
       row('Remote ID module', 'Avionics', 1, 10, '5V', 0.2, 0.5, '2400'),
-      row('ESC 80A', 'Propulsion', 4, 25),
       row('Power module + PDB', 'Power', 1, 60),
       row('Battery straps', 'Hardware', 2, 15),
       row('Wire & connectors (est.)', 'Wiring', 1, 200),
@@ -118,13 +117,12 @@
     batt: { name: '6S 5000 25C', chem: 'lipo', s: 6, p: 1, cellMah: 5000, g: 451, c: 25, cPeak: 50, packs: 2, conn: 'parallel', usable: 80 },
     becEff: 90,
     mr: { layout: 'quadx', set: 'xing2812-hq8', n: 4, escA: 50, maxThr: 70, cda: 0.05, lean: 30 },
-    fw: { span: 0.845, area: 0.1696, cd0: 0.035, e: 0.75, clmax: 1.1, etaP: 60, etaD: 85, vc: 22, set: 'atom2807-8x4', n: 1, vsMax: 14,
+    fw: { span: 0.845, area: 0.1696, cd0: 0.035, e: 0.75, clmax: 1.1, etaP: 60, etaD: 85, vc: 22, set: 'atom2807-8x4', n: 1, esc: 'esc-6s-60', vsMax: 14,
       cal: { on: false, v: 0, a: 0, g: 0, learn: false },
       drag: { mode: 'buildup', finish: 'foam', fusL: 0.83, fusD: 0.11, tailPct: 20, tc: 0.12, booms: { n: 0, L: 0, d: 0 }, extras: [{ name: 'Gimbal camera', cda: 40, qty: 1 }, { name: 'Exposed antenna', cda: 5, qty: 3 }], misc: 20, eAuto: true } },
     vtol: { kind: 'quadplane', hoverS: 90, reserve: 0, dcd0: 0.008 },
     bom: [
       row('AtomRC Dolphin Pro airframe', 'Structures', 1, 790),
-      row('ESC 50A with BEC', 'Propulsion', 1, 15),
       row('Flight controller', 'Avionics', 1, 25, '5V', 2, 2.5),
       row('GPS + compass', 'Sensors', 1, 20, '5V', 1, 1.2, ''),
       row('Airspeed sensor', 'Sensors', 1, 12, '5V', 0.5, 0.6),
@@ -145,14 +143,12 @@
     env: { alt: 300, temp: 25 },
     batt: { name: '6S4P Molicel P45B 21700 (example)', chem: 'liion', s: 6, p: 4, cellMah: 4500, g: 1750, c: 10, packs: 1, conn: 'parallel', usable: 85 },
     becEff: 90,
-    mr: { layout: 'quadx', set: 'xing2812-hq8', n: 4, escA: 65, maxThr: 70, cda: 0.05, lean: 30 },
-    fw: { span: 2.0, area: 0.5, cd0: 0.03, e: 0.8, clmax: 1.3, etaP: 65, etaD: 85, vc: 20, set: 'atom2807-8x4', n: 1, vsMax: 13, cal: { on: false, v: 0, a: 0, g: 0 },
+    mr: { layout: 'quadx', set: 'xing2812-hq8', n: 4, esc: 'esc-6s-60', escA: 0, maxThr: 70, cda: 0.05, lean: 30 },
+    fw: { span: 2.0, area: 0.5, cd0: 0.03, e: 0.8, clmax: 1.3, etaP: 65, etaD: 85, vc: 20, set: 'atom2807-8x4', n: 1, esc: 'esc-6s-60', vsMax: 13, cal: { on: false, v: 0, a: 0, g: 0 },
       drag: { mode: 'buildup', finish: 'builtup', fusL: 1.0, fusD: 0.13, tailPct: 22, tc: 0.12, booms: { n: 2, L: 1.1, d: 0.025 }, extras: [{ name: 'Gimbal camera', cda: 40, qty: 1 }, { name: 'Exposed antenna', cda: 5, qty: 2 }], misc: 20, eAuto: true } },
     vtol: { kind: 'quadplane', hoverS: 90, reserve: 0, dcd0: 0.008 },
     bom: [
       row('Airframe + booms', 'Structures', 1, 1400),
-      row('Lift ESC 65A', 'Propulsion', 4, 15),
-      row('Cruise ESC 50A', 'Propulsion', 1, 15),
       row('Cube Orange+ Mini', 'Avionics', 1, 53, '5V', 2.5, 3),
       row('Here4 GPS', 'Sensors', 1, 60, '5V', 1, 1.5, ''),
       row('3DR CAN airspeed (DLVR)', 'Sensors', 1, 12.2, '5V', 0.5, 0.6),
@@ -170,6 +166,12 @@
   for (const pr of props) { const a = (G.UAS_APC || {})[pr.name]; if (a) pr.data = a.data; }
   const fix = (o) => { if (o.set && map[o.set]) [o.motor, o.prop] = map[o.set]; delete o.set; };
   for (const p of [quad, dolphin, vtol]) { fix(p.mr); fix(p.fw); }
+  // one entry = one ESC: continuous and burst amps, cell range, weight
+  const escs = [
+    { id: 'esc-6s-40', name: 'Generic 6S 40A ESC', brand: '', a: 40, burst: 50, sMin: 2, sMax: 6, g: 35 },
+    { id: 'esc-6s-60', name: 'Generic 6S 60A ESC', brand: '', a: 60, burst: 80, sMin: 3, sMax: 6, g: 60 },
+    { id: 'esc-12s-80', name: 'Generic 12S 80A ESC', brand: '', a: 80, burst: 100, sMin: 6, sMax: 12, g: 90 },
+  ];
   const printer = { lineW: 0.45, layerH: 0.2 };
   const printed = [
     { id: 'pp-gps-mast', name: 'GPS mast', mat: 'petg', vol: 18, area: 0, walls: 3, tb: 4, infill: 25, g: 0, sub: '3D printed', notes: '' },
@@ -178,5 +180,5 @@
   for (const x of printed) x.g = +G.UAS.partMass(x, G.UAS.MATERIALS.find((m) => m.id === x.mat).rho, printer).toFixed(1);
   // library.js (from make_defaults.js) replaces the built-in library and, optionally, the example designs
   const OV = G.UAS_LIBRARY;
-  G.UAS_SEED = { lib: OV && OV.lib ? OV.lib : { motors, props, tests, batteries, parts, airframes, printed, printer }, projects: OV && OV.projects ? OV.projects : [quad, dolphin, vtol], legacySets: sets };
+  G.UAS_SEED = { lib: OV && OV.lib ? OV.lib : { motors, props, tests, batteries, parts, airframes, printed, escs, printer }, projects: OV && OV.projects ? OV.projects : [quad, dolphin, vtol], legacySets: sets };
 })(typeof window !== 'undefined' ? window : globalThis);

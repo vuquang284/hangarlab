@@ -205,5 +205,15 @@ for (let k = 0; k < N; k++) rows.push(`BAT, ${k * 1000}, ${50 - k / N}, ${k === 
 const big = U.logSummary(U.parseText(rows.join('\n')));
 assert(big.iMax === 99 && big.vibeMax === 42 && big.vMin > 49 && big.vMin < 49.01, 'long log summary ' + JSON.stringify(big));
 
+// ESC limits: a 6S 40 A ESC on the 12S example quad is over current and over voltage; library ESCs go in the BOM
+{
+  const ex = JSON.parse(JSON.stringify(globalThis.UAS_SEED.projects[0])), L = globalThis.UAS_SEED.lib;
+  assert(!U.compute(ex, L).overload?.length, 'example quad ESC fits');
+  assert(U.autoRows(ex, L).some((x) => x.auto === 'esc' && x.qty === 4), 'ESC rows in BOM');
+  ex.mr.esc = 'esc-6s-40';
+  const o = U.compute(ex, L).overload;
+  assert(o.includes('over ESC') && o.includes('ESC voltage'), 'ESC overload ' + o);
+}
+
 console.log('all checks passed');
 console.log({ quadHoverMin: rq.hoverMin.toFixed(1), quadTW: rq.h.tw.toFixed(2), quadThr: rq.h.thr.toFixed(0), dolphinMin: rd.cruise.minutes.toFixed(1), dolphinKm: rd.cruise.km.toFixed(1), vtolKm: rv.mission.km.toFixed(1), vtolHoverThr: rv.h.thr.toFixed(0) });

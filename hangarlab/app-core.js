@@ -4,7 +4,7 @@
 'use strict';
 
 // app version: bump on every update and add a CHANGELOG.md entry. 0.x + '-dev' while in development; 1.0.0 = first public release
-const APP_VERSION = '0.2.2-dev';
+const APP_VERSION = '0.3.0-dev';
 const U = window.UAS;
 const KEY = 'uas-workbench.v1'; // storage key kept from the old name so saved work still loads
 const $ = (s, el = document) => el.querySelector(s);
@@ -134,6 +134,7 @@ function migrate(s) {
   // the built-in example packs were trimmed to three; drop the retired ones once (designs keep their own pack values)
   if (!s.lib.batPruned) { const old = ['6s5000', '4s5000', '6s4000', 'p45b-6s2p', 'p45b-6s4p']; s.lib.batteries = (s.lib.batteries || []).filter((x) => !old.includes(x.id)); s.lib.batPruned = 1; }
   if (hadSettings) s.settings.detail = 'detailed';
+  s.lib.escs = s.lib.escs || [];
   s.massView = s.massView || 'edit';
   s.bomSel = s.bomSel || [];
   return s;
@@ -150,7 +151,7 @@ function backup(raw, why) {
   } catch (e) { /* storage full: skip the backup rather than fail */ }
 }
 // library items shipped in a newer build reach existing users once; anything they already have or have deleted stays as is
-const LIB_KINDS = ['motors', 'props', 'tests', 'batteries', 'parts', 'airframes', 'printed'];
+const LIB_KINDS = ['motors', 'props', 'tests', 'batteries', 'escs', 'parts', 'airframes', 'printed'];
 let mergedNote = '';
 function mergeDefaults(s) {
   const seed = window.UAS_SEED.lib, first = !Array.isArray(s.lib.knownDefaults);
@@ -339,6 +340,12 @@ const sideTools = `<div class="side-tools"><button class="btn ghost sm" data-act
 const motorOpts = () => S.lib.motors.map((m) => [m.id, `${m.name}${m.kv ? ` · ${m.kv}KV` : ''}`]);
 const propOpts = () => S.lib.props.map((x) => [x.id, `${x.name}${x.diam ? ` · ${x.diam}×${x.pitch}"` : ''}${x.data ? ' · data' : ''}`]);
 // motor + prop pickers with a line saying where the thrust numbers come from
+// ESC picker for a propulsion group: a library ESC, or a typed rating and cell limit
+function escPick(base) {
+  const o = getPath(P(), base), e = (S.lib.escs || []).find((x) => x.id === o.esc);
+  return `${sel(base + '.esc', `ESC ${tip('Pick one from Parts Library → ESCs, or type its rating. Full-throttle current is checked against it, and the pack against its cell limit.')}`, [['', 'Type the rating']].concat((S.lib.escs || []).map((x) => [x.id, `${x.name} · ${x.a} A${x.sMax ? ` · ${x.sMin ? x.sMin + '–' : '≤'}${x.sMax}S` : ''}`])), { wide: true, rebuild: true })}
+    ${e ? `<p class="hint wide">${fmt(e.a, 0)} A continuous${e.burst ? `, ${fmt(e.burst, 0)} A burst` : ''}${e.sMax ? `, ${e.sMin ? e.sMin + '–' : 'up to '}${e.sMax}S` : ''}${e.g ? `, ${fmt(e.g, 0)} g each (added to the BOM)` : ''}.</p>` : `${num(base + '.escA', 'ESC rating', { unit: 'A', min: 0 })}${num(base + '.escS', 'ESC max cells', { unit: 'S', min: 0, step: 1 })}`}`;
+}
 function propPick(base, V) {
   const o = getPath(P(), base);
   const c = U.combo(S.lib, o.motor, o.prop, V);

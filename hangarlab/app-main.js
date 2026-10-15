@@ -438,6 +438,7 @@ document.addEventListener('click', (e) => {
     case 'test-save': saveTestFromDlg(); break;
     case 'bulk-import': bulkDialog(); break;
     case 'bulk-go': bulkGo(); break;
+    case 'use-esc': { const x = S.lib.escs[i], role = b.dataset.role; p[role].esc = x.id; save(); toast(`${x.name} → ${p.name} (${role === 'mr' ? 'lift' : 'cruise'})`); break; }
     case 'use-motor': case 'use-prop': {
       const kind = b.dataset.act === 'use-motor' ? 'motors' : 'props', x = S.lib[kind][i], role = b.dataset.role;
       p[role][kind === 'motors' ? 'motor' : 'prop'] = x.id;

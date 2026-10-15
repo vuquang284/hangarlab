@@ -211,7 +211,7 @@ function importWorkspace(text) {
     const tmp = migrate({ v: o.v >= 2 ? o.v : 1, projects: o.projects, lib: o.lib });
     const ids = new Set(S.projects.map((p) => p.id));
     for (const p of tmp.projects) { if (ids.has(p.id)) p.id = 'p-' + uid(); S.projects.push(p); }
-    for (const k of ['motors', 'props', 'tests', 'batteries', 'parts', 'airframes', 'printed']) {
+    for (const k of LIB_KINDS) {
       const have = new Set(S.lib[k].map((x) => x.id));
       for (const x of tmp.lib[k] || []) if (!have.has(x.id)) S.lib[k].push(x);
     }
@@ -258,7 +258,7 @@ function renderSettings(el) {
 
       <div class="card"><h2>Saving &amp; backups</h2>
         <p class="note" style="margin:8px 0 10px">Every change saves automatically to this browser about a quarter second after you make it. Loaded flight logs, STL previews and undo history are not saved. Each address (localhost port, shared link, downloaded file) has its own storage.</p>
-        <dl class="kv" style="margin-bottom:12px"><dt>Storage used</dt><dd id="setStore"></dd><dt>Designs · library items</dt><dd>${S.projects.length} · ${['motors', 'props', 'tests', 'batteries', 'parts', 'printed', 'airframes'].reduce((a, k) => a + (S.lib[k] || []).length, 0)}</dd><dt>Props with performance data</dt><dd>${propData}</dd></dl>
+        <dl class="kv" style="margin-bottom:12px"><dt>Storage used</dt><dd id="setStore"></dd><dt>Designs · library items</dt><dd>${S.projects.length} · ${LIB_KINDS.reduce((a, k) => a + (S.lib[k] || []).length, 0)}</dd><dt>Props with performance data</dt><dd>${propData}</dd></dl>
         <div class="fields" style="padding:0">${chk('settings.backups.on', 'Keep automatic backups (on open, at most every 12 h, and before upgrades)', { st: true })}</div>
         <div class="checks" style="margin:8px 0">${bk.map((x, j) => `<div class="chk" style="align-items:center"><span class="grow">${new Date(x.t).toLocaleString()} <span class="faint">· ${esc(x.why)}</span></span><button class="btn sm" data-act="restore" data-i="${j}">Restore</button></div>`).join('') || '<p class="hint">No backups yet.</p>'}</div>
         <div class="row"><button class="btn sm" data-act="backup-now">Back up now</button><button class="btn sm" data-act="tpl-download">Component template (.xlsx)</button><button class="btn sm" data-act="export">Export workspace…</button><button class="btn sm" data-act="import">Import…</button></div></div>

@@ -55,7 +55,8 @@ function designInputs() {
       ${num('mr.n', 'Motors', { step: 1, min: 1 })}
       ${propPick('mr', bat.V)}
       ${finderRow(p, 'mr')}
-      ${adv(`${num('mr.escA', 'ESC rating', { unit: 'A' })}
+      ${escPick('mr')}
+      ${adv(`
       ${num('mr.maxThr', `Payload limit ${tip('Extra payload is counted until hover throttle reaches this value.')}`, { unit: '% thr' })}
       ${t === 'multirotor' ? num('mr.cda', 'Frame drag area CdA', { unit: 'm²', step: 0.01 }) : ''}
       ${t === 'multirotor' ? num('mr.lean', `Max lean angle ${tip('ArduPilot ANGLE_MAX (default 30°). Top speed and wind limit stop where the frame would need to tilt further than this.')}`, { unit: '°', step: 1, min: 5 }) : ''}`)}
@@ -89,7 +90,7 @@ function designInputs() {
       ${num('fw.etaD', 'Motor + ESC eff.', { unit: '%' })}`)}
       ${t === 'fixedwing' ? num('fw.vsMax', 'Max stall speed', { unit: 'm/s' }) : ''}
       ${(p.fw.drag || {}).mode === 'buildup' ? '' : '<p class="hint">Typical CD0: glider 0.02, FPV wing 0.03, ISR plane 0.05–0.07.</p>'}`);
-    if (!shared) prop += group(t === 'fixedwing' ? 'Propulsion' : 'Cruise propulsion', `${propPick('fw', bat.V)}${finderRow(p, 'fw')}${num('fw.n', 'Cruise motors', { step: 1, min: 1 })}${adv(chk('fw.propOther', 'My actual prop differs from this data (−15 % prop efficiency)'))}`);
+    if (!shared) prop += group(t === 'fixedwing' ? 'Propulsion' : 'Cruise propulsion', `${propPick('fw', bat.V)}${finderRow(p, 'fw')}${num('fw.n', 'Cruise motors', { step: 1, min: 1 })}${escPick('fw')}${adv(chk('fw.propOther', 'My actual prop differs from this data (−15 % prop efficiency)'))}`);
     if (!isSimple()) h += group('Calibrate from flight', `
       ${chk('fw.cal.on', 'Scale the drag model to a measured cruise point', { rebuild: true })}
       ${p.fw.cal.on ? `${chk('fw.cal.learn', 'Real measurement of this aircraft: use it to improve estimates for other designs')}${num('fw.cal.v', 'Measured airspeed', { unit: 'm/s' })}${num('fw.cal.a', 'Propulsion current', { unit: 'A' })}${num('fw.cal.g', 'Weight at test', { unit: 'g' })}<p class="hint" id="calHint"></p>` : '<p class="hint">Optional: anchor the model to a measured cruise point.</p>'}`, p.fw.cal.on);
@@ -253,7 +254,8 @@ function finderRows(p, kind, role) {
     const end = U.enduranceOf(q, R);
     if (!fin(end) || end <= 0) return;
     const why = [];
-    if (R.h) { if (R.h.tw < twMin) why.push(`T/W ${fmt(R.h.tw, 1)}`); if (R.h.thr > 70) why.push(`hover ${fmt(R.h.thr, 0)} %`); if (q.mr.escA && R.h.iMaxMotor > q.mr.escA) why.push('over ESC'); }
+    if (R.h) { if (R.h.tw < twMin) why.push(`T/W ${fmt(R.h.tw, 1)}`); if (R.h.thr > 70) why.push(`hover ${fmt(R.h.thr, 0)} %`); }
+    for (const x of R.overload || []) if (!why.includes(x)) why.push(x);
     if (R.cruise && q.type !== 'multirotor' && (!fin(R.cruise.P) || R.cruise.thr > 90)) why.push('cannot hold cruise');
     if (q.type === 'fixedwing' && +q.fw.vsMax > 0 && R.vs > +q.fw.vsMax) why.push(`stall ${fmt(R.vs, 1)} m/s`);
     const sus = R.h && q.type === 'multirotor' ? R.hoverI : R.cruise ? R.cruise.I : R.hoverI;

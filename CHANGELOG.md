@@ -10,6 +10,13 @@ Numbering ([semantic versioning](https://semver.org), major.minor.patch):
 
 To record an update: bump `APP_VERSION` at the top of `hangarlab/app-core.js`, add an entry here, run `node build.js` in `hangarlab/`, commit, then tag it (`git tag v0.1.1-dev && git push --tags`). The version shows at the bottom right of every page.
 
+## 0.3.0-dev (2026-10-15)
+
+- ESCs: new **ESCs** section in the Parts Library (continuous and burst current, cell range, weight, cost, buy link), and an ESC picker for the lift and cruise motors in Propulsion. Pick one from the library, or type its rating and max cells. Library ESCs are added to the BOM automatically.
+- New checks: full-throttle current against the ESC's continuous and burst rating, pack voltage against the ESC's cell range, and full-throttle current and power against the motor's own max current and max power. The cruise motor is now checked too, not only the lift motors.
+- Part finders flag motor + prop pairs and packs that overload the ESC or the motor.
+- Excel import and template: new ESCs sheet.
+
 ## 0.2.2-dev (2026-10-15)
 
 - Tour: waits until the page is on screen before starting, and only counts as seen once someone finishes or skips it (it could be skipped silently when the page opened in the background).

@@ -69,6 +69,7 @@ lines = [
     ('Motors — kV, winding resistance Rm (mΩ) and no-load current I0 turn on the motor model. Max current/power from the datasheet.', None),
     ('Props — diameter and pitch in inches. Performance data (APC .dat) is imported separately in the app.', None),
     ('Batteries — one row per pack: cells in series (S), in parallel (P), capacity per cell, continuous C and peak (burst) C. Pack count is set per design in the app.', None),
+    ('ESCs — continuous and burst current, the cell range it accepts, and weight. Designs pick an ESC for the lift and cruise motors.', None),
     ('Airframes — wingspan, wing area and length in meters, weight in grams.', None),
     ('Motor thrust data — thrust-stand tests, one row per measurement: Motor, Prop, Throttle, Thrust, Voltage, Current. Rows with the same Motor + Prop form one test; pick names from the Motors and Props sheets. (Older one-sheet-per-test "Thrust - …" sheets still import.)', None),
     ('', None),
@@ -148,6 +149,14 @@ table(pr, ['Name', 'Diameter (in)', 'Pitch (in)', 'Weight (g)', 'Link', 'Unit co
     ['HQ 8x4.5x3', 8, 4.5, '', '', '', ''],
     ['APC 15x5.5MR', 15, 5.5, 42, '', '', ''],
 ])
+
+# ---------- ESCs ----------
+es = wb.create_sheet('ESCs')
+table(es, ['Name', 'Brand', 'Continuous current (A)', 'Burst current (A)', 'Min cells (S)', 'Max cells (S)', 'Weight (g)', 'Link', 'Unit cost', 'Buy link'],
+      [28, 14, 20, 17, 13, 13, 11, 42, 11, 42], [
+          ['Generic 6S 60A ESC', '', 60, 80, 3, 6, 60, '', '', ''],
+          ['Generic 12S 80A ESC', '', 80, 100, 6, 12, 90, '', '', ''],
+      ])
 
 # ---------- Batteries ----------
 ba = wb.create_sheet('Batteries')

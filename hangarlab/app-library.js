@@ -9,6 +9,7 @@ const LIB_COLS = {
   batteries: [['name', 'Pack', 'text', 240], ['brand', 'Brand', 'text', 110], ['chem', 'Chem', 'chem'], ['s', 'Cells S', 'number', 54], ['p', 'Cells P', 'number', 54], ['cellMah', 'Cell mAh', 'number', 76], ['g', 'Pack g', 'number', 70, 'g>oz'], ['c', 'Cont. C', 'number', 54], ['cPeak', 'Peak C', 'number', 54], ['link', 'Link', 'text', 120], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
   printed: [['name', 'Part', 'text', 190], ['mat', 'Material', 'mat'], ['vol', 'Volume cm³', 'number', 70, 'cm³>in³'], ['area', 'Area cm²', 'number', 70, 'cm²>in²'], ['walls', 'Walls', 'number', 50], ['tb', 'Top/bot layers', 'number', 56], ['infill', 'Infill %', 'number', 56], ['g', 'Mass g', 'number', 66, 'g>oz'], ['notes', 'Notes', 'text', 140], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
   parts: [['name', 'Name', 'text', 220], ['sub', 'Subsystem', 'sub', 110], ['g', 'g', 'number', 70, 'g>oz'], ['rail', 'Rail', 'rail'], ['w', 'Avg W', 'number', 60], ['pw', 'Peak W', 'number', 60], ['rf', 'RF Freq', 'rf'], ['link', 'Link', 'text', 140], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
+  escs: [['name', 'ESC', 'text', 210], ['brand', 'Brand', 'text', 100], ['a', 'Cont. A', 'number', 62], ['burst', 'Burst A', 'number', 62], ['sMin', 'Min S', 'number', 54], ['sMax', 'Max S', 'number', 54], ['g', 'Weight g', 'number', 66, 'g>oz'], ['link', 'Link', 'text', 120], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
   airframes: [['name', 'Name', 'text', 200], ['span', 'Span m', 'number', 70, 'm>in'], ['area', 'Wing m²', 'number', 80, 'm²>ft²'], ['length', 'Length m', 'number', 70, 'm>in'], ['g', 'Weight g', 'number', 80, 'g>oz'], ['notes', 'Notes', 'text', 160], ['link', 'Link', 'text', 140], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
 };
 const LIB_BLANK = {
@@ -17,6 +18,7 @@ const LIB_BLANK = {
   batteries: { name: 'New pack', chem: 'lipo', s: 6, p: 1, cellMah: 5000, g: 700, c: 25, cPeak: 0, link: '', cost: 0, buy: '' },
   printed: { name: 'New printed part', mat: 'petg', vol: 10, area: 0, walls: 3, tb: 4, infill: 25, g: 0, sub: '3D printed', notes: '', cost: 0, buy: '' },
   parts: { name: 'New component', sub: 'Avionics', g: 10, rail: '5V', w: 1, pw: 1, rf: '', link: '', cost: 0, buy: '' },
+  escs: { name: 'New ESC', brand: '', a: 40, burst: 0, sMin: 2, sMax: 6, g: 30, link: '', cost: 0, buy: '' },
   airframes: { name: 'New airframe', span: 1, area: 0.2, length: 0.8, g: 500, notes: '', link: '', cost: 0, buy: '' },
 };
 // brand: guessed once from the name (usually its first word), then editable. Some product lines don't carry the maker's name.
@@ -79,7 +81,7 @@ function renderLibrary(el) {
   if (S.libTab === 'subs') S.libTab = 'parts';
   const t = S.libTab, L = S.lib;
   fillBrands(L);
-  const tabs =[['motors', 'Motors & thrust data', L.motors.length], ['props', 'Props', L.props.length], ['batteries', 'Battery packs', L.batteries.length], ['parts', 'Components', L.parts.length], ['printed', '3D printed parts', (L.printed || []).length], ['airframes', 'Airframes', L.airframes.length]];
+  const tabs =[['motors', 'Motors & thrust data', L.motors.length], ['props', 'Props', L.props.length], ['batteries', 'Battery packs', L.batteries.length], ['escs', 'ESCs', (L.escs || []).length], ['parts', 'Components', L.parts.length], ['printed', '3D printed parts', (L.printed || []).length], ['airframes', 'Airframes', L.airframes.length]];
   const opt = (list, v) => list.map(([a, b]) => `<option value="${a}"${a === (v || '') ? ' selected' : ''}>${b}</option>`).join('');
   let body = '';
   // one motor's thrust tests, shown under its row
@@ -123,6 +125,7 @@ function renderLibrary(el) {
       parts: `<button class="btn sm" data-act="lib-use" data-kind="parts" data-i="${i}">Add to BOM</button>`,
       printed: `<label class="btn sm">STL<input type="file" accept=".stl,.STL" data-stlrow="${i}" hidden></label><button class="btn sm" data-act="lib-use" data-kind="printed" data-i="${i}">Add to BOM</button>`,
       airframes: `<button class="btn sm" data-act="lib-use" data-kind="airframes" data-i="${i}">Apply</button>`,
+      escs: `<button class="btn sm" data-act="use-esc" data-role="mr" data-i="${i}">Lift</button><button class="btn sm" data-act="use-esc" data-role="fw" data-i="${i}">Cruise</button>`,
     })[t];
     const extra = t === 'motors' ? '<th>Thrust data</th>' : t === 'props' ? '<th>Performance data</th><th class="n">Tests</th>' : '';
     const nTests = (x) => `<td class="n">${L.tests.filter((q) => q[t === 'motors' ? 'motor' : 'prop'] === x.id).length || '<span class="faint">0</span>'}</td>`;
@@ -139,7 +142,7 @@ function renderLibrary(el) {
       <div class="tbl-wrap"><table><thead><tr>${cols.map(th).join('')}${extra}<th>Use in ${esc(P().name)}</th><th></th></tr></thead><tbody>
       ${libOrder(t, cols).map((i) => { const x = L[t][i], rq = esc(rowText(x)), hid = libMatch(rowText(x), q) ? '' : ' hidden'; return `<tr data-libq="${rq}"${hid}>${cols.map((c) => `<td>${cell(`${t}.${i}.${c[0]}`, c, x[c[0]])}</td>`).join('')}${extraCell(x, i)}<td><div class="row" style="flex-wrap:nowrap">${acts(i)}</div></td><td><button class="btn ghost sm danger" data-act="lib-del" data-kind="${t}" data-i="${i}" aria-label="Delete">×</button></td></tr>${t === 'motors' && mtOpen.has(x.id) ? `<tr class="mt-row" data-libq="${rq}"${hid}><td colspan="${cols.length + 3}">${testRows(x.id)}</td></tr>` : ''}`; }).join('')}
       </tbody></table></div>
-      <div class="row" style="margin-top:10px"><button class="btn primary" data-act="lib-add" data-kind="${t}">Add ${{ motors: 'motor', props: 'prop', batteries: 'battery pack', parts: 'component', printed: 'printed part', airframes: 'airframe' }[t]}</button>
+      <div class="row" style="margin-top:10px"><button class="btn primary" data-act="lib-add" data-kind="${t}">Add ${{ motors: 'motor', props: 'prop', batteries: 'battery pack', parts: 'component', printed: 'printed part', airframes: 'airframe', escs: 'ESC' }[t]}</button>
       ${t === 'printed' ? `<span class="note">Printer settings:</span>
         <label class="f" style="width:110px"><span>Line width mm</span><input type="number" data-lib="printer.lineW" value="${PRN().lineW}" step="0.01"></label>
         <label class="f" style="width:110px"><span>Layer height mm</span><input type="number" data-lib="printer.layerH" value="${PRN().layerH}" step="0.01"></label>` : ''}
@@ -232,6 +235,10 @@ async function importWorkbook(file) {
     } else if (name === 'batteries' || name === 'packs') {
       for (const o of sheetObjects(sh.rows, [['name', /^name|pack/i], ['chem', /chem/i], ['s', /cells? s\b|series|^s$/i], ['p', /cells? p\b|parallel|^p$/i], ['cellMah', /cell cap|mah/i], ['g', /weight|mass/i], ['cPeak', /peak|burst/i], ['c', /\bc\b|continuous/i], ...BUY_COLS, ['link', /link|url/i]])) {
         tally('batteries', upsert('batteries', 'batteries-', Object.assign({ name: String(o.name).trim(), chem: chemIn(o.chem), s: numOr(o.s, 1), p: numOr(o.p, 1), cellMah: numOr(o.cellMah), g: numOr(o.g), c: numOr(o.c, 1), cPeak: numOr(o.cPeak) }, o.link ? { link: String(o.link) } : {}, buyOf(o))));
+      }
+    } else if (name === 'escs' || name === 'esc') {
+      for (const o of sheetObjects(sh.rows, [['name', /^name|esc/i], ['brand', /brand|make/i], ['burst', /burst|peak/i], ['a', /cont|current|amps?\b|\(a\)/i], ['sMin', /min/i], ['sMax', /max/i], ['g', /weight|mass/i], ...BUY_COLS, ['link', /link|url/i]])) {
+        tally('ESCs', upsert('escs', 'esc-', Object.assign({ name: String(o.name).trim(), brand: o.brand ? String(o.brand).trim() : '', a: numOr(o.a), burst: numOr(o.burst), sMin: numOr(o.sMin), sMax: numOr(o.sMax), g: numOr(o.g) }, o.link ? { link: String(o.link) } : {}, buyOf(o))));
       }
     } else if (name === 'airframes') {
       for (const o of sheetObjects(sh.rows, [['name', /^name|airframe/i], ['span', /span/i], ['area', /area/i], ['length', /length/i], ['g', /weight|mass/i], ['notes', /note/i], ...BUY_COLS, ['link', /link|url/i]])) {

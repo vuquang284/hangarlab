@@ -20,7 +20,7 @@ if (args[0] === '--reset') {
   const ws = JSON.parse(fs.readFileSync(file, 'utf8'));
   if (!ws.lib || !ws.projects) { console.error('Not a HangarLab workspace backup (Export → Workspace backup).'); process.exit(1); }
   if (ws.v !== 5 || !ws.lib.motors) { console.error('This backup is from an older version. Import it into the app, then export it again.'); process.exit(1); }
-  const KINDS = ['motors', 'props', 'tests', 'batteries', 'parts', 'airframes', 'printed'];
+  const KINDS = ['motors', 'props', 'tests', 'batteries', 'escs', 'parts', 'airframes', 'printed'];
   const lib = { printer: ws.lib.printer || { lineW: 0.45, layerH: 0.2 } };
   for (const k of KINDS) lib[k] = ws.lib[k] || [];
   // tests whose motor or prop is missing would be unusable
