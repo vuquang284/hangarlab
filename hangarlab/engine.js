@@ -1336,6 +1336,95 @@
     return { segs: out, wh };
   }
   // which ArduPilot firmware wrote the log: from the version message, else from tell-tale parameters
+  // ---------- product page → library fields ----------
+  // Reads a shop or maker page (HTML or pasted text): structured data first (JSON-LD Product, meta tags), then
+  // "label ... value unit" patterns in the visible text. Returns only the fields it found; the user checks them.
+  function pageSpecs(src, kind) {
+    const html = String(src || ''), o = {};
+    const ent = (s) => s.replace(/&nbsp;|&#160;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;|&#34;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&times;/g, 'x').replace(/&Omega;|&#937;/g, 'Ω');
+    // JSON-LD Product
+    for (const m of html.matchAll(/<script[^>]*ld\+json[^>]*>([\s\S]*?)<\/script>/gi)) {
+      let d; try { d = JSON.parse(m[1].trim()); } catch (e) { continue; }
+      const all = [].concat(d['@graph'] || d).flat();
+      const p = all.find((x) => x && /product/i.test([].concat(x['@type'] || '').join(' ')));
+      if (!p) continue;
+      if (p.name) o.name = ent(String(p.name)).trim();
+      const b = p.brand && (p.brand.name || p.brand);
+      if (typeof b === 'string' && b.trim()) o.brand = ent(b).trim();
+      const off = [].concat(p.offers || [])[0];
+      const pr = off && (off.price ?? off.lowPrice ?? (off.priceSpecification && off.priceSpecification.price));
+      if (pr != null && isFinite(+pr) && +pr > 0) o.cost = +pr;
+      if (p.description) o._desc = ent(String(p.description));
+      break;
+    }
+    const meta = (rx) => { const m = html.match(new RegExp(`<meta[^>]+(?:property|name)=["'](?:${rx})["'][^>]*>`, 'i')); const c = m && m[0].match(/content=["']([^"']*)["']/i); return c ? ent(c[1]).trim() : ''; };
+    if (!o.name) o.name = meta('og:title|twitter:title') || ent((html.match(/<title[^>]*>([^<]*)<\/title>/i) || [])[1] || '').split(/\s+[|–—]\s+/)[0].trim();
+    if (!o.cost) { const pm = meta('product:price:amount|og:price:amount'); if (+pm > 0) o.cost = +pm; }
+    if (!o.brand) { const bm = meta('product:brand|og:brand'); if (bm) o.brand = bm; }
+    // visible text: tags become separators so "<td>KV</td><td>250</td>" reads "KV | 250"
+    // the page's main content only, when marked, so menus listing other products ("180A HV (6-14S)") don't count
+    const body = (html.match(/<main[\s>][\s\S]*<\/main>/i) || [html])[0];
+    const plain = (h) => ent(ent(h).replace(/<(script|style|noscript|svg)[\s\S]*?<\/\1>/gi, ' ').replace(/<[^>]+>/g, ' | ')).replace(/\s+/g, ' ');
+    // the product description (often a spec table) goes first, ahead of the rest of the page
+    const text = (o._desc ? plain(o._desc) + ' | ' : '') + plain(body);
+    delete o._desc;
+    if (!o.name) o.name = (ent(html.replace(/<[^>]+>/g, '\n')).split('\n').map((x) => x.trim()).find(Boolean) || '').slice(0, 120); // pasted text: first line
+    const all = `${o.name} | ${text}`;
+    // number after a label, within a short gap (skips "|", ":" and words like "(g)")
+    const after = (label, unit) => { const m = all.match(new RegExp(`(?:${label})(?:[^0-9|(]|\\([^)]{0,20}\\)|\\|){0,40}?(\\d+(?:[.,]\\d+)?)\\s*(${unit})`, 'i')); return m ? { v: +m[1].replace(',', '.'), u: (m[2] || '').toLowerCase() } : null; };
+    const W = after('weight|mass|net weight', 'kg|g\\b|grams?|oz|lbs?|');
+    if (W && W.v > 0) {
+      const g = W.u === 'kg' ? W.v * 1000 : W.u === 'oz' ? W.v * 28.35 : /^lb/.test(W.u) ? W.v * 453.6 : W.v;
+      // no unit given: grams if plausible
+      if (W.u || g >= 1) o.g = +g.toFixed(1);
+    }
+    if (!o.cost) { const pm = all.match(/(?:[$€£]|USD|EUR|GBP)\s?(\d{1,5}(?:[.,]\d{2})?)/); if (pm) o.cost = +pm[1].replace(',', '.'); }
+    const len = (label) => { const r = after(label, 'mm|cm|m\\b|in\\b|inch(?:es)?|"'); return r ? (r.u === 'mm' ? r.v / 1000 : r.u === 'cm' ? r.v / 100 : /in|"/.test(r.u) ? r.v * 0.0254 : r.v) : null; };
+    if (kind === 'motors') {
+      const kv = all.match(/(\d{2,5})\s*kv\b/i) || all.match(/\bkv\s*(\d{2,5})\b/i) || after('\\bkv\\b', '');
+      if (kv) o.kv = +(kv.v || kv[1]);
+      const rm = after('internal resistance|resistance|\\brm\\b', 'mΩ|m ?ohms?|mohm|Ω|ohms?|');
+      if (rm) o.rm = /^m/.test(rm.u) || (!rm.u && rm.v > 1.5) || rm.v > 1.5 ? +(rm.v / 1000).toFixed(5) : rm.v;
+      const i0 = after('no[- ]?load current|idle current|\\bi0\\b|\\bio\\b', 'a\\b'); if (i0) o.i0 = i0.v;
+      const ma = after('max(?:imum)?\\.? (?:continuous )?current|peak current|max(?:imum)? amps?|\\bimax\\b', 'a\\b'); if (ma) o.maxA = ma.v;
+      const mw = after('max(?:imum)?\\.? (?:continuous )?power|peak power|\\bpmax\\b', 'w\\b'); if (mw) o.maxW = mw.v;
+    } else if (kind === 'props') {
+      const sz = sizeOf(o.name); if (sz.diam) Object.assign(o, sz);
+      const d = after('diameter', 'in\\b|inch(?:es)?|"|mm'); if (!o.diam && d) o.diam = d.u === 'mm' ? +(d.v / 25.4).toFixed(1) : d.v;
+      const p = after('pitch', 'in\\b|inch(?:es)?|"|mm'); if (!o.pitch && p) o.pitch = p.u === 'mm' ? +(p.v / 25.4).toFixed(1) : p.v;
+    } else if (kind === 'batteries') {
+      const sp = all.match(/\b(\d{1,2})\s*S\s*(\d{1,2})\s*P\b/i), s = sp || all.match(/\b(\d{1,2})\s*S\b(?![a-z])/i);
+      if (s) o.s = +s[1];
+      o.p = sp ? +sp[2] : 1;
+      const mah = all.match(/(\d{3,6})\s*mAh/i) || ((m) => m && [m[0], String(+m[1] * 1000)])(all.match(/(\d{1,3}(?:\.\d+)?)\s*Ah\b/i));
+      if (mah) o.cellMah = Math.round(+mah[1] / o.p);
+      const c = all.match(/(\d{1,3})\s*C\b(?!\w)/); if (c) o.c = +c[1];
+      const cb = after('burst|peak|max(?:imum)? discharge', 'c\\b'); if (cb && cb.v > (o.c || 0)) o.cPeak = cb.v;
+      o.chem = /li-?ion|18650|21700|molicel|amprius/i.test(all) ? 'liion' : /lihv|\bhv\b/i.test(all) ? 'lihv' : /lifepo|life\b/i.test(all) ? 'life' : 'lipo';
+      // Li-ion packs often give amps or watts instead of C: "300A burst", "1369W sustained discharge"
+      const ah = o.cellMah && o.p ? (o.cellMah * o.p) / 1000 : 0;
+      if (ah && !o.cPeak) { const m = all.match(/(\d{2,4})\s*A\s*(?:burst|peak)/i) || all.match(/(?:burst|peak)[^0-9|]{0,20}(\d{2,4})\s*A\b/i); if (m) o.cPeak = +(+m[1] / ah).toFixed(1); }
+      if (ah && !o.c && o.s) {
+        const m = all.match(/(\d{2,4})\s*A\s*(?:continuous|sustained|max continuous)/i), w = all.match(/(\d{3,5})\s*W\s*(?:sustained|continuous)/i);
+        const m2 = all.match(/(?:continuous|sustained)[^0-9|]{0,25}(\d{2,4})\s*A\b(?!\s*(?:burst|peak))/i);
+        const A = m ? +m[1] : w ? +w[1] / (o.s * (o.chem === 'liion' ? 3.6 : 3.7)) : m2 ? +m2[1] : 0;
+        if (A) o.c = +(A / ah).toFixed(1);
+      }
+    } else if (kind === 'escs') {
+      const a = after('continuous current|cont\\.? current|constant current', 'a\\b') || ((m) => m && { v: +m[1] })(all.match(/\b(\d{2,3})\s*A\b(?!h)/));
+      if (a) o.a = a.v;
+      const b = after('burst current|peak current|burst|peak', 'a\\b'); if (b && b.v > (o.a || 0)) o.burst = b.v;
+      const s = all.match(/\b(\d{1,2})\s*(?:S\s*)?(?:-|–|~|to)\s*(\d{1,2})\s*S\b/i);
+      if (s) { o.sMin = +s[1]; o.sMax = +s[2]; } else { const m = all.match(/\b(\d{1,2})\s*S\b/); if (m) o.sMax = +m[1]; }
+    } else if (kind === 'airframes') {
+      const sp = len('wing ?span|span'); if (sp) o.span = +sp.toFixed(3);
+      const l = len('length'); if (l) o.length = +l.toFixed(3);
+      const ar = after('wing area', 'dm²|dm2|dm\\^2|cm²|cm2|m²|m2|sq\\.? ?in'); if (ar) o.area = +(ar.u.startsWith('dm') ? ar.v / 100 : ar.u.startsWith('cm') ? ar.v / 1e4 : ar.u.startsWith('sq') ? ar.v * 0.00064516 : ar.v).toFixed(4);
+    }
+    for (const k of Object.keys(o)) if (o[k] === '' || o[k] == null || (typeof o[k] === 'number' && !isFinite(o[k]))) delete o[k];
+    return o;
+  }
+
   function logFirmware(log, params) {
     const m = findMsg(log, 'MSG'), txt = m && m.cols.includes('Message') ? Array.from(m.col('Message')).slice(0, 40).join(' ') : '';
     const hit = /Ardu(Plane|Copter|Rover|Sub)|AntennaTracker|Blimp/.exec(txt);
@@ -1654,7 +1743,7 @@
   G.UAS = {
     g0, RHO0, CELL, LAYOUTS, BANDS, POL, MATERIALS, RAIL_V, COAX_THRUST,
     rhoAt, battery, packOf, curve, dragBuildup, oswald, FINISH, CONSERVATIVE, DEFAULT_K, motorCanMm, combo, parseAPC, parsePropTable, propCoef, drive, drivePower, sizeOf, splitSets, propulsion, payloadSweep, fullBom, consolidate, costOf, cgOf, missionPlan, SEG, enduranceOf, fwDrag, mrForward, massOf, autoRows, avionicsPower, compute, batterySweep,
-    powerPlan, pickWire, pickConn, escOf, AIRMAX, RADIOS, ANTENNAS, polLoss, CONNECTORS, WIRE, link, fspl, radioHorizonKm, rfConflicts,
+    powerPlan, pickWire, pickConn, escOf, pageSpecs, AIRMAX, RADIOS, ANTENNAS, polLoss, CONNECTORS, WIRE, link, fspl, radioHorizonKm, rfConflicts,
     rankMaterials, partMass, partShell, parseSTL, stlStats,
     parseBin, parseText, parseCSV, logModes, logSummary, logFirmware, logHealth, apParams, modeCruise, VTOL_DEF, missionFromLog, coldFactor, gpsTrack, sampleLog, findMsg, interp, logEvents, logParams, logTrack, evalExpr, idxAt, ERR_SUBSYS, EV_IDS,
   };

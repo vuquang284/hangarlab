@@ -10,6 +10,11 @@ Numbering ([semantic versioning](https://semver.org), major.minor.patch):
 
 To record an update: bump `APP_VERSION` at the top of `hangarlab/app-core.js`, add an entry here, run `node build.js` in `hangarlab/`, commit, then tag it (`git tag v0.1.1-dev && git push --tags`). The version shows at the bottom right of every page.
 
+## 0.4.0-dev (2026-10-15)
+
+- **Add from link** in the Parts Library (motors, props, battery packs, ESCs, components, airframes): paste a product page link and HangarLab fills in the name, brand, price, buy link and the specs it finds (kV, Rm, I0, max current and power, weight, size and pitch, cells, capacity, C rating, ESC current and cell range, wingspan, length, wing area). Found values are highlighted to check before adding. Li-ion packs that list amps or watts instead of C are converted.
+- Pages are read through a small Cloudflare Pages Function (`functions/api/page.js`). Where it isn't available (running locally) and the shop blocks reading, paste the page text instead.
+
 ## 0.3.1-dev (2026-10-15)
 
 - Built-in parts library updated from the edited parts spreadsheet: new props (APC 8x6E, 8x6EP, 16x10E, 16x10EP), components (Cube Orange+ Standard, Herelink air unit, Jetson Orin Nano Super Dev Kit), the HEEWING T2 motor with thrust data, and the Skids Assembly printed part; updated component values. Removed the frame parts, payload mount, electromagnet and the old printed parts. Libraries people already have keep their own items.

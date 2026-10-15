@@ -36,7 +36,7 @@ No account and nothing to install: it runs in your browser, and your designs are
 
 **3D Printing**: filament ranking for heat, UV and impact; STL preview with printed-part mass.
 
-**Parts Library**: motors (with thrust-stand data), props (with APC performance data), battery packs, ESCs, components (with editable subsystems), printed parts and airframes. Import from the Excel template.
+**Parts Library**: motors (with thrust-stand data), props (with APC performance data), battery packs, ESCs, components (with editable subsystems), printed parts and airframes. Import from the Excel template, or **add from a product link**: the name, price and specs are read from the page for you to check.
 
 **Flight Logs** (ArduPilot `.bin` / `.log`)
 - Plots, presets and expressions, parameters and events.
@@ -109,6 +109,7 @@ Requires Node.js (any current LTS) for the tools below. Run them from `hangarlab
 | `app-export.js` | Dialogs, export, checklist and Settings. |
 | `app-main.js` | Quick start, Compare tab, events and start-up. |
 | `_headers` | Cache headers for the live site. |
+| `../functions/api/page.js` | Cloudflare Pages Function that fetches product pages for "Add from link" (Pages deploys the repository's `functions/` folder automatically). |
 | `test-fixtures.json` | Reference designs `test.js` checks the model against (not shipped in the app). |
 
 The `app-*.js` files are plain scripts that share one global scope, so their load order matters. It is listed in both `index.html` and `build.js`, and `app-main.js` must come last.

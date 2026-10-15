@@ -427,6 +427,9 @@ document.addEventListener('click', (e) => {
     case 'mt-all': { if (mtOpen.size) mtOpen.clear(); else S.lib.motors.forEach((m) => mtOpen.add(m.id)); render(); break; }
     case 'spec-import': specDialog(b.dataset.kind); break;
     case 'spec-go': specGo(); break;
+    case 'link-dlg': linkDialog(b.dataset.kind); break;
+    case 'link-read': linkRead(!!b.dataset.paste); break;
+    case 'link-add': linkAdd(); break;
     case 'apc-import': apcDialog(); break;
     case 'apc-go': apcGo(); break;
     case 'apc-all': apcShown().forEach(([e]) => (e.on = true)); renderApc(); break;

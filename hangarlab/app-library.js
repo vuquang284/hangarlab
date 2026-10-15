@@ -142,7 +142,7 @@ function renderLibrary(el) {
       <div class="tbl-wrap"><table><thead><tr>${cols.map(th).join('')}${extra}<th>Use in ${esc(P().name)}</th><th></th></tr></thead><tbody>
       ${libOrder(t, cols).map((i) => { const x = L[t][i], rq = esc(rowText(x)), hid = libMatch(rowText(x), q) ? '' : ' hidden'; return `<tr data-libq="${rq}"${hid}>${cols.map((c) => `<td>${cell(`${t}.${i}.${c[0]}`, c, x[c[0]])}</td>`).join('')}${extraCell(x, i)}<td><div class="row" style="flex-wrap:nowrap">${acts(i)}</div></td><td><button class="btn ghost sm danger" data-act="lib-del" data-kind="${t}" data-i="${i}" aria-label="Delete">×</button></td></tr>${t === 'motors' && mtOpen.has(x.id) ? `<tr class="mt-row" data-libq="${rq}"${hid}><td colspan="${cols.length + 3}">${testRows(x.id)}</td></tr>` : ''}`; }).join('')}
       </tbody></table></div>
-      <div class="row" style="margin-top:10px"><button class="btn primary" data-act="lib-add" data-kind="${t}">Add ${{ motors: 'motor', props: 'prop', batteries: 'battery pack', parts: 'component', printed: 'printed part', airframes: 'airframe', escs: 'ESC' }[t]}</button>
+      <div class="row" style="margin-top:10px"><button class="btn primary" data-act="lib-add" data-kind="${t}">Add ${{ motors: 'motor', props: 'prop', batteries: 'battery pack', parts: 'component', printed: 'printed part', airframes: 'airframe', escs: 'ESC' }[t]}</button>${LINK_KIND[t] ? `<button class="btn" data-act="link-dlg" data-kind="${t}">Add from link</button>` : ''}
       ${t === 'printed' ? `<span class="note">Printer settings:</span>
         <label class="f" style="width:110px"><span>Line width mm</span><input type="number" data-lib="printer.lineW" value="${PRN().lineW}" step="0.01"></label>
         <label class="f" style="width:110px"><span>Layer height mm</span><input type="number" data-lib="printer.layerH" value="${PRN().layerH}" step="0.01"></label>` : ''}
@@ -671,4 +671,66 @@ function bulkGo() {
     n++;
   });
   closeDlg(); S.libTab = 'motors'; save(); render(); toast(`Imported ${n} thrust test(s)`);
+}
+
+// ---------- add from a product link ----------
+// The page is read through /api/page (a Cloudflare Pages Function, see functions/api/page.js) since a browser page can't
+// read other sites itself; a few shops allow it directly. Anything else: paste the page text instead.
+let linkState = null;
+const LINK_KIND = { motors: 'motor', props: 'prop', batteries: 'battery pack', escs: 'ESC', parts: 'component', airframes: 'airframe' };
+function linkDialog(kind) {
+  linkState = { kind, found: {} };
+  openDlg(`Add ${LINK_KIND[kind]} from a link`, `
+    <p class="note">Paste the product page link. HangarLab reads the name, brand, price and specs it can find; check them before adding.</p>
+    <div class="row"><input type="url" id="link-url" placeholder="https://..." style="flex:1;min-width:200px"><button class="btn primary" data-act="link-read">Read page</button></div>
+    <details id="link-paste-box"><summary class="note">Or paste the page text</summary><p class="hint">Some shops block reading. Open the page, select all (Ctrl+A), copy, and paste it here.</p><textarea id="link-text" rows="5"></textarea><button class="btn sm" data-act="link-read" data-paste="1">Read pasted text</button></details>
+    <p class="hint" id="link-msg"></p><div id="link-form"></div>`,
+    `<button class="btn" data-act="dlg-close">Cancel</button><button class="btn primary" data-act="link-add" disabled id="link-add">Add to library</button>`);
+  setTimeout(() => $('#link-url')?.focus(), 50);
+}
+async function linkFetch(url) {
+  try {
+    const r = await fetch('api/page?url=' + encodeURIComponent(url));
+    if (r.ok && /text\/plain/.test(r.headers.get('Content-Type') || '')) return await r.text();
+    if (r.status !== 404 && r.status !== 405) throw new Error(await r.text());
+  } catch (e) { if (e.message && !/fetch|network|load/i.test(e.message)) throw e; }
+  const r = await fetch(url); // shops that allow it
+  if (!r.ok) throw new Error(`The shop answered ${r.status}`);
+  return await r.text();
+}
+async function linkRead(paste) {
+  const url = ($('#link-url').value || '').trim(), msg = $('#link-msg');
+  let src = '';
+  if (paste) src = $('#link-text').value;
+  else {
+    if (!/^https?:\/\//i.test(url)) { msg.textContent = 'Enter a link starting with http:// or https://.'; return; }
+    msg.textContent = 'Reading the page…';
+    try { src = await linkFetch(url); } catch (e) {
+      msg.textContent = `Couldn't read that page here${e && e.message && !/fetch/i.test(e.message) ? ` (${e.message})` : ''}. Paste the page text below instead.`;
+      $('#link-paste-box').open = true;
+      return;
+    }
+  }
+  const k = linkState.kind, f = U.pageSpecs(src, k);
+  if (!f.brand && (k === 'motors' || k === 'props')) { const b = brandGuess(f.name || ''); if (b) f.brand = b; }
+  if (url) f.buy = url;
+  linkState.found = f;
+  const cols = LIB_COLS[k].filter((c) => c[2] === 'text' || c[2] === 'number' || c[0] === 'chem');
+  const n = Object.keys(f).filter((x) => x !== 'buy' && x !== 'name').length;
+  msg.textContent = n ? `Found ${n} value${n > 1 ? 's' : ''} (highlighted). Check them and fill in the rest.` : 'No specs found on that page. Fill them in below, or paste the page text.';
+  $('#link-form').innerHTML = `<div class="fields" style="padding:8px 0 0">${cols.map(([key, label, type]) => {
+    const v = f[key] ?? LIB_BLANK[k][key] ?? '', cls = key in f ? ' found' : '';
+    if (key === 'chem') return `<label class="f${cls}"><span>${label}</span><select data-link="chem">${Object.entries(U.CELL).map(([ck, c]) => `<option value="${ck}"${ck === v ? ' selected' : ''}>${c.label}</option>`).join('')}</select></label>`;
+    return `<label class="f${cls}${key === 'name' || key === 'buy' || key === 'link' ? ' wide' : ''}"><span>${esc(label)}</span><input data-link="${key}" type="${type === 'number' ? 'number' : 'text'}" step="any" value="${esc(v)}"></label>`;
+  }).join('')}</div>`;
+  $('#link-add').disabled = false;
+}
+function linkAdd() {
+  const k = linkState.kind, o = {};
+  document.querySelectorAll('#link-form [data-link]').forEach((el) => { o[el.dataset.link] = el.type === 'number' ? (el.value === '' ? 0 : +el.value) : el.value.trim(); });
+  if (!o.name) return toast('Give it a name first.');
+  snapshot();
+  const r = upsert(k, k === 'motors' ? 'm-' : k === 'props' ? 'pr-' : k.slice(0, 2) + '-', o);
+  save(); closeDlg(); render();
+  toast(`${r === 'u' ? 'Updated' : 'Added'} ${o.name}`);
 }

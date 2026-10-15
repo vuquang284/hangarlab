@@ -215,5 +215,15 @@ assert(big.iMax === 99 && big.vibeMax === 42 && big.vMin > 49 && big.vMin < 49.0
   assert(o.includes('over ESC') && o.includes('ESC voltage'), 'ESC overload ' + o);
 }
 
+// product pages: structured data plus "label | value unit" spec tables
+{
+  const m = U.pageSpecs('<title>T-Motor MN5008 KV340 – Shop</title><script type="application/ld+json">{"@type":"Product","name":"T-Motor MN5008 KV340","brand":{"name":"T-Motor"},"offers":{"price":"109.90"}}</script><table><tr><td>Internal resistance</td><td>89 mΩ</td></tr><tr><td>Idle current (10V)</td><td>0.8 A</td></tr><tr><td>Max continuous current (180S)</td><td>28 A</td></tr><tr><td>Weight (incl. cable)</td><td>135 g</td></tr></table>', 'motors');
+  assert(m.brand === 'T-Motor' && m.cost === 109.9 && m.kv === 340 && m.rm === 0.089 && m.i0 === 0.8 && m.maxA === 28 && m.g === 135, 'motor page ' + JSON.stringify(m));
+  const b = U.pageSpecs('RED V4 6S6P 30Ah\n30Ah capacity, 1369W sustained discharge, and 300A burst\nWeight: 2.6kg', 'batteries');
+  assert(b.s === 6 && b.p === 6 && b.cellMah === 5000 && b.chem === 'lipo' && b.g === 2600 && b.cPeak === 10 && b.c > 2 && b.c < 2.3, 'battery page ' + JSON.stringify(b));
+  const e = U.pageSpecs('Hobbywing XRotor 60A ESC\nContinuous current: 60A\nBurst current: 80A (10s)\nLiPo: 3-6S\nWeight: 62g', 'escs');
+  assert(e.name === 'Hobbywing XRotor 60A ESC' && e.a === 60 && e.burst === 80 && e.sMin === 3 && e.sMax === 6 && e.g === 62, 'ESC page ' + JSON.stringify(e));
+}
+
 console.log('all checks passed');
 console.log({ quadHoverMin: rq.hoverMin.toFixed(1), quadTW: rq.h.tw.toFixed(2), quadThr: rq.h.thr.toFixed(0), dolphinMin: rd.cruise.minutes.toFixed(1), dolphinKm: rd.cruise.km.toFixed(1), vtolKm: rv.mission.km.toFixed(1), vtolHoverThr: rv.h.thr.toFixed(0) });
