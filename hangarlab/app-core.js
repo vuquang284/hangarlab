@@ -310,7 +310,8 @@ function tipShow(b, pin) {
   if (!pop) { pop = document.createElement('div'); pop.id = 'tipPop'; pop.setAttribute('role', 'tooltip'); }
   const host = b.closest('dialog') || document.body; // inside a modal the bubble must live in the dialog to show above it
   if (pop.parentNode !== host) host.appendChild(pop);
-  pop.textContent = b.dataset.tip; pop.hidden = false; pop.dataset.pinned = pin ? '1' : '';
+  // **bold** marks key numbers, new lines break the text into rows
+  pop.innerHTML = esc(b.dataset.tip).replace(/^\*\*(.+?)\*\*/gm, '<b class="tipnum tipkey">$1</b>').replace(/\*\*(.+?)\*\*/g, '<b class="tipnum">$1</b>').replace(/\n/g, '<br>'); pop.dataset.src = b.dataset.tip; pop.hidden = false; pop.dataset.pinned = pin ? '1' : '';
   const r = b.getBoundingClientRect(), w = Math.min(280, innerWidth - 24);
   pop.style.width = w + 'px';
   pop.style.left = Math.max(12, Math.min(innerWidth - w - 12, r.left + r.width / 2 - w / 2)) + 'px';
@@ -320,7 +321,7 @@ function tipShow(b, pin) {
 const tipHide = (force) => { const pop = $('#tipPop'); if (pop && (force || !pop.dataset.pinned)) pop.hidden = true; };
 document.addEventListener('click', (e) => {
   const b = e.target.closest('.tip');
-  if (b) { e.preventDefault(); e.stopPropagation(); const pop = $('#tipPop'); if (pop && !pop.hidden && pop.dataset.pinned && pop.textContent === b.dataset.tip) tipHide(true); else tipShow(b, true); return; }
+  if (b) { e.preventDefault(); e.stopPropagation(); const pop = $('#tipPop'); if (pop && !pop.hidden && pop.dataset.pinned && pop.dataset.src === b.dataset.tip) tipHide(true); else tipShow(b, true); return; }
   if (!e.target.closest('#tipPop')) tipHide(true);
 }, true);
 document.addEventListener('mouseover', (e) => { const b = e.target.closest && e.target.closest('.tip'); if (b) tipShow(b, false); });
