@@ -4,7 +4,7 @@
 'use strict';
 
 // app version: bump on every update and add a CHANGELOG.md entry. 0.x + '-dev' while in development; 1.0.0 = first public release
-const APP_VERSION = '0.3.0-dev';
+const APP_VERSION = '0.3.1-dev';
 const U = window.UAS;
 const KEY = 'uas-workbench.v1'; // storage key kept from the old name so saved work still loads
 const $ = (s, el = document) => el.querySelector(s);

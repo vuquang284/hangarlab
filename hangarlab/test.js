@@ -35,8 +35,8 @@ const cal = U.compute(Object.assign({}, dol, { bom: [], payload: { g: 0 }, batt:
 near((cal.cruise.P - cal.pAv) / cal.bat.V, 5.25, 0.05, 'dolphin calibration point');
 assert(rd.cruise.minutes > 10, 'dolphin endurance');
 
-// library split: 15 bench tests kept, placeholder AtomRC pair falls back to physics
-assert.strictEqual(lib.tests.length, 15);
+// library split: 16 bench tests kept, placeholder AtomRC pair falls back to physics
+assert.strictEqual(lib.tests.length, 16);
 const atom = U.combo(lib, dol.fw.motor, dol.fw.prop, 22.2);
 assert(atom.physics && atom.rows.length === 10, 'physics fallback');
 // physics estimate within 20% of the HW4120 16x8 bench max thrust
