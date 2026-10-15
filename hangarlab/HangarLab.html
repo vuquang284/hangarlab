@@ -419,6 +419,8 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
 .wiz-dots span.on { color: var(--accent); border-color: var(--accent); }
 .wiz-dots span.done { color: var(--muted); }
 
+.ant-find h3 { font: 600 15px var(--display); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
 /* flight log viewer */
 #lvMap { position: relative; z-index: 0; isolation: isolate; } /* keeps Leaflet's panes under the sticky header */
 .lv { display: grid; grid-template-columns: minmax(240px, 300px) minmax(0, 1fr); gap: 16px; align-items: start; }
@@ -3523,6 +3525,38 @@ function rfLinks(p) {
   p.rf.manual.forEach((l, i) => list.push({ key: `rf.manual.${i}`, name: l.name, band: l.band, l, manual: i }));
   return list;
 }
+// antenna finder: every aircraft omni × every ground antenna, ranked by whether it reaches the range, then by how
+// simple it is to own (omni < patch < panel/helical < yagi; directional ones need aiming or a tracker), then margin
+const ANT_EASE = { dipole: 0, collinear: 1, mushroom: 1, patch8: 2, panel14cp: 3, helical12: 3, yagi15: 4 };
+function antennaOptions(l, d) {
+  const out = [];
+  for (const [ta, A] of Object.entries(U.ANTENNAS)) {
+    if (A.bw < 360) continue; // aircraft side stays omni: it turns and banks
+    for (const [ra, B] of Object.entries(U.ANTENNAS)) {
+      const pl = U.polLoss(A.pol, B.pol), pol = pl === 0 ? 'same' : pl === 3 ? 'cl' : 'lr';
+      const r = U.link(Object.assign({}, l, { txG: A.g, rxG: B.g, pol }), d);
+      out.push({ ta, ra, A, B, r, ok: r.margin >= d.fade, ease: ANT_EASE[ta] + ANT_EASE[ra] * 2 + (pl === 25 ? 10 : 0) });
+    }
+  }
+  return out.sort((x, y) => (y.ok - x.ok) || (x.ok ? x.ease - y.ease : y.r.margin - x.r.margin) || y.r.margin - x.r.margin);
+}
+function antennaFinder(x, d) {
+  const l = x.l, opts = antennaOptions(l, d), ok = opts.filter((o) => o.ok);
+  const cur = U.link(l, d), need = d.fade - cur.margin, hor = U.radioHorizonKm(d.alt, d.gndH);
+  const top = (ok.length ? ok : opts).slice(0, 5);
+  const rate = U.RADIOS[l.preset] && U.RADIOS[l.preset].airmax ? (() => {
+    // fastest airMAX rate that still reaches the range with the current antennas
+    const cap = U.RADIOS[l.preset].airmax;
+    let best = -1;
+    U.AIRMAX.forEach((rr, i) => { if (U.link(Object.assign({}, l, { tx: Math.min(rr[1], cap), sens: rr[2] }), d).margin >= d.fade) best = i; });
+    return best < 0 ? `<p class="hint" style="color:var(--crit)">No airMAX data rate reaches ${fmt(d.dist, 1)} km with these antennas.</p>` : `<p class="hint">Fastest data rate that reaches ${fmt(d.dist, 1)} km with these antennas: <b>${esc(U.AIRMAX[best][0])}</b>${best !== +l.rate ? ` <button class="btn sm" data-act="rf-rate" data-k="${x.key}" data-i="${best}">Use it</button>` : ''}</p>`;
+  })() : '';
+  return `<h3 style="margin:12px 0 4px">Antennas for ${fmt(d.dist, 1)} km ${need > 0 ? `<span class="pill crit">now ${fmt(need, 1)} dB short</span>` : '<span class="pill good">current setup reaches it</span>'}</h3>
+    ${ok.length ? '' : `<p class="hint" style="color:var(--crit)">No antenna pair reaches ${fmt(d.dist, 1)} km at ${d.fade} dB margin with this radio. Closest options below; also consider more TX power, a lower data rate, or a lower fade margin.</p>`}
+    <div class="tbl-wrap"><table class="mis"><thead><tr><th>Aircraft antenna</th><th>Ground antenna</th><th class="n">Margin at ${fmt(d.dist, 1)} km</th><th class="n">Max range</th><th>Aiming</th><th></th></tr></thead><tbody>
+    ${top.map((o) => `<tr${o.ok ? '' : ' style="opacity:.65"'}><td>${esc(o.A.label)}</td><td>${esc(o.B.label)}</td><td class="n${o.ok ? '' : ' bad'}">${fmt(o.r.margin, 1)} dB</td><td class="n">${o.r.maxKm > hor ? `${fmt(hor, 0)} km <span class="faint" title="Radio range ${fmt(o.r.maxKm, 0)} km, but the earth's curve blocks line of sight first at this height">horizon</span>` : `${fmt(o.r.maxKm, o.r.maxKm < 10 ? 1 : 0)} km`}</td><td>${o.B.bw >= 360 ? 'none' : o.B.bw >= 60 ? 'point at the area' : 'tracker or careful aiming'}</td><td>${l.txAnt === o.ta && l.rxAnt === o.ra ? '<span class="faint">in use</span>' : `<button class="btn sm" data-act="rf-ant" data-k="${x.key}" data-tx="${o.ta}" data-rx="${o.ra}">Use</button>`}</td></tr>`).join('')}
+    </tbody></table></div>${rate}`;
+}
 function renderRF(el) {
   const p = P(), links = rfLinks(p);
   const linkCard = (x) => {
@@ -3544,6 +3578,7 @@ function renderRF(el) {
       </div>
       <dl class="kv" style="margin-top:12px" id="${k}-out"></dl>
       <p class="note" id="${k}-ant" style="margin:10px 0 0"></p>
+      <div class="ant-find" id="${k}-find"></div>
       <div class="checks" id="${k}-geo" style="margin-top:8px"></div>
       <details class="rf-math" style="margin-top:8px"><summary>Path loss, step by step</summary><div id="${k}-math"></div></details>
       ${x.manual != null ? `<button class="btn ghost sm danger" data-act="rf-del" data-i="${x.manual}" style="margin-top:8px">Remove link</button>` : ''}
@@ -3551,7 +3586,7 @@ function renderRF(el) {
   };
   const conf = U.rfConflicts(p.bom.filter((r) => r.rf).map((r) => r.rf).concat(p.bom.some((r) => /gps|gnss|here\s?\d|rtk/i.test(r.name)) ? ['gnss'] : []));
   el.innerHTML = `<div class="bench"><aside class="side">${sideTools}
-      ${group('Mission geometry', `${num('rf.dist', 'Ground distance', { unit: 'km' })}${num('rf.alt', 'Drone altitude AGL', { unit: 'm' })}${num('rf.gndH', 'Ground antenna height', { unit: 'm' })}${num('rf.fade', 'Required fade margin', { unit: 'dB' })}<p class="hint" id="rfGeo"></p>`)}
+      ${group('Mission geometry', `${num('rf.dist', `Range you need ${tip('The farthest the aircraft will be from the ground station. Each radio card lists the antennas that reach it with your fade margin.')}`, { unit: 'km' })}${num('rf.alt', 'Drone altitude AGL', { unit: 'm' })}${num('rf.gndH', 'Ground antenna height', { unit: 'm' })}${num('rf.fade', 'Required fade margin', { unit: 'dB' })}<p class="hint" id="rfGeo"></p>`)}
       <div class="card"><h3>Sensitivity cheat sheet</h3><dl class="kv" style="margin-top:8px;font-size:12px">
         <dt>ELRS 2.4 500 Hz / 150 Hz / 50 Hz</dt><dd>−105 / −112 / −115</dd><dt>ELRS 900 200 Hz / 50 Hz</dt><dd>−112 / −123</dd>
         <dt>RFD900x 64 kbps</dt><dd>−121</dd><dt>TBS Crossfire 150 Hz</dt><dd>−117</dd><dt>Analog 5.8 GHz video</dt><dd>≈ −90</dd><dt>Wi-Fi bridge (MCS0)</dt><dd>≈ −94</dd></dl>
@@ -3601,6 +3636,7 @@ function liveRF() {
       const other = x.l.mhz > 4000 ? 2440 : 5800, ro2 = U.link(Object.assign({}, x.l, { mhz: other }), d);
       geo.push(['info', `Same radio and antennas at ${other > 4000 ? '5.8' : '2.4'} GHz: ${fmt(ro2.margin, 1)} dB margin (${ro2.margin >= r.margin ? '+' : ''}${fmt(ro2.margin - r.margin, 1)} dB), max range ${fmt(ro2.maxKm, 1)} km. 2.4 GHz reaches further and gets through obstacles better; 5.8 GHz has more channel bandwidth for video.`]);
     }
+    const af = document.getElementById(`${x.key}-find`); if (af) af.innerHTML = antennaFinder(x, d);
     const ge = document.getElementById(`${x.key}-geo`);
     if (ge) ge.innerHTML = geo.map(([lv, msg]) => `<div class="chk"><span class="pill ${lv}">${{ good: 'OK', warn: 'Check', crit: 'Fix', info: 'Note' }[lv]}</span><span>${esc(msg)}</span></div>`).join('');
     // FSPL = 20·log10(d) + 20·log10(f) + 20·log10(4π/c), then the link budget around it
@@ -6004,6 +6040,17 @@ document.addEventListener('click', (e) => {
     case 'bom-paste': pasteDialog(); break;
     case 'paste-go': { const rows = parsePaste($('#pasteBox').value); closeDlg(); withUndo(`Added ${rows.length} row(s)`, () => p.bom.push(...rows)); break; }
     case 'rf-add': (p.rf.manual = p.rf.manual || []).push({ name: 'Ground video link', band: '5800', mhz: 5800, tx: 25, txG: 3, rxG: 8, loss: 1, sens: -90, pol: 'cl' }); save(); render(); break;
+    case 'rf-ant': case 'rf-rate': {
+      const l = getPath(p, b.dataset.k);
+      if (!l) break;
+      withUndo(b.dataset.act === 'rf-ant' ? `Antennas: ${U.ANTENNAS[b.dataset.tx].label} + ${U.ANTENNAS[b.dataset.rx].label}` : `Data rate: ${U.AIRMAX[i][0]}`, () => {
+        if (b.dataset.act === 'rf-ant') {
+          const A = U.ANTENNAS[b.dataset.tx], B = U.ANTENNAS[b.dataset.rx], pl = U.polLoss(A.pol, B.pol);
+          Object.assign(l, { txAnt: b.dataset.tx, rxAnt: b.dataset.rx, txG: A.g, rxG: B.g, pol: pl === 0 ? 'same' : pl === 3 ? 'cl' : 'lr' });
+        } else { const rr = U.AIRMAX[i]; Object.assign(l, { rate: String(i), tx: Math.min(rr[1], U.RADIOS[l.preset].airmax), sens: rr[2] }); }
+      });
+      break;
+    }
     case 'rf-del': withUndo('Link removed', () => p.rf.manual.splice(i, 1)); break;
     case 'part-add': {
       const top = U.rankMaterials(p.mat).find((x) => x.ok);

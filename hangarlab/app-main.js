@@ -398,6 +398,17 @@ document.addEventListener('click', (e) => {
     case 'bom-paste': pasteDialog(); break;
     case 'paste-go': { const rows = parsePaste($('#pasteBox').value); closeDlg(); withUndo(`Added ${rows.length} row(s)`, () => p.bom.push(...rows)); break; }
     case 'rf-add': (p.rf.manual = p.rf.manual || []).push({ name: 'Ground video link', band: '5800', mhz: 5800, tx: 25, txG: 3, rxG: 8, loss: 1, sens: -90, pol: 'cl' }); save(); render(); break;
+    case 'rf-ant': case 'rf-rate': {
+      const l = getPath(p, b.dataset.k);
+      if (!l) break;
+      withUndo(b.dataset.act === 'rf-ant' ? `Antennas: ${U.ANTENNAS[b.dataset.tx].label} + ${U.ANTENNAS[b.dataset.rx].label}` : `Data rate: ${U.AIRMAX[i][0]}`, () => {
+        if (b.dataset.act === 'rf-ant') {
+          const A = U.ANTENNAS[b.dataset.tx], B = U.ANTENNAS[b.dataset.rx], pl = U.polLoss(A.pol, B.pol);
+          Object.assign(l, { txAnt: b.dataset.tx, rxAnt: b.dataset.rx, txG: A.g, rxG: B.g, pol: pl === 0 ? 'same' : pl === 3 ? 'cl' : 'lr' });
+        } else { const rr = U.AIRMAX[i]; Object.assign(l, { rate: String(i), tx: Math.min(rr[1], U.RADIOS[l.preset].airmax), sens: rr[2] }); }
+      });
+      break;
+    }
     case 'rf-del': withUndo('Link removed', () => p.rf.manual.splice(i, 1)); break;
     case 'part-add': {
       const top = U.rankMaterials(p.mat).find((x) => x.ok);
