@@ -10,6 +10,10 @@ Numbering ([semantic versioning](https://semver.org), major.minor.patch):
 
 To record an update: bump `APP_VERSION` at the top of `hangarlab/app-core.js`, add an entry here, run `node tools/build.js`, commit, then tag it (`git tag v0.1.1-dev && git push --tags`). The version shows at the bottom right of every page.
 
+## 0.7.3-dev (2026-10-15)
+
+- Libraries already saved in a browser get the same APC merge once (E / EP versions become one prop per size), with thrust data and designs repointed. Before, only new visitors saw it.
+
 ## 0.7.2-dev (2026-10-15)
 
 - Built-in library: APC props are listed once per size, without the E / EP suffix (APC 8x6E and 8x6EP are now APC 8x6; likewise 16x8, 16x10 and 8x4). Thrust data and designs that used either version point to the merged prop.

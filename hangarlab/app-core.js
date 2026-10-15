@@ -4,7 +4,7 @@
 'use strict';
 
 // app version: bump on every update and add a CHANGELOG.md entry. 0.x + '-dev' while in development; 1.0.0 = first public release
-const APP_VERSION = '0.7.2-dev';
+const APP_VERSION = '0.7.3-dev';
 const U = window.UAS;
 const KEY = 'uas-workbench.v1'; // storage key kept from the old name so saved work still loads
 const $ = (s, el = document) => el.querySelector(s);
@@ -69,6 +69,29 @@ function fresh() {
   return { v: 5, settings: migrate({ v: 5, projects: [], lib: {} }).settings, theme: 'dark', tab: 'design', libTab: 'motors', massView: 'edit', bomSel: [], active: seed.projects[0].id, projects: seed.projects, lib: seed.lib };
 }
 // v1 stored motor+prop+bench rows together as "sets"; v2 splits them and adds a payload field
+// APC props are listed once per size: "APC 8x6E" and "APC 8x6EP" become "APC 8x6". Keeps the entry with prop data or
+// thrust tests, fills its blanks from the others, and repoints tests and designs to it.
+function mergeApc(lib, projects) {
+  const base = (n) => String(n || '').trim().replace(/^(APC\s+\d+(?:\.\d+)?x\d+(?:\.\d+)?)(?:EP|E)$/i, '$1');
+  const groups = {}, remap = {};
+  for (const p of lib.props) if (/^APC\s/i.test(p.name || '')) (groups[base(p.name)] = groups[base(p.name)] || []).push(p);
+  for (const [name, ps] of Object.entries(groups)) {
+    const score = (p) => (p.data ? 2 : 0) + (lib.tests.some((t) => t.prop === p.id) ? 1 : 0);
+    ps.sort((a, b) => score(b) - score(a));
+    const keep = ps[0];
+    for (const o of ps.slice(1)) {
+      for (const k of Object.keys(o)) if ((keep[k] == null || keep[k] === '' || keep[k] === 0) && o[k] != null && o[k] !== '' && o[k] !== 0) keep[k] = o[k];
+      remap[o.id] = keep.id;
+    }
+    keep.name = name;
+  }
+  lib.props = lib.props.filter((p) => !remap[p.id]);
+  for (const t of lib.tests) if (remap[t.prop]) t.prop = remap[t.prop];
+  const seen = {};
+  lib.tests = lib.tests.filter((t) => { const k = t.motor + '|' + t.prop, o = seen[k]; if (!o) { seen[k] = t; return true; } if ((t.rows || []).length > (o.rows || []).length) Object.assign(o, t); return false; });
+  const fix = (o) => { for (const k of Object.keys(o)) { if (typeof o[k] === 'string' && remap[o[k]]) o[k] = remap[o[k]]; else if (o[k] && typeof o[k] === 'object') fix(o[k]); } };
+  for (const p of projects || []) fix(p);
+}
 function migrate(s) {
   if (s.v === 1) {
     const { motors, props, tests, map } = U.splitSets(s.lib.sets);
@@ -137,6 +160,7 @@ function migrate(s) {
   if (!s.lib.batPruned) { const old = ['6s5000', '4s5000', '6s4000', 'p45b-6s2p', 'p45b-6s4p']; s.lib.batteries = (s.lib.batteries || []).filter((x) => !old.includes(x.id)); s.lib.batPruned = 1; }
   if (hadSettings) s.settings.detail = 'detailed';
   s.lib.escs = s.lib.escs || [];
+  if (!s.lib.apcMerged && s.lib.props && s.lib.tests) { mergeApc(s.lib, s.projects); s.lib.apcMerged = 1; }
   for (const a of s.lib.airframes || []) if (!a.type) a.type = /vtol|quad-?plane|tilt|tailsitter/i.test(a.name) ? 'vtol' : /quad(?!-?plane)|hexa|octo|copter|\bframe\b/i.test(a.name) ? 'multirotor' : 'fixedwing';
   s.massView = s.massView || 'edit';
   s.bomSel = s.bomSel || [];
