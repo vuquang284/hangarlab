@@ -267,7 +267,7 @@ function renderSettings(el) {
         <div class="row"><button class="btn sm danger" data-act="clear-propdata"${propData ? '' : ' disabled'}>Remove all prop performance data</button><button class="btn sm danger" data-act="reset-examples">Replace everything with the example data</button></div></div>
 
       <div class="card"><h2>Keyboard shortcuts</h2><dl class="kv" style="margin-top:8px"><dt>Switch tab</dt><dd>1 – 9</dd><dt>Undo</dt><dd>Ctrl/⌘ + Z</dd><dt>Export</dt><dd>Ctrl/⌘ + E</dd><dt>Quick start guide</dt><dd>?</dd></dl>
-        <div class="row" style="margin-top:12px"><button class="btn sm" data-act="shortcuts">Open quick start</button>${chk('settings.quickstart', 'Show the quick start next time the app opens', { st: true })}</div></div>
+        <div class="row" style="margin-top:12px"><button class="btn sm" data-act="shortcuts">Open quick start</button><button class="btn sm" data-tour="start">Replay the tour</button>${chk('settings.quickstart', 'Show the quick start next time the app opens', { st: true })}</div></div>
 
       <div class="card"><h2>About</h2>
         <p class="note" style="margin:8px 0 6px">HangarLab gives planning estimates, not guarantees. Check them against bench tests and test flights and follow your local aviation rules; the regulation notes are not legal advice. Your designs, library and logs stay in this browser.</p>

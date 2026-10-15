@@ -1,0 +1,577 @@
+{
+ "note": "Reference designs the self-check was validated against (the original example quad and Dolphin). Not shipped in the app.",
+ "quad": {
+  "id": "p-quad",
+  "name": "Heavy-lift quad (2025-26)",
+  "type": "multirotor",
+  "payload": {
+   "name": "Payload (3 lb)",
+   "g": 1360
+  },
+  "env": {
+   "alt": 300,
+   "temp": 25
+  },
+  "batt": {
+   "name": "Tattu 6S 7000 25C",
+   "chem": "lipo",
+   "s": 6,
+   "p": 1,
+   "cellMah": 7000,
+   "g": 870,
+   "c": 25,
+   "cPeak": 50,
+   "packs": 2,
+   "conn": "series",
+   "usable": 80
+  },
+  "becEff": 90,
+  "mr": {
+   "layout": "quadx",
+   "n": 4,
+   "escA": 90,
+   "maxThr": 70,
+   "cda": 0.12,
+   "lean": 30,
+   "motor": "m-hobbywing-4120-250kv",
+   "prop": "pr-apc-16x8e"
+  },
+  "fw": {
+   "span": 2,
+   "area": 0.5,
+   "cd0": 0.03,
+   "e": 0.8,
+   "clmax": 1.2,
+   "etaP": 65,
+   "etaD": 85,
+   "vc": 18,
+   "n": 1,
+   "vsMax": 12,
+   "cal": {
+    "on": false,
+    "v": 0,
+    "a": 0,
+    "g": 0
+   },
+   "drag": {
+    "mode": "buildup",
+    "finish": "foam",
+    "fusL": 1.2,
+    "fusD": 0.14,
+    "tailPct": 22,
+    "tc": 0.12,
+    "booms": {
+     "n": 0,
+     "L": 0,
+     "d": 0
+    },
+    "extras": [],
+    "misc": 20,
+    "eAuto": true
+   },
+   "motor": "m-atomrc-2807-1100kv",
+   "prop": "pr-apc-8x4e"
+  },
+  "vtol": {
+   "kind": "quadplane",
+   "hoverS": 90,
+   "reserve": 0,
+   "dcd0": 0.008
+  },
+  "bom": [
+   {
+    "id": "b0",
+    "name": "Cube Orange+ Mini",
+    "sub": "Avionics",
+    "qty": 1,
+    "g": 53,
+    "rail": "5V",
+    "w": 2.5,
+    "pw": 3,
+    "rf": "",
+    "link": ""
+   },
+   {
+    "id": "b1",
+    "name": "ELRS RP4 receiver",
+    "sub": "Comms",
+    "qty": 1,
+    "g": 3.4,
+    "rail": "5V",
+    "w": 0.5,
+    "pw": 0.6,
+    "rf": "2400",
+    "link": ""
+   },
+   {
+    "id": "b2",
+    "name": "FT EZ ID Remote ID",
+    "sub": "Avionics",
+    "qty": 1,
+    "g": 10,
+    "rail": "5V",
+    "w": 0.2,
+    "pw": 0.5,
+    "rf": "2400",
+    "link": ""
+   },
+   {
+    "id": "b3",
+    "name": "Here4 GPS",
+    "sub": "Sensors",
+    "qty": 1,
+    "g": 60,
+    "rail": "5V",
+    "w": 1,
+    "pw": 1.5,
+    "rf": "",
+    "link": ""
+   },
+   {
+    "id": "b4",
+    "name": "Landmark landing camera",
+    "sub": "Sensors",
+    "qty": 1,
+    "g": 37,
+    "rail": "5V",
+    "w": 1.5,
+    "pw": 2,
+    "rf": "",
+    "link": ""
+   },
+   {
+    "id": "b5",
+    "name": "RFD900 telemetry",
+    "sub": "Comms",
+    "qty": 1,
+    "g": 20,
+    "rail": "5V",
+    "w": 5,
+    "pw": 5,
+    "rf": "915",
+    "link": ""
+   },
+   {
+    "id": "b6",
+    "name": "Tattu 4S 550 (avionics pack)",
+    "sub": "Power",
+    "qty": 1,
+    "g": 60,
+    "rail": "",
+    "w": 0,
+    "pw": 0,
+    "rf": "",
+    "link": ""
+   },
+   {
+    "id": "b7",
+    "name": "Gemfan Kevlar battery strap",
+    "sub": "Hardware",
+    "qty": 4,
+    "g": 23,
+    "rail": "",
+    "w": 0,
+    "pw": 0,
+    "rf": "",
+    "link": ""
+   },
+   {
+    "id": "b8",
+    "name": "M6 locknut (props)",
+    "sub": "Hardware",
+    "qty": 4,
+    "g": 4,
+    "rail": "",
+    "w": 0,
+    "pw": 0,
+    "rf": "",
+    "link": ""
+   },
+   {
+    "id": "b9",
+    "name": "TPU battery mount",
+    "sub": "Structures",
+    "qty": 1,
+    "g": 58,
+    "rail": "",
+    "w": 0,
+    "pw": 0,
+    "rf": "",
+    "link": ""
+   },
+   {
+    "id": "b10",
+    "name": "APW 15 mm electromagnet",
+    "sub": "Payload",
+    "qty": 4,
+    "g": 25,
+    "rail": "12V",
+    "w": 2.5,
+    "pw": 2.5,
+    "rf": "",
+    "link": ""
+   },
+   {
+    "id": "b11",
+    "name": "Wire (est.)",
+    "sub": "Wiring",
+    "qty": 1,
+    "g": 250,
+    "rail": "",
+    "w": 0,
+    "pw": 0,
+    "rf": "",
+    "link": ""
+   },
+   {
+    "id": "b12",
+    "name": "Copper bus bar",
+    "sub": "Power",
+    "qty": 2,
+    "g": 30,
+    "rail": "",
+    "w": 0,
+    "pw": 0,
+    "rf": "",
+    "link": ""
+   },
+   {
+    "id": "b13",
+    "name": "TBS Lucid 12S 90A ESC",
+    "sub": "Propulsion",
+    "qty": 4,
+    "g": 20,
+    "rail": "",
+    "w": 0,
+    "pw": 0,
+    "rf": "",
+    "link": ""
+   },
+   {
+    "id": "b14",
+    "name": "XT60 panel mount",
+    "sub": "Power",
+    "qty": 2,
+    "g": 5,
+    "rail": "",
+    "w": 0,
+    "pw": 0,
+    "rf": "",
+    "link": ""
+   },
+   {
+    "id": "b15",
+    "name": "XT90 anti-spark pair",
+    "sub": "Power",
+    "qty": 1,
+    "g": 15,
+    "rail": "",
+    "w": 0,
+    "pw": 0,
+    "rf": "",
+    "link": ""
+   },
+   {
+    "id": "b16",
+    "name": "Frame (est.)",
+    "sub": "Structures",
+    "qty": 1,
+    "g": 1000,
+    "rail": "",
+    "w": 0,
+    "pw": 0,
+    "rf": "",
+    "link": ""
+   }
+  ],
+  "rf": {
+   "dist": 2,
+   "alt": 120,
+   "gndH": 2,
+   "fade": 10,
+   "links": {}
+  },
+  "mat": {
+   "amb": 40,
+   "sun": true,
+   "heat": false,
+   "uv": true,
+   "wet": false,
+   "crash": true,
+   "fuel": false,
+   "flex": false,
+   "stiff": 6,
+   "light": 6,
+   "budget": 4,
+   "printer": "enclosed",
+   "vol": 35,
+   "infill": 30,
+   "area": 0,
+   "walls": 3,
+   "tb": 4
+  }
+ },
+ "dolphin": {
+  "id": "p-dolphin",
+  "name": "AtomRC Dolphin Pro ISR",
+  "type": "fixedwing",
+  "payload": {
+   "name": "Detection payload",
+   "g": 410
+  },
+  "env": {
+   "alt": 300,
+   "temp": 25
+  },
+  "batt": {
+   "name": "6S 5000 25C",
+   "chem": "lipo",
+   "s": 6,
+   "p": 1,
+   "cellMah": 5000,
+   "g": 451,
+   "c": 25,
+   "cPeak": 50,
+   "packs": 2,
+   "conn": "parallel",
+   "usable": 80
+  },
+  "becEff": 90,
+  "mr": {
+   "layout": "quadx",
+   "n": 4,
+   "escA": 50,
+   "maxThr": 70,
+   "cda": 0.05,
+   "lean": 30,
+   "motor": "m-xing-2812-1150kv",
+   "prop": "pr-hq-8x4-5x3"
+  },
+  "fw": {
+   "span": 0.845,
+   "area": 0.1696,
+   "cd0": 0.035,
+   "e": 0.75,
+   "clmax": 1.1,
+   "etaP": 60,
+   "etaD": 85,
+   "vc": 22,
+   "n": 1,
+   "vsMax": 14,
+   "cal": {
+    "on": true,
+    "v": 22,
+    "a": 5.25,
+    "g": 1400,
+    "learn": false
+   },
+   "drag": {
+    "mode": "buildup",
+    "finish": "foam",
+    "fusL": 0.83,
+    "fusD": 0.11,
+    "tailPct": 20,
+    "tc": 0.12,
+    "booms": {
+     "n": 0,
+     "L": 0,
+     "d": 0
+    },
+    "extras": [
+     {
+      "name": "Gimbal camera",
+      "cda": 40,
+      "qty": 1
+     },
+     {
+      "name": "Exposed antenna",
+      "cda": 5,
+      "qty": 3
+     }
+    ],
+    "misc": 20,
+    "eAuto": true
+   },
+   "motor": "m-atomrc-2807-1100kv",
+   "prop": "pr-apc-8x4e"
+  },
+  "vtol": {
+   "kind": "quadplane",
+   "hoverS": 90,
+   "reserve": 0,
+   "dcd0": 0.008
+  },
+  "bom": [
+   {
+    "id": "b17",
+    "name": "AtomRC Dolphin Pro airframe",
+    "sub": "Structures",
+    "qty": 1,
+    "g": 790,
+    "rail": "",
+    "w": 0,
+    "pw": 0,
+    "rf": "",
+    "link": ""
+   },
+   {
+    "id": "b18",
+    "name": "≥6S 50A ESC w/ BEC",
+    "sub": "Propulsion",
+    "qty": 1,
+    "g": 15,
+    "rail": "",
+    "w": 0,
+    "pw": 0,
+    "rf": "",
+    "link": ""
+   },
+   {
+    "id": "b19",
+    "name": "Jetson Orin Nano + A603",
+    "sub": "Compute",
+    "qty": 1,
+    "g": 128,
+    "rail": "12V",
+    "w": 15,
+    "pw": 25,
+    "rf": "",
+    "link": ""
+   },
+   {
+    "id": "b20",
+    "name": "3DR CAN airspeed (DLVR)",
+    "sub": "Sensors",
+    "qty": 1,
+    "g": 12.2,
+    "rail": "5V",
+    "w": 0.5,
+    "pw": 0.6,
+    "rf": "",
+    "link": ""
+   },
+   {
+    "id": "b21",
+    "name": "Control Zero H7 OEM G + carrier",
+    "sub": "Avionics",
+    "qty": 1,
+    "g": 9.6,
+    "rail": "5V",
+    "w": 10.5,
+    "pw": 12,
+    "rf": "",
+    "link": ""
+   },
+   {
+    "id": "b22",
+    "name": "3DR Location One GPS",
+    "sub": "Sensors",
+    "qty": 1,
+    "g": 20,
+    "rail": "5V",
+    "w": 1,
+    "pw": 1.2,
+    "rf": "",
+    "link": ""
+   },
+   {
+    "id": "b23",
+    "name": "PDB & power modules (est.)",
+    "sub": "Power",
+    "qty": 1,
+    "g": 70,
+    "rail": "",
+    "w": 0,
+    "pw": 0,
+    "rf": "",
+    "link": ""
+   },
+   {
+    "id": "b24",
+    "name": "RFD900x telemetry",
+    "sub": "Comms",
+    "qty": 1,
+    "g": 18,
+    "rail": "5V",
+    "w": 5,
+    "pw": 5,
+    "rf": "915",
+    "link": ""
+   },
+   {
+    "id": "b25",
+    "name": "SIYI A8 mini",
+    "sub": "Payload",
+    "qty": 1,
+    "g": 95,
+    "rail": "12V",
+    "w": 5,
+    "pw": 8,
+    "rf": "",
+    "link": ""
+   },
+   {
+    "id": "b26",
+    "name": "Ubiquiti Bullet AC",
+    "sub": "Comms",
+    "qty": 1,
+    "g": 116,
+    "rail": "24V",
+    "w": 8,
+    "pw": 10,
+    "rf": "5800",
+    "link": ""
+   },
+   {
+    "id": "b27",
+    "name": "Matek BEC12S-PRO",
+    "sub": "Power",
+    "qty": 1,
+    "g": 5,
+    "rail": "",
+    "w": 0,
+    "pw": 0,
+    "rf": "",
+    "link": ""
+   },
+   {
+    "id": "b28",
+    "name": "FT EZ ID Remote ID",
+    "sub": "Avionics",
+    "qty": 1,
+    "g": 10,
+    "rail": "5V",
+    "w": 0.2,
+    "pw": 0.5,
+    "rf": "2400",
+    "link": ""
+   }
+  ],
+  "rf": {
+   "dist": 5,
+   "alt": 120,
+   "gndH": 2,
+   "fade": 10,
+   "links": {}
+  },
+  "mat": {
+   "amb": 35,
+   "sun": true,
+   "heat": true,
+   "uv": true,
+   "wet": false,
+   "crash": true,
+   "fuel": false,
+   "flex": false,
+   "stiff": 5,
+   "light": 8,
+   "budget": 5,
+   "printer": "open",
+   "vol": 12,
+   "infill": 20,
+   "area": 0,
+   "walls": 3,
+   "tb": 4
+  }
+ }
+}

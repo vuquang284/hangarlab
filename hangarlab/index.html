@@ -429,6 +429,16 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
 .site-foot .ver { position: absolute; right: 16px; bottom: 12px; font: 500 11.5px var(--mono, monospace); color: var(--faint); }
 @media (max-width: 600px) { .site-foot .ver { position: static; display: block; margin-top: 6px; } }
 
+#tourLayer { position: fixed; inset: 0; z-index: 1200; }
+.tour-spot { position: fixed; border-radius: 8px; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6); outline: 2px solid var(--accent); pointer-events: none; transition: all .2s ease; }
+.tour-tip { position: fixed; background: var(--panel); color: var(--fg); border: 1px solid var(--accent); border-radius: 8px; padding: 12px 14px; box-shadow: 0 10px 30px rgba(0,0,0,.45); }
+.tour-tip h3 { margin: 2px 0 4px; font: 700 17px var(--display); color: var(--accent); }
+.tour-tip p { margin: 0; font-size: 13.5px; line-height: 1.5; }
+.tour-n { font: 600 11px var(--mono, monospace); color: var(--faint); }
+.tour-tip::before { content: ""; position: absolute; left: calc(var(--ax) - 9px); border: 9px solid transparent; }
+.tour-tip.below::before { top: -18px; border-bottom-color: var(--accent); }
+.tour-tip.above::before { bottom: -18px; border-top-color: var(--accent); }
+
 /* flight log viewer */
 #lvMap { position: relative; z-index: 0; isolation: isolate; } /* keeps Leaflet's panes under the sticky header */
 .lv { display: grid; grid-template-columns: minmax(240px, 300px) minmax(0, 1fr); gap: 16px; align-items: start; }
@@ -539,5 +549,6 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
 <script src="app-map3d.js"></script>
 <script src="app-rfmap.js"></script>
 <script src="app-wizard.js"></script>
+<script src="app-tour.js"></script>
 <script src="app-export.js"></script>
 <script src="app-main.js"></script>

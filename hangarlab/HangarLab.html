@@ -432,6 +432,16 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
 .site-foot .ver { position: absolute; right: 16px; bottom: 12px; font: 500 11.5px var(--mono, monospace); color: var(--faint); }
 @media (max-width: 600px) { .site-foot .ver { position: static; display: block; margin-top: 6px; } }
 
+#tourLayer { position: fixed; inset: 0; z-index: 1200; }
+.tour-spot { position: fixed; border-radius: 8px; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6); outline: 2px solid var(--accent); pointer-events: none; transition: all .2s ease; }
+.tour-tip { position: fixed; background: var(--panel); color: var(--fg); border: 1px solid var(--accent); border-radius: 8px; padding: 12px 14px; box-shadow: 0 10px 30px rgba(0,0,0,.45); }
+.tour-tip h3 { margin: 2px 0 4px; font: 700 17px var(--display); color: var(--accent); }
+.tour-tip p { margin: 0; font-size: 13.5px; line-height: 1.5; }
+.tour-n { font: 600 11px var(--mono, monospace); color: var(--faint); }
+.tour-tip::before { content: ""; position: absolute; left: calc(var(--ax) - 9px); border: 9px solid transparent; }
+.tour-tip.below::before { top: -18px; border-bottom-color: var(--accent); }
+.tour-tip.above::before { bottom: -18px; border-top-color: var(--accent); }
+
 /* flight log viewer */
 #lvMap { position: relative; z-index: 0; isolation: isolate; } /* keeps Leaflet's panes under the sticky header */
 .lv { display: grid; grid-template-columns: minmax(240px, 300px) minmax(0, 1fr); gap: 16px; align-items: start; }
@@ -2265,8 +2275,8 @@ var uPlot=function(){"use strict";const l="u-off",e="u-label",t="width",n="heigh
   const row = (name, sub, qty, g, rail = '', w = 0, pw = 0, rf = '', link = '') => ({ id: 'b' + n++, name, sub, qty, g, rail, w, pw: pw || w, rf, link });
 
   const quad = {
-    id: 'p-quad', name: 'Heavy-lift quad (2025-26)', type: 'multirotor',
-    payload: { name: 'Payload (3 lb)', g: 1360 },
+    id: 'p-quad', name: 'Example quadcopter', type: 'multirotor',
+    payload: { name: 'Payload', g: 1000 },
     env: { alt: 300, temp: 25 },
     batt: { name: 'Tattu 6S 7000 25C', chem: 'lipo', s: 6, p: 1, cellMah: 7000, g: 870, c: 25, cPeak: 50, packs: 2, conn: 'series', usable: 80 },
     becEff: 90,
@@ -2275,22 +2285,15 @@ var uPlot=function(){"use strict";const l="u-off",e="u-label",t="width",n="heigh
       drag: { mode: 'buildup', finish: 'foam', fusL: 1.2, fusD: 0.14, tailPct: 22, tc: 0.12, booms: { n: 0, L: 0, d: 0 }, extras: [], misc: 20, eAuto: true } },
     vtol: { kind: 'quadplane', hoverS: 90, reserve: 0, dcd0: 0.008 },
     bom: [
-      row('Cube Orange+ Mini', 'Avionics', 1, 53, '5V', 2.5, 3),
-      row('ELRS RP4 receiver', 'Comms', 1, 3.4, '5V', 0.5, 0.6, '2400'),
-      row('FT EZ ID Remote ID', 'Avionics', 1, 10, '5V', 0.2, 0.5, '2400'),
-      row('Here4 GPS', 'Sensors', 1, 60, '5V', 1, 1.5, ''),
-      row('Landmark landing camera', 'Sensors', 1, 37, '5V', 1.5, 2),
-      row('RFD900 telemetry', 'Comms', 1, 20, '5V', 5, 5, '915'),
-      row('Tattu 4S 550 (avionics pack)', 'Power', 1, 60, ''),
-      row('Gemfan Kevlar battery strap', 'Hardware', 4, 23),
-      row('M6 locknut (props)', 'Hardware', 4, 4),
-      row('TPU battery mount', 'Structures', 1, 58),
-      row('APW 15 mm electromagnet', 'Payload', 4, 25, '12V', 2.5, 2.5),
-      row('Wire (est.)', 'Wiring', 1, 250),
-      row('Copper bus bar', 'Power', 2, 30),
-      row('TBS Lucid 12S 90A ESC', 'Propulsion', 4, 20),
-      row('XT60 panel mount', 'Power', 2, 5),
-      row('XT90 anti-spark pair', 'Power', 1, 15),
+      row('Flight controller', 'Avionics', 1, 50, '5V', 2.5, 3),
+      row('GPS + compass', 'Sensors', 1, 40, '5V', 1, 1.5, ''),
+      row('RC receiver (ELRS 2.4 GHz)', 'Comms', 1, 4, '5V', 0.5, 0.6, '2400'),
+      row('Telemetry radio (900 MHz)', 'Comms', 1, 20, '5V', 5, 5, '915'),
+      row('Remote ID module', 'Avionics', 1, 10, '5V', 0.2, 0.5, '2400'),
+      row('ESC 80A', 'Propulsion', 4, 25),
+      row('Power module + PDB', 'Power', 1, 60),
+      row('Battery straps', 'Hardware', 2, 15),
+      row('Wire & connectors (est.)', 'Wiring', 1, 200),
       row('Frame (est.)', 'Structures', 1, 1000),
     ],
     rf: { dist: 2, alt: 120, gndH: 2, fade: 10, links: {} },
@@ -2298,29 +2301,28 @@ var uPlot=function(){"use strict";const l="u-off",e="u-label",t="width",n="heigh
   };
 
   const dolphin = {
-    id: 'p-dolphin', name: 'AtomRC Dolphin Pro ISR', type: 'fixedwing',
-    payload: { name: 'Detection payload', g: 410 },
+    id: 'p-dolphin', name: 'Example fixed-wing', type: 'fixedwing',
+    payload: { name: 'Camera payload', g: 250 },
     env: { alt: 300, temp: 25 },
     batt: { name: '6S 5000 25C', chem: 'lipo', s: 6, p: 1, cellMah: 5000, g: 451, c: 25, cPeak: 50, packs: 2, conn: 'parallel', usable: 80 },
     becEff: 90,
     mr: { layout: 'quadx', set: 'xing2812-hq8', n: 4, escA: 50, maxThr: 70, cda: 0.05, lean: 30 },
     fw: { span: 0.845, area: 0.1696, cd0: 0.035, e: 0.75, clmax: 1.1, etaP: 60, etaD: 85, vc: 22, set: 'atom2807-8x4', n: 1, vsMax: 14,
-      cal: { on: true, v: 22, a: 5.25, g: 1400, learn: false },
+      cal: { on: false, v: 0, a: 0, g: 0, learn: false },
       drag: { mode: 'buildup', finish: 'foam', fusL: 0.83, fusD: 0.11, tailPct: 20, tc: 0.12, booms: { n: 0, L: 0, d: 0 }, extras: [{ name: 'Gimbal camera', cda: 40, qty: 1 }, { name: 'Exposed antenna', cda: 5, qty: 3 }], misc: 20, eAuto: true } },
     vtol: { kind: 'quadplane', hoverS: 90, reserve: 0, dcd0: 0.008 },
     bom: [
       row('AtomRC Dolphin Pro airframe', 'Structures', 1, 790),
-      row('≥6S 50A ESC w/ BEC', 'Propulsion', 1, 15),
-      row('Jetson Orin Nano + A603', 'Compute', 1, 128, '12V', 15, 25),
-      row('3DR CAN airspeed (DLVR)', 'Sensors', 1, 12.2, '5V', 0.5, 0.6),
-      row('Control Zero H7 OEM G + carrier', 'Avionics', 1, 9.6, '5V', 10.5, 12),
-      row('3DR Location One GPS', 'Sensors', 1, 20, '5V', 1, 1.2, ''),
-      row('PDB & power modules (est.)', 'Power', 1, 70),
-      row('RFD900x telemetry', 'Comms', 1, 18, '5V', 5, 5, '915'),
-      row('SIYI A8 mini', 'Payload', 1, 95, '12V', 5, 8),
-      row('Ubiquiti Bullet AC', 'Comms', 1, 116, '24V', 8, 10, '5800'),
-      row('Matek BEC12S-PRO', 'Power', 1, 5),
-      row('FT EZ ID Remote ID', 'Avionics', 1, 10, '5V', 0.2, 0.5, '2400'),
+      row('ESC 50A with BEC', 'Propulsion', 1, 15),
+      row('Flight controller', 'Avionics', 1, 25, '5V', 2, 2.5),
+      row('GPS + compass', 'Sensors', 1, 20, '5V', 1, 1.2, ''),
+      row('Airspeed sensor', 'Sensors', 1, 12, '5V', 0.5, 0.6),
+      row('RC receiver (ELRS 2.4 GHz)', 'Comms', 1, 4, '5V', 0.5, 0.6, '2400'),
+      row('Telemetry radio (900 MHz)', 'Comms', 1, 18, '5V', 5, 5, '915'),
+      row('Mini gimbal camera', 'Payload', 1, 95, '12V', 5, 8),
+      row('Power module', 'Power', 1, 25),
+      row('Remote ID module', 'Avionics', 1, 10, '5V', 0.2, 0.5, '2400'),
+      row('Wire & connectors (est.)', 'Wiring', 1, 80),
     ],
     rf: { dist: 5, alt: 120, gndH: 2, fade: 10, links: {} },
     mat: { amb: 35, sun: true, heat: true, uv: true, wet: false, crash: true, fuel: false, flex: false, stiff: 5, light: 8, budget: 5, printer: 'open', vol: 12, infill: 20, area: 0, walls: 3, tb: 4 },
@@ -2328,7 +2330,7 @@ var uPlot=function(){"use strict";const l="u-off",e="u-label",t="width",n="heigh
 
   const vtol = {
     id: 'p-vtol', name: 'Example quadplane VTOL', type: 'vtol',
-    payload: { name: 'Survey camera (example)', g: 300 },
+    payload: { name: 'Survey camera', g: 300 },
     env: { alt: 300, temp: 25 },
     batt: { name: '6S4P Molicel P45B 21700 (example)', chem: 'liion', s: 6, p: 4, cellMah: 4500, g: 1750, c: 10, packs: 1, conn: 'parallel', usable: 85 },
     becEff: 90,
@@ -2337,7 +2339,7 @@ var uPlot=function(){"use strict";const l="u-off",e="u-label",t="width",n="heigh
       drag: { mode: 'buildup', finish: 'builtup', fusL: 1.0, fusD: 0.13, tailPct: 22, tc: 0.12, booms: { n: 2, L: 1.1, d: 0.025 }, extras: [{ name: 'Gimbal camera', cda: 40, qty: 1 }, { name: 'Exposed antenna', cda: 5, qty: 2 }], misc: 20, eAuto: true } },
     vtol: { kind: 'quadplane', hoverS: 90, reserve: 0, dcd0: 0.008 },
     bom: [
-      row('Airframe + booms (example)', 'Structures', 1, 1400),
+      row('Airframe + booms', 'Structures', 1, 1400),
       row('Lift ESC 65A', 'Propulsion', 4, 15),
       row('Cruise ESC 50A', 'Propulsion', 1, 15),
       row('Cube Orange+ Mini', 'Avionics', 1, 53, '5V', 2.5, 3),
@@ -2381,7 +2383,7 @@ var uPlot=function(){"use strict";const l="u-off",e="u-label",t="width",n="heigh
 'use strict';
 
 // app version: bump on every update and add a CHANGELOG.md entry. 0.x + '-dev' while in development; 1.0.0 = first public release
-const APP_VERSION = '0.1.0-dev';
+const APP_VERSION = '0.2.0-dev';
 const U = window.UAS;
 const KEY = 'uas-workbench.v1'; // storage key kept from the old name so saved work still loads
 const $ = (s, el = document) => el.querySelector(s);
@@ -5569,6 +5571,73 @@ function wizardCreate() {
 
 </script>
 <script>
+// HangarLab UI: first-visit guided tour. A dimmed page with a spotlight on one control at a time and a bubble whose
+// arrow points at it. Runs once (settings.tourDone); replay from the quick start guide or Settings.
+'use strict';
+
+const TOUR = [
+  { sel: '#projSel', title: 'Your designs', text: 'Every aircraft you plan is a design. Pick one here; the examples are there to explore.' },
+  { sel: '[data-act="new"]', title: 'Start your own', text: 'New opens a 4-step wizard: type, battery, motor + prop, payload.' },
+  { sel: '[data-detail="simple"]', parent: true, title: 'Simple or Detailed', text: 'Simple shows the inputs most designs need. Detailed adds drag build-up, calibration, mission and electronics.' },
+  { sel: '.side details.group', title: 'Inputs', text: 'Change anything on the left. Every number on the right updates as you type, and Ctrl+Z undoes.' },
+  { sel: '#readouts', title: 'Results', text: 'Weight, endurance, range and the other key numbers. More results are folded underneath, and Checks lists anything to fix.' },
+  { sel: '#tabs', title: 'One tab per job', text: 'Compare designs, list parts and weight, size the electrical system, plan radio links, and pick 3D printing materials.' },
+  { sel: '[data-tab="library"]', title: 'Parts Library', text: 'Add your own motors, props, batteries and parts (or import the Excel template). Every design draws from it.' },
+  { sel: '[data-tab="logs"]', title: 'Flight Logs', text: 'Open an ArduPilot log to check a flight, see it on a 3D map, and calibrate your design from real data.' },
+  { sel: '[data-act="export"]', title: 'Export and backup', text: 'Reports, Excel, a pre-flight checklist, ArduPilot parameters, and backups of all your work. Your data stays in this browser, so back it up.' },
+  { sel: '[data-act="shortcuts"]', title: 'Help any time', text: 'The ? button opens the guide, and you can replay this tour from there.' },
+];
+let tourStep = -1;
+
+function tourStart() {
+  if (S.tab !== 'design') { S.tab = 'design'; save(); render(); }
+  document.querySelectorAll('details.group').forEach((d) => { d.open = true; });
+  tourShow(0);
+}
+function tourEnd() {
+  tourStep = -1;
+  $('#tourLayer')?.remove();
+  S.settings.tourDone = true; save();
+}
+function tourShow(i) {
+  if (i < 0) i = 0;
+  if (i >= TOUR.length) return tourEnd();
+  // skip steps whose control is not on screen (e.g. a narrow window)
+  let st = TOUR[i], el = document.querySelector(st.sel);
+  if (el && st.parent) el = el.parentElement;
+  if (!el || !el.getClientRects().length) return tourShow(i + (i >= tourStep ? 1 : -1));
+  tourStep = i;
+  el.scrollIntoView({ block: 'center', behavior: 'instant' });
+  let layer = $('#tourLayer');
+  if (!layer) { layer = document.createElement('div'); layer.id = 'tourLayer'; document.body.appendChild(layer); }
+  const r = el.getBoundingClientRect(), pad = 6, W = Math.min(320, innerWidth - 24);
+  const below = r.bottom + 170 < innerHeight || r.top < 190;
+  const left = Math.max(12, Math.min(innerWidth - W - 12, r.left + r.width / 2 - W / 2));
+  const arrowX = Math.max(18, Math.min(W - 18, r.left + r.width / 2 - left));
+  layer.innerHTML = `<div class="tour-spot" style="left:${r.left - pad}px;top:${r.top - pad}px;width:${r.width + pad * 2}px;height:${r.height + pad * 2}px"></div>
+    <div class="tour-tip ${below ? 'below' : 'above'}" role="dialog" aria-live="polite" style="left:${left}px;width:${W}px;${below ? `top:${r.bottom + pad + 14}px` : `bottom:${innerHeight - r.top + pad + 14}px`};--ax:${arrowX}px">
+      <div class="tour-n">${i + 1} / ${TOUR.length}</div><h3>${esc(st.title)}</h3><p>${esc(st.text)}</p>
+      <div class="row" style="justify-content:space-between;margin-top:10px"><button class="btn sm ghost" data-tour="skip">Skip tour</button>
+        <div class="row" style="gap:6px">${i ? '<button class="btn sm" data-tour="back">Back</button>' : ''}<button class="btn sm primary" data-tour="next">${i === TOUR.length - 1 ? 'Done' : 'Next'}</button></div></div></div>`;
+  layer.querySelector('[data-tour="next"]').focus();
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-tour]');
+  if (!b) { if (tourStep >= 0 && e.target.closest('#tourLayer')) e.stopPropagation(); return; }
+  e.stopPropagation();
+  const a = b.dataset.tour;
+  if (a === 'start') { closeDlg(); tourStart(); } else if (a === 'next') tourShow(tourStep + 1); else if (a === 'back') tourShow(tourStep - 1); else tourEnd();
+}, true);
+document.addEventListener('keydown', (e) => {
+  if (tourStep < 0) return;
+  if (e.key === 'Escape') tourEnd();
+  else if (e.key === 'ArrowRight' || e.key === 'Enter') { e.preventDefault(); tourShow(tourStep + 1); }
+  else if (e.key === 'ArrowLeft') tourShow(tourStep - 1);
+}, true);
+window.addEventListener('resize', () => { if (tourStep >= 0) tourShow(tourStep); });
+
+</script>
+<script>
 // HangarLab UI: dialogs, export and Settings.
 // The app-*.js files share one global scope and load in the order listed in build.js.
 'use strict';
@@ -5838,7 +5907,7 @@ function renderSettings(el) {
         <div class="row"><button class="btn sm danger" data-act="clear-propdata"${propData ? '' : ' disabled'}>Remove all prop performance data</button><button class="btn sm danger" data-act="reset-examples">Replace everything with the example data</button></div></div>
 
       <div class="card"><h2>Keyboard shortcuts</h2><dl class="kv" style="margin-top:8px"><dt>Switch tab</dt><dd>1 – 9</dd><dt>Undo</dt><dd>Ctrl/⌘ + Z</dd><dt>Export</dt><dd>Ctrl/⌘ + E</dd><dt>Quick start guide</dt><dd>?</dd></dl>
-        <div class="row" style="margin-top:12px"><button class="btn sm" data-act="shortcuts">Open quick start</button>${chk('settings.quickstart', 'Show the quick start next time the app opens', { st: true })}</div></div>
+        <div class="row" style="margin-top:12px"><button class="btn sm" data-act="shortcuts">Open quick start</button><button class="btn sm" data-tour="start">Replay the tour</button>${chk('settings.quickstart', 'Show the quick start next time the app opens', { st: true })}</div></div>
 
       <div class="card"><h2>About</h2>
         <p class="note" style="margin:8px 0 6px">HangarLab gives planning estimates, not guarantees. Check them against bench tests and test flights and follow your local aviation rules; the regulation notes are not legal advice. Your designs, library and logs stay in this browser.</p>
@@ -5923,7 +5992,7 @@ function quickStart(step = 0) {
     <div class="qs-dots" role="tablist">${QS_STEPS.map((x, i) => `<button data-qs="${i}" aria-label="Step ${i + 1}" aria-current="${i === qsStep}"></button>`).join('')}</div>`,
     `<span class="faint" style="margin-right:auto;font-size:13px">Reopen any time with the ? button</span>
      ${st.tab ? `<button class="btn ghost" data-qs-go="${st.tab}">Show me</button>` : ''}
-     ${qsStep ? '<button class="btn" data-qs="prev">Back</button>' : ''}
+     ${qsStep ? '<button class="btn" data-qs="prev">Back</button>' : '<button class="btn" data-tour="start">Take the tour</button>'}
      <button class="btn primary" data-qs="${last ? 'done' : 'next'}">${last ? 'Get started' : 'Next'}</button>`);
   $('#dlg').classList.add('qs-dlg');
 }
@@ -6452,7 +6521,8 @@ S = load();
 render();
 if (mergedNote) { save(); toast(mergedNote, { label: 'Undo', fn: undo }); }
 // first visit only; the ? button (or the setting) brings it back
-if (S.settings.quickstart !== false) { S.settings.quickstart = false; save(); setTimeout(() => quickStart(0), 250); }
+if (!S.settings.tourDone) { S.settings.quickstart = false; save(); setTimeout(tourStart, 400); }
+else if (S.settings.quickstart !== false) { S.settings.quickstart = false; save(); setTimeout(() => quickStart(0), 250); }
 
 </script>
 

@@ -111,9 +111,11 @@ Requires Node.js (any current LTS). Run these from `hangarlab/`:
 | `app-map3d.js` | Flight Logs 3D satellite map. |
 | `app-rfmap.js` | Radio Link coverage map. |
 | `app-wizard.js` | New design wizard. |
+| `app-tour.js` | First-visit guided tour. |
 | `app-export.js` | Dialogs, export, checklist and Settings. |
 | `app-main.js` | Quick start, Compare tab, events and start-up. |
 | `_headers` | Cache headers for Cloudflare Pages. |
+| `test-fixtures.json` | Reference designs `test.js` checks the model against (not shipped in the app). |
 
 The `app-*.js` files are plain scripts that share one global scope, so their load order matters. It is listed in both `index.html` and `build.js`, and `app-main.js` must come last.
 

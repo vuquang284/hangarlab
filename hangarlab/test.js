@@ -4,7 +4,13 @@ require('./apc.js');
 require('./library.js');
 require('./data.js');
 const assert = require('assert');
-const U = globalThis.UAS, { lib, projects } = globalThis.UAS_SEED;
+const U = globalThis.UAS, { lib } = globalThis.UAS_SEED;
+// numeric checks run against fixed reference designs (validated against the team spreadsheet and a measured flight),
+// so changing the shipped example designs in data.js never moves the goalposts
+const FIX = require('./test-fixtures.json');
+const projects = [FIX.quad, FIX.dolphin, globalThis.UAS_SEED.projects[2]];
+// the shipped examples must still compute
+for (const ex of globalThis.UAS_SEED.projects) { const r = U.compute(ex, lib); assert(r.Wg > 0 && r.checks.length, `example ${ex.name} computes`); }
 const near = (a, b, tol, msg) => assert(Math.abs(a - b) <= tol, `${msg}: got ${a}, want ${b}±${tol}`);
 
 // Heavy-lift quad: AUW must match the spreadsheet (6467.88 g)

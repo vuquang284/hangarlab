@@ -66,7 +66,7 @@ function quickStart(step = 0) {
     <div class="qs-dots" role="tablist">${QS_STEPS.map((x, i) => `<button data-qs="${i}" aria-label="Step ${i + 1}" aria-current="${i === qsStep}"></button>`).join('')}</div>`,
     `<span class="faint" style="margin-right:auto;font-size:13px">Reopen any time with the ? button</span>
      ${st.tab ? `<button class="btn ghost" data-qs-go="${st.tab}">Show me</button>` : ''}
-     ${qsStep ? '<button class="btn" data-qs="prev">Back</button>' : ''}
+     ${qsStep ? '<button class="btn" data-qs="prev">Back</button>' : '<button class="btn" data-tour="start">Take the tour</button>'}
      <button class="btn primary" data-qs="${last ? 'done' : 'next'}">${last ? 'Get started' : 'Next'}</button>`);
   $('#dlg').classList.add('qs-dlg');
 }
@@ -595,4 +595,5 @@ S = load();
 render();
 if (mergedNote) { save(); toast(mergedNote, { label: 'Undo', fn: undo }); }
 // first visit only; the ? button (or the setting) brings it back
-if (S.settings.quickstart !== false) { S.settings.quickstart = false; save(); setTimeout(() => quickStart(0), 250); }
+if (!S.settings.tourDone) { S.settings.quickstart = false; save(); setTimeout(tourStart, 400); }
+else if (S.settings.quickstart !== false) { S.settings.quickstart = false; save(); setTimeout(() => quickStart(0), 250); }
