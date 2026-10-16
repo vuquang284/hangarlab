@@ -330,7 +330,7 @@ function regsDialog() {
     '<button class="btn" data-act="dlg-close">Close</button>');
 }
 function renderDesign(el) {
-  el.innerHTML = `<div class="bench"><aside class="side"><div class="row" style="justify-content:space-between;margin-bottom:8px"><div class="seg" role="group" aria-label="Input detail"><button data-detail="simple" aria-pressed="${isSimple()}" title="The inputs most designs need">Simple</button><button data-detail="detailed" aria-pressed="${!isSimple()}" title="Every input: drag build-up, calibration, mission, electronics">Detailed</button></div>${sideTools}</div>${designInputs()}</aside>
+  el.innerHTML = `<div class="bench"><aside class="side"><div class="side-top" style="margin-bottom:8px">${sideTog()}<div class="seg" role="group" aria-label="Input detail"><button data-detail="simple" aria-pressed="${isSimple()}" title="The inputs most designs need">Simple</button><button data-detail="detailed" aria-pressed="${!isSimple()}" title="Every input: drag build-up, calibration, mission, electronics">Detailed</button></div>${sideTools}</div>${designInputs()}</aside>
     <section class="stack">
       <div id="readouts"></div>
       <div class="card"><div class="card-h"><h2>Checks</h2><div class="row"><p id="chkCount" style="margin:0">Updated as you type</p><button class="btn sm ghost" data-act="regs">Regulations</button></div></div><div class="checks" id="checks"></div></div>

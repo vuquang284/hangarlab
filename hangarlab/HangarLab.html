@@ -326,11 +326,16 @@ table.bom tbody tr:not(.grp):not(.total):hover td { background: color-mix(in srg
 .badge.dot { width: 7px; height: 7px; padding: 0; border-radius: 50%; }
 .badge.dot.good { background: var(--good); border-color: transparent; }
 .side-tools { display: flex; justify-content: flex-end; gap: 2px; margin-bottom: -4px; flex-wrap: wrap; }
-/* hidden input panel: results take the full width; a tab on the left edge brings it back */
-body.side-hidden .bench { grid-template-columns: minmax(0, 1fr); }
-body.side-hidden .bench > .side { display: none; }
-.side-show { display: none; position: fixed; left: 0; top: 50%; z-index: 30; writing-mode: vertical-rl; transform: rotate(180deg); border-radius: 0 var(--r) var(--r) 0; padding: 12px 6px; }
-body.side-hidden:has(.bench) .side-show { display: inline-flex; }
+/* collapsible input panel: closes to a slim rail holding only the toggle icon */
+.side-top { display: flex; align-items: center; gap: 6px; }
+.side-top .side-tools { margin: 0 0 0 auto; }
+.side-tog svg.i { width: 18px; height: 18px; }
+.bench { transition: grid-template-columns 0.18s ease; }
+body.side-hidden .bench { grid-template-columns: 38px minmax(0, 1fr); }
+body.side-hidden .side { overflow: visible; padding-right: 0; }
+body.side-hidden .side > :not(.side-top), body.side-hidden .side-top > :not(.side-tog) { display: none; }
+@media (max-width: 900px) { body.side-hidden .bench { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { .bench { transition: none; } }
 .chart-tools { display: flex; gap: 2px; margin-left: auto; }
 .toast { display: flex; align-items: center; gap: 14px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); }
 .toast button { background: none; border: 0; color: var(--accent); font-weight: 600; cursor: pointer; padding: 0; font-size: 14px; }
@@ -500,6 +505,7 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></symbol>
   <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9.5 4v16"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
   <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
   <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4M7 9l5-5 5 5"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></symbol>
@@ -547,7 +553,6 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
   </nav>
 </header>
 
-<button id="sideShow" class="btn sm side-show" data-act="side-toggle" title="Show the input panel">Show inputs</button>
 <main id="view"></main>
 <footer class="site-foot">
   <p><b>HangarLab</b> gives planning estimates, not guarantees. Check them against bench tests and test flights, and follow your local aviation rules; the regulation notes are not legal advice.</p>
@@ -2545,7 +2550,7 @@ var uPlot=function(){"use strict";const l="u-off",e="u-label",t="width",n="heigh
 'use strict';
 
 // app version: bump on every update and add a CHANGELOG.md entry. 0.x + '-dev' while in development; 1.0.0 = first public release
-const APP_VERSION = '0.8.0-dev';
+const APP_VERSION = '0.8.1-dev';
 const U = window.UAS;
 const KEY = 'uas-workbench.v1'; // storage key kept from the old name so saved work still loads
 const $ = (s, el = document) => el.querySelector(s);
@@ -2920,7 +2925,14 @@ const group = (title, body, open = true) => {
   const k = gKey(title), st = (S.ui && S.ui.groups && S.ui.groups[k]);
   return `<details class="group" data-g="${esc(k)}"${(st ?? open) ? ' open' : ''}><summary>${title}</summary><div class="fields">${body}</div></details>`;
 };
-const sideTools = `<div class="side-tools"><button class="btn ghost sm" data-act="groups-open">Expand all</button><button class="btn ghost sm" data-act="groups-close">Collapse all</button><button class="btn ghost sm" data-act="side-toggle" title="Hide the input panel to give the results the full width">Hide panel</button></div>`;
+const sideTools = `<div class="side-tools"><button class="btn ghost sm" data-act="groups-open">Expand all</button><button class="btn ghost sm" data-act="groups-close">Collapse all</button></div>`;
+// sidebar toggle (like Claude's): the same icon closes the input panel to a slim rail and opens it again
+const sideTog = () => { const h = !!(S.ui && S.ui.sideHidden); return `<button class="btn ghost icon side-tog" data-act="side-toggle" aria-label="${h ? 'Open' : 'Close'} sidebar" aria-expanded="${!h}" title="${h ? 'Open' : 'Close'} sidebar (Ctrl+B)"><svg class="i"><use href="#i-panel"/></svg></button>`; };
+function sideToggle() {
+  S.ui = S.ui || {}; S.ui.sideHidden = !S.ui.sideHidden; save();
+  document.body.classList.toggle('side-hidden', S.ui.sideHidden);
+  document.querySelectorAll('.side-tog').forEach((b) => { const t = `${S.ui.sideHidden ? 'Open' : 'Close'} sidebar`; b.setAttribute('aria-label', t); b.title = t + ' (Ctrl+B)'; b.setAttribute('aria-expanded', String(!S.ui.sideHidden)); });
+}
 const motorOpts = () => S.lib.motors.map((m) => [m.id, `${m.name}${m.kv ? ` · ${m.kv}KV` : ''}`]);
 const propOpts = () => S.lib.props.map((x) => [x.id, `${x.name}${x.diam ? ` · ${x.diam}×${x.pitch}"` : ''}${x.data ? ' · data' : ''}`]);
 // motor + prop pickers with a line saying where the thrust numbers come from
@@ -3440,7 +3452,7 @@ function regsDialog() {
     '<button class="btn" data-act="dlg-close">Close</button>');
 }
 function renderDesign(el) {
-  el.innerHTML = `<div class="bench"><aside class="side"><div class="row" style="justify-content:space-between;margin-bottom:8px"><div class="seg" role="group" aria-label="Input detail"><button data-detail="simple" aria-pressed="${isSimple()}" title="The inputs most designs need">Simple</button><button data-detail="detailed" aria-pressed="${!isSimple()}" title="Every input: drag build-up, calibration, mission, electronics">Detailed</button></div>${sideTools}</div>${designInputs()}</aside>
+  el.innerHTML = `<div class="bench"><aside class="side"><div class="side-top" style="margin-bottom:8px">${sideTog()}<div class="seg" role="group" aria-label="Input detail"><button data-detail="simple" aria-pressed="${isSimple()}" title="The inputs most designs need">Simple</button><button data-detail="detailed" aria-pressed="${!isSimple()}" title="Every input: drag build-up, calibration, mission, electronics">Detailed</button></div>${sideTools}</div>${designInputs()}</aside>
     <section class="stack">
       <div id="readouts"></div>
       <div class="card"><div class="card-h"><h2>Checks</h2><div class="row"><p id="chkCount" style="margin:0">Updated as you type</p><button class="btn sm ghost" data-act="regs">Regulations</button></div></div><div class="checks" id="checks"></div></div>
@@ -3885,7 +3897,7 @@ function renderRF(el) {
     </div>`;
   };
   const conf = U.rfConflicts(p.bom.filter((r) => r.rf).map((r) => r.rf).concat(p.bom.some((r) => /gps|gnss|here\s?\d|rtk/i.test(r.name)) ? ['gnss'] : []));
-  el.innerHTML = `<div class="bench"><aside class="side">${sideTools}
+  el.innerHTML = `<div class="bench"><aside class="side"><div class="side-top">${sideTog()}${sideTools}</div>
       ${group('Mission geometry', `${num('rf.dist', `Range you need ${tip('The farthest the aircraft will be from the ground station. Each radio card lists the antennas that reach it with your fade margin.')}`, { unit: 'km' })}${num('rf.alt', `Drone height (AGL) ${tip('Height of the drone **above the ground at the ground station**, not above sea level (that is the field elevation on the Performance tab).\n\n**120 m**  = 400 ft, the usual legal ceiling\n\nThe coverage map adds the real terrain under the ground station, so hills and valleys are handled for you.')}`, { unit: 'm' })}${num('rf.gndH', `Ground antenna height ${tip('Height of the ground antenna **above the ground** where it stands (mast or tripod), not above sea level.\n\n**2 m**  tripod\n**5–10 m**  mast\n\nHigher antennas see further and clear the Fresnel zone over the ground.')}`, { unit: 'm' })}${num('rf.fade', `Required fade margin ${tip('Spare signal above what the receiver needs, for losses the free-space math leaves out: fading, antenna angle in banks, trees or terrain near the path, interference, datasheet spread.\n\n**6–10 dB**  clear line of sight, open field\n**10 dB**  general use (default)\n**15–20 dB**  trees, suburbs, hard maneuvering\n**15–20 dB**  RC and telemetry links you rely on\n\nBelow **0 dB** the link drops; under your value it works but is fragile. Every **6 dB** more halves the max range.')}`, { unit: 'dB' })}<p class="hint" id="rfGeo"></p>`)}
       <div class="card"><h3>Sensitivity cheat sheet</h3><dl class="kv" style="margin-top:8px;font-size:12px">
         <dt>ELRS 2.4 500 Hz / 150 Hz / 50 Hz</dt><dd>−105 / −112 / −115</dd><dt>ELRS 900 200 Hz / 50 Hz</dt><dd>−112 / −123</dd>
@@ -3972,7 +3984,7 @@ function liveRF() {
 
 // ---------- MATERIALS ----------
 function renderMaterials(el) {
-  el.innerHTML = `<div class="bench"><aside class="side">${sideTools}
+  el.innerHTML = `<div class="bench"><aside class="side"><div class="side-top">${sideTog()}${sideTools}</div>
     ${group('Where the part lives', `
       ${num('mat.amb', 'Max ambient', { unit: '°C' })}
       ${sel('mat.printer', 'Your printer', [['open', 'Open frame'], ['enclosed', 'Enclosed'], ['hightemp', 'High-temp (PEI/PEEK)']])}
@@ -6918,7 +6930,7 @@ document.addEventListener('click', (e) => {
     case 'lib-del': withUndo(`Removed ${S.lib[b.dataset.kind][i].name || 'item'}`, () => S.lib[b.dataset.kind].splice(i, 1)); break;
     case 'chart-copy': chartCopy(b.dataset.chart); break;
     case 'chart-save': chartSave(b.dataset.chart); break;
-    case 'side-toggle': S.ui = S.ui || {}; S.ui.sideHidden = !S.ui.sideHidden; document.body.classList.toggle('side-hidden', S.ui.sideHidden); save(); break;
+    case 'side-toggle': sideToggle(); break;
     case 'groups-open': case 'groups-close': {
       const open = b.dataset.act === 'groups-open';
       S.ui = S.ui || {}; S.ui.groups = S.ui.groups || {};
@@ -6970,6 +6982,8 @@ document.addEventListener('click', (e) => {
 const moreSet = (open) => { $('.actions').classList.toggle('open', open); $('#moreBtn').setAttribute('aria-expanded', open); };
 document.addEventListener('click', (e) => { const open = !!e.target.closest('#moreBtn') && !$('.actions').classList.contains('open'); moreSet(open); }, true);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('.actions').classList.contains('open')) moreSet(false); });
+// Ctrl/⌘ + B opens or closes the input sidebar
+document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'b' && document.querySelector('.bench > .side')) { e.preventDefault(); sideToggle(); } });
 
 // library filter: hide rows in place (a re-render would take focus out of the box)
 document.addEventListener('input', (e) => { if (e.target.id === 'libFilter') { libQ[S.libTab] = e.target.value; libFilterApply(); } });

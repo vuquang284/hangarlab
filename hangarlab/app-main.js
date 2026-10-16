@@ -448,7 +448,7 @@ document.addEventListener('click', (e) => {
     case 'lib-del': withUndo(`Removed ${S.lib[b.dataset.kind][i].name || 'item'}`, () => S.lib[b.dataset.kind].splice(i, 1)); break;
     case 'chart-copy': chartCopy(b.dataset.chart); break;
     case 'chart-save': chartSave(b.dataset.chart); break;
-    case 'side-toggle': S.ui = S.ui || {}; S.ui.sideHidden = !S.ui.sideHidden; document.body.classList.toggle('side-hidden', S.ui.sideHidden); save(); break;
+    case 'side-toggle': sideToggle(); break;
     case 'groups-open': case 'groups-close': {
       const open = b.dataset.act === 'groups-open';
       S.ui = S.ui || {}; S.ui.groups = S.ui.groups || {};
@@ -500,6 +500,8 @@ document.addEventListener('click', (e) => {
 const moreSet = (open) => { $('.actions').classList.toggle('open', open); $('#moreBtn').setAttribute('aria-expanded', open); };
 document.addEventListener('click', (e) => { const open = !!e.target.closest('#moreBtn') && !$('.actions').classList.contains('open'); moreSet(open); }, true);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('.actions').classList.contains('open')) moreSet(false); });
+// Ctrl/⌘ + B opens or closes the input sidebar
+document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'b' && document.querySelector('.bench > .side')) { e.preventDefault(); sideToggle(); } });
 
 // library filter: hide rows in place (a re-render would take focus out of the box)
 document.addEventListener('input', (e) => { if (e.target.id === 'libFilter') { libQ[S.libTab] = e.target.value; libFilterApply(); } });

@@ -4,7 +4,7 @@
 'use strict';
 
 // app version: bump on every update and add a CHANGELOG.md entry. 0.x + '-dev' while in development; 1.0.0 = first public release
-const APP_VERSION = '0.8.0-dev';
+const APP_VERSION = '0.8.1-dev';
 const U = window.UAS;
 const KEY = 'uas-workbench.v1'; // storage key kept from the old name so saved work still loads
 const $ = (s, el = document) => el.querySelector(s);
@@ -379,7 +379,14 @@ const group = (title, body, open = true) => {
   const k = gKey(title), st = (S.ui && S.ui.groups && S.ui.groups[k]);
   return `<details class="group" data-g="${esc(k)}"${(st ?? open) ? ' open' : ''}><summary>${title}</summary><div class="fields">${body}</div></details>`;
 };
-const sideTools = `<div class="side-tools"><button class="btn ghost sm" data-act="groups-open">Expand all</button><button class="btn ghost sm" data-act="groups-close">Collapse all</button><button class="btn ghost sm" data-act="side-toggle" title="Hide the input panel to give the results the full width">Hide panel</button></div>`;
+const sideTools = `<div class="side-tools"><button class="btn ghost sm" data-act="groups-open">Expand all</button><button class="btn ghost sm" data-act="groups-close">Collapse all</button></div>`;
+// sidebar toggle (like Claude's): the same icon closes the input panel to a slim rail and opens it again
+const sideTog = () => { const h = !!(S.ui && S.ui.sideHidden); return `<button class="btn ghost icon side-tog" data-act="side-toggle" aria-label="${h ? 'Open' : 'Close'} sidebar" aria-expanded="${!h}" title="${h ? 'Open' : 'Close'} sidebar (Ctrl+B)"><svg class="i"><use href="#i-panel"/></svg></button>`; };
+function sideToggle() {
+  S.ui = S.ui || {}; S.ui.sideHidden = !S.ui.sideHidden; save();
+  document.body.classList.toggle('side-hidden', S.ui.sideHidden);
+  document.querySelectorAll('.side-tog').forEach((b) => { const t = `${S.ui.sideHidden ? 'Open' : 'Close'} sidebar`; b.setAttribute('aria-label', t); b.title = t + ' (Ctrl+B)'; b.setAttribute('aria-expanded', String(!S.ui.sideHidden)); });
+}
 const motorOpts = () => S.lib.motors.map((m) => [m.id, `${m.name}${m.kv ? ` · ${m.kv}KV` : ''}`]);
 const propOpts = () => S.lib.props.map((x) => [x.id, `${x.name}${x.diam ? ` · ${x.diam}×${x.pitch}"` : ''}${x.data ? ' · data' : ''}`]);
 // motor + prop pickers with a line saying where the thrust numbers come from

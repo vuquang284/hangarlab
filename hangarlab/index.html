@@ -326,11 +326,16 @@ table.bom tbody tr:not(.grp):not(.total):hover td { background: color-mix(in srg
 .badge.dot { width: 7px; height: 7px; padding: 0; border-radius: 50%; }
 .badge.dot.good { background: var(--good); border-color: transparent; }
 .side-tools { display: flex; justify-content: flex-end; gap: 2px; margin-bottom: -4px; flex-wrap: wrap; }
-/* hidden input panel: results take the full width; a tab on the left edge brings it back */
-body.side-hidden .bench { grid-template-columns: minmax(0, 1fr); }
-body.side-hidden .bench > .side { display: none; }
-.side-show { display: none; position: fixed; left: 0; top: 50%; z-index: 30; writing-mode: vertical-rl; transform: rotate(180deg); border-radius: 0 var(--r) var(--r) 0; padding: 12px 6px; }
-body.side-hidden:has(.bench) .side-show { display: inline-flex; }
+/* collapsible input panel: closes to a slim rail holding only the toggle icon */
+.side-top { display: flex; align-items: center; gap: 6px; }
+.side-top .side-tools { margin: 0 0 0 auto; }
+.side-tog svg.i { width: 18px; height: 18px; }
+.bench { transition: grid-template-columns 0.18s ease; }
+body.side-hidden .bench { grid-template-columns: 38px minmax(0, 1fr); }
+body.side-hidden .side { overflow: visible; padding-right: 0; }
+body.side-hidden .side > :not(.side-top), body.side-hidden .side-top > :not(.side-tog) { display: none; }
+@media (max-width: 900px) { body.side-hidden .bench { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { .bench { transition: none; } }
 .chart-tools { display: flex; gap: 2px; margin-left: auto; }
 .toast { display: flex; align-items: center; gap: 14px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); }
 .toast button { background: none; border: 0; color: var(--accent); font-weight: 600; cursor: pointer; padding: 0; font-size: 14px; }
@@ -500,6 +505,7 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></symbol>
   <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9.5 4v16"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
   <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
   <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4M7 9l5-5 5 5"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></symbol>
@@ -547,7 +553,6 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
   </nav>
 </header>
 
-<button id="sideShow" class="btn sm side-show" data-act="side-toggle" title="Show the input panel">Show inputs</button>
 <main id="view"></main>
 <footer class="site-foot">
   <p><b>HangarLab</b> gives planning estimates, not guarantees. Check them against bench tests and test flights, and follow your local aviation rules; the regulation notes are not legal advice.</p>

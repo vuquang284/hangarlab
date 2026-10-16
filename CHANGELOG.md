@@ -10,13 +10,16 @@ Numbering ([semantic versioning](https://semver.org), major.minor.patch):
 
 To record an update: bump `APP_VERSION` at the top of `hangarlab/app-core.js`, add an entry here, run `node tools/build.js`, commit, then tag it (`git tag v0.1.1-dev && git push --tags`). The version shows at the bottom right of every page.
 
+## 0.8.1-dev (2026-10-16)
+
+- The input panel now collapses like Claude's sidebar: a panel icon at its top left closes it to a slim rail that keeps the same icon to open it again (Ctrl/⌘ + B also works). Replaces the Hide panel button and the Show inputs tab.
+
 ## 0.8.0-dev (2026-10-16)
 
 - **Excel export, worked calculation:** a new first sheet lists every input (blue) and works each result out as a live Excel formula of those inputs: air density, battery voltage, capacity and usable energy, all-up weight (summed from the BOM sheet), hover thrust, power, current and time, cruise lift and drag coefficients, drag, power, efficiency, endurance, range, stall speed, and the mission energy per segment. Each result sits next to the value the app shows. Change an input and the sheet recalculates.
 - **Charts in the export:** the Design charts (power vs airspeed, payload trade, battery trade, motor curve) are pictures next to their data sheets and together on a Charts sheet, even when exporting from another tab.
 - The BOM sheet totals are formulas (qty × unit weight, qty × unit cost).
 - **Copy and Save PNG** buttons on every chart.
-- **Hide panel** in the input panel gives the results the full width; "Show inputs" on the left edge brings it back.
 - The Excel export now uses ExcelJS (loaded when you export); the old Calculations sheet is now Summary.
 
 ## 0.7.4-dev (2026-10-16)

@@ -4,7 +4,7 @@
 
 // ---------- MATERIALS ----------
 function renderMaterials(el) {
-  el.innerHTML = `<div class="bench"><aside class="side">${sideTools}
+  el.innerHTML = `<div class="bench"><aside class="side"><div class="side-top">${sideTog()}${sideTools}</div>
     ${group('Where the part lives', `
       ${num('mat.amb', 'Max ambient', { unit: '°C' })}
       ${sel('mat.printer', 'Your printer', [['open', 'Open frame'], ['enclosed', 'Enclosed'], ['hightemp', 'High-temp (PEI/PEEK)']])}
