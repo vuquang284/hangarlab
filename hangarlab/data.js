@@ -117,7 +117,7 @@
     batt: { name: '6S 5000 25C', chem: 'lipo', s: 6, p: 1, cellMah: 5000, g: 451, c: 25, cPeak: 50, packs: 2, conn: 'parallel', usable: 80 },
     becEff: 90,
     mr: { layout: 'quadx', set: 'xing2812-hq8', n: 4, escA: 50, maxThr: 70, cda: 0.05, lean: 30 },
-    fw: { span: 0.845, area: 0.1696, cd0: 0.035, e: 0.75, clmax: 1.1, etaP: 60, etaD: 85, vc: 22, motor: 'm-xing2-3110-900kv', prop: 'pr-hq-8x4x3', n: 1, esc: 'esc-6s-60', vsMax: 14,
+    fw: { span: 0.845, area: 0.1696, cd0: 0.035, e: 0.75, clmax: 1.1, etaP: 60, etaD: 85, vc: 22, motor: 'm-xnova-3220-sk-700kv', prop: 'pr-hq-10x5x3', n: 1, esc: 'esc-6s-60', vsMax: 14,
       cal: { on: false, v: 0, a: 0, g: 0, learn: false },
       drag: { mode: 'buildup', finish: 'foam', fusL: 0.83, fusD: 0.11, tailPct: 20, tc: 0.12, booms: { n: 0, L: 0, d: 0 }, extras: [{ name: 'Gimbal camera', cda: 40, qty: 1 }, { name: 'Exposed antenna', cda: 5, qty: 3 }], misc: 20, eAuto: true } },
     vtol: { kind: 'quadplane', hoverS: 90, reserve: 0, dcd0: 0.008 },

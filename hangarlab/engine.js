@@ -837,7 +837,7 @@
       else if (sg.type === 'climb') {
         r.t = v / rate;
         r.P = !fw ? R.hoverP + (W * rate) / 0.7 : R.bestEnd ? R.bestEnd.P + (W * rate) / 0.6 : null;
-        if (fw && R.maxRoc != null && rate > R.maxRoc) r.err = `Climb rate ${rate} m/s is above the best climb ${R.maxRoc.toFixed(1)} m/s.`;
+        if (fw && R.maxRoc != null && rate > R.maxRoc) r.err = `Climbing at ${rate} m/s needs more thrust than the cruise motor has: at full throttle this aircraft climbs at most ${R.maxRoc.toFixed(1)} m/s. Lower the mission's climb rate, or use a stronger motor or larger prop.`;
       } else if (sg.type === 'descend') { r.t = v / (fw ? 2 : 1.5); r.P = fw ? pAv : R.hoverP * 0.85; }
       else if (sg.type === 'loiter') { r.t = v * 60; r.P = fw ? R.bestEnd && R.bestEnd.P : R.hoverP; }
       else if (sg.type === 'cruise') {

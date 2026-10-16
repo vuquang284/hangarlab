@@ -222,7 +222,7 @@ function missionReadouts(p, R, mp) {
 const leftTxt = (left, avail) => (left >= 0 ? `${fmt(left, 0)} Wh left (${fmt((left / (avail || 1)) * 100, 0)} %)` : `${fmt(-left, 0)} Wh short`);
 function misStatus(mp) {
   const cons = mp.consK > 1, lN = mp.avail - mp.total, lC = mp.avail - mp.totalCons, err = mp.rows.some((r) => r.err);
-  if (err) return { st: 'crit', pill: 'Cannot fly', text: 'a segment is impossible (see the table)' };
+  if (err) { const r = mp.rows.find((x) => x.err); return { st: 'crit', pill: 'Cannot fly', text: `the ${r.label.toLowerCase()} segment is not possible: ${r.err}` }; }
   if (mp.ok) return { st: 'good', pill: 'Fits', text: `${leftTxt(cons ? lC : lN, mp.avail)} at landing${cons ? ', even with conservative power' : ''}` };
   if (mp.okNominal) return { st: 'warn', pill: 'Tight', text: `${leftTxt(lN, mp.avail)} at landing; ${fmt(-lC, 0)} Wh short if power is ${fmt((mp.consK - 1) * 100, 0)} % higher than modeled` };
   return { st: 'crit', pill: 'Does not fit', text: `${leftTxt(lN, mp.avail)}: shorten the mission, fly slower or add battery` };
@@ -261,7 +261,7 @@ function missionCard(p, mp) {
     ${cons ? `<tr class="total"><td colspan="5">Conservative (propulsion power +${fmt((mp.consK - 1) * 100, 0)} %)</td><td class="n">${fmt(mp.totalCons, 0)} Wh</td>${leftCell(mp.avail - mp.totalCons)}</tr>` : ''}</tbody></table></div>
     ${fin(p.mission.logWh) && p.mission.logWh > 0 ? `<p class="hint"><b>Logged flight</b> (${esc(p.mission.logName || 'log')}): the pack gave <b>${fmt(p.mission.logWh, 0)} Wh</b>; this plan predicts ${fmt(mp.total, 0)} Wh (${mp.total >= p.mission.logWh ? '+' : ''}${fmt((mp.total / p.mission.logWh - 1) * 100, 0)} %). Edit any segment to clear this comparison.</p>` : ''}
     <p class="hint">Power per segment comes from the same model as the readouts above; climb and descent are estimates within ~10 %. ${cons ? 'The conservative row covers the usual gap between a model and real flight until you calibrate from a flight log.' : ''}</p>`;
-  if (note) note.innerHTML = `<span class="pill ${st.st}">${st.pill}</span> ${st.text}`;
+  if (note) note.innerHTML = `<span class="pill ${st.st}">${st.pill}</span> ${esc(st.text)}`;
 }
 // ---- part finders: try library options in the full model, rank by endurance within limits ----
 function finderRows(p, kind, role) {

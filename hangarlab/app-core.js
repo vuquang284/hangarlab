@@ -4,7 +4,7 @@
 'use strict';
 
 // app version: bump on every update and add a CHANGELOG.md entry. 0.x + '-dev' while in development; 1.0.0 = first public release
-const APP_VERSION = '0.7.3-dev';
+const APP_VERSION = '0.7.4-dev';
 const U = window.UAS;
 const KEY = 'uas-workbench.v1'; // storage key kept from the old name so saved work still loads
 const $ = (s, el = document) => el.querySelector(s);
@@ -54,6 +54,8 @@ const MISSION_DEF = {
   vtol: [['hover', 30], ['transition', 1], ['climb', 100], ['cruise', 8, 'head'], ['loiter', 10], ['cruise', 8, 'tail'], ['descend', 100], ['transition', 1], ['hover', 30]],
 };
 function fixDesign(p) {
+  // the shipped fixed-wing example's earlier cruise motors were over their rating or too weak to climb: move it to the current one
+  if (p.id === 'p-dolphin' && p.name === 'Example fixed-wing' && p.fw && ['m-atomrc-2807-1100kv', 'm-xing2-3110-900kv'].includes(p.fw.motor)) Object.assign(p.fw, { motor: 'm-xnova-3220-sk-700kv', prop: 'pr-hq-10x5x3' });
   if (!p.mission) p.mission = { wind: 0, reserve: 0, climb: 2, vMr: 0, segs: (MISSION_DEF[p.type] || MISSION_DEF.fixedwing).map(([type, v, dir]) => ({ type, v, dir: dir || 'none' })) };
   if (!p.cg) p.cg = { le: 0, mac: 0, pos: {} };
   if (p.mr && p.mr.lean == null) p.mr.lean = 30;

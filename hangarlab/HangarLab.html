@@ -1396,7 +1396,7 @@ var uPlot=function(){"use strict";const l="u-off",e="u-label",t="width",n="heigh
       else if (sg.type === 'climb') {
         r.t = v / rate;
         r.P = !fw ? R.hoverP + (W * rate) / 0.7 : R.bestEnd ? R.bestEnd.P + (W * rate) / 0.6 : null;
-        if (fw && R.maxRoc != null && rate > R.maxRoc) r.err = `Climb rate ${rate} m/s is above the best climb ${R.maxRoc.toFixed(1)} m/s.`;
+        if (fw && R.maxRoc != null && rate > R.maxRoc) r.err = `Climbing at ${rate} m/s needs more thrust than the cruise motor has: at full throttle this aircraft climbs at most ${R.maxRoc.toFixed(1)} m/s. Lower the mission's climb rate, or use a stronger motor or larger prop.`;
       } else if (sg.type === 'descend') { r.t = v / (fw ? 2 : 1.5); r.P = fw ? pAv : R.hoverP * 0.85; }
       else if (sg.type === 'loiter') { r.t = v * 60; r.P = fw ? R.bestEnd && R.bestEnd.P : R.hoverP; }
       else if (sg.type === 'cruise') {
@@ -2459,7 +2459,7 @@ var uPlot=function(){"use strict";const l="u-off",e="u-label",t="width",n="heigh
     batt: { name: '6S 5000 25C', chem: 'lipo', s: 6, p: 1, cellMah: 5000, g: 451, c: 25, cPeak: 50, packs: 2, conn: 'parallel', usable: 80 },
     becEff: 90,
     mr: { layout: 'quadx', set: 'xing2812-hq8', n: 4, escA: 50, maxThr: 70, cda: 0.05, lean: 30 },
-    fw: { span: 0.845, area: 0.1696, cd0: 0.035, e: 0.75, clmax: 1.1, etaP: 60, etaD: 85, vc: 22, motor: 'm-xing2-3110-900kv', prop: 'pr-hq-8x4x3', n: 1, esc: 'esc-6s-60', vsMax: 14,
+    fw: { span: 0.845, area: 0.1696, cd0: 0.035, e: 0.75, clmax: 1.1, etaP: 60, etaD: 85, vc: 22, motor: 'm-xnova-3220-sk-700kv', prop: 'pr-hq-10x5x3', n: 1, esc: 'esc-6s-60', vsMax: 14,
       cal: { on: false, v: 0, a: 0, g: 0, learn: false },
       drag: { mode: 'buildup', finish: 'foam', fusL: 0.83, fusD: 0.11, tailPct: 20, tc: 0.12, booms: { n: 0, L: 0, d: 0 }, extras: [{ name: 'Gimbal camera', cda: 40, qty: 1 }, { name: 'Exposed antenna', cda: 5, qty: 3 }], misc: 20, eAuto: true } },
     vtol: { kind: 'quadplane', hoverS: 90, reserve: 0, dcd0: 0.008 },
@@ -2538,7 +2538,7 @@ var uPlot=function(){"use strict";const l="u-off",e="u-label",t="width",n="heigh
 'use strict';
 
 // app version: bump on every update and add a CHANGELOG.md entry. 0.x + '-dev' while in development; 1.0.0 = first public release
-const APP_VERSION = '0.7.3-dev';
+const APP_VERSION = '0.7.4-dev';
 const U = window.UAS;
 const KEY = 'uas-workbench.v1'; // storage key kept from the old name so saved work still loads
 const $ = (s, el = document) => el.querySelector(s);
@@ -2588,6 +2588,8 @@ const MISSION_DEF = {
   vtol: [['hover', 30], ['transition', 1], ['climb', 100], ['cruise', 8, 'head'], ['loiter', 10], ['cruise', 8, 'tail'], ['descend', 100], ['transition', 1], ['hover', 30]],
 };
 function fixDesign(p) {
+  // the shipped fixed-wing example's earlier cruise motors were over their rating or too weak to climb: move it to the current one
+  if (p.id === 'p-dolphin' && p.name === 'Example fixed-wing' && p.fw && ['m-atomrc-2807-1100kv', 'm-xing2-3110-900kv'].includes(p.fw.motor)) Object.assign(p.fw, { motor: 'm-xnova-3220-sk-700kv', prop: 'pr-hq-10x5x3' });
   if (!p.mission) p.mission = { wind: 0, reserve: 0, climb: 2, vMr: 0, segs: (MISSION_DEF[p.type] || MISSION_DEF.fixedwing).map(([type, v, dir]) => ({ type, v, dir: dir || 'none' })) };
   if (!p.cg) p.cg = { le: 0, mac: 0, pos: {} };
   if (p.mr && p.mr.lean == null) p.mr.lean = 30;
@@ -3283,7 +3285,7 @@ function missionReadouts(p, R, mp) {
 const leftTxt = (left, avail) => (left >= 0 ? `${fmt(left, 0)} Wh left (${fmt((left / (avail || 1)) * 100, 0)} %)` : `${fmt(-left, 0)} Wh short`);
 function misStatus(mp) {
   const cons = mp.consK > 1, lN = mp.avail - mp.total, lC = mp.avail - mp.totalCons, err = mp.rows.some((r) => r.err);
-  if (err) return { st: 'crit', pill: 'Cannot fly', text: 'a segment is impossible (see the table)' };
+  if (err) { const r = mp.rows.find((x) => x.err); return { st: 'crit', pill: 'Cannot fly', text: `the ${r.label.toLowerCase()} segment is not possible: ${r.err}` }; }
   if (mp.ok) return { st: 'good', pill: 'Fits', text: `${leftTxt(cons ? lC : lN, mp.avail)} at landing${cons ? ', even with conservative power' : ''}` };
   if (mp.okNominal) return { st: 'warn', pill: 'Tight', text: `${leftTxt(lN, mp.avail)} at landing; ${fmt(-lC, 0)} Wh short if power is ${fmt((mp.consK - 1) * 100, 0)} % higher than modeled` };
   return { st: 'crit', pill: 'Does not fit', text: `${leftTxt(lN, mp.avail)}: shorten the mission, fly slower or add battery` };
@@ -3322,7 +3324,7 @@ function missionCard(p, mp) {
     ${cons ? `<tr class="total"><td colspan="5">Conservative (propulsion power +${fmt((mp.consK - 1) * 100, 0)} %)</td><td class="n">${fmt(mp.totalCons, 0)} Wh</td>${leftCell(mp.avail - mp.totalCons)}</tr>` : ''}</tbody></table></div>
     ${fin(p.mission.logWh) && p.mission.logWh > 0 ? `<p class="hint"><b>Logged flight</b> (${esc(p.mission.logName || 'log')}): the pack gave <b>${fmt(p.mission.logWh, 0)} Wh</b>; this plan predicts ${fmt(mp.total, 0)} Wh (${mp.total >= p.mission.logWh ? '+' : ''}${fmt((mp.total / p.mission.logWh - 1) * 100, 0)} %). Edit any segment to clear this comparison.</p>` : ''}
     <p class="hint">Power per segment comes from the same model as the readouts above; climb and descent are estimates within ~10 %. ${cons ? 'The conservative row covers the usual gap between a model and real flight until you calibrate from a flight log.' : ''}</p>`;
-  if (note) note.innerHTML = `<span class="pill ${st.st}">${st.pill}</span> ${st.text}`;
+  if (note) note.innerHTML = `<span class="pill ${st.st}">${st.pill}</span> ${esc(st.text)}`;
 }
 // ---- part finders: try library options in the full model, rank by endurance within limits ----
 function finderRows(p, kind, role) {

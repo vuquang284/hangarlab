@@ -10,6 +10,11 @@ Numbering ([semantic versioning](https://semver.org), major.minor.patch):
 
 To record an update: bump `APP_VERSION` at the top of `hangarlab/app-core.js`, add an entry here, run `node tools/build.js`, commit, then tag it (`git tag v0.1.1-dev && git push --tags`). The version shows at the bottom right of every page.
 
+## 0.7.4-dev (2026-10-16)
+
+- Example fixed-wing: cruise motor is now the Xnova 3220 SK 700KV with an HQ 10x5x3 (bench data). The previous one could only climb 1.6 m/s, so the example's 2 m/s mission climb showed "Cannot fly". Saved copies of the example are updated too.
+- Mission "Cannot fly" now names the segment and the reason, and the climb message says what to change (lower climb rate, stronger motor or larger prop).
+
 ## 0.7.3-dev (2026-10-15)
 
 - Libraries already saved in a browser get the same APC merge once (E / EP versions become one prop per size), with thrust data and designs repointed. Before, only new visitors saw it.
