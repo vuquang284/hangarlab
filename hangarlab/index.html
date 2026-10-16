@@ -325,7 +325,13 @@ table.bom tbody tr:not(.grp):not(.total):hover td { background: color-mix(in srg
 .badge.warn { background: var(--warn); color: #1c1303; border-color: transparent; }
 .badge.dot { width: 7px; height: 7px; padding: 0; border-radius: 50%; }
 .badge.dot.good { background: var(--good); border-color: transparent; }
-.side-tools { display: flex; justify-content: flex-end; gap: 2px; margin-bottom: -4px; }
+.side-tools { display: flex; justify-content: flex-end; gap: 2px; margin-bottom: -4px; flex-wrap: wrap; }
+/* hidden input panel: results take the full width; a tab on the left edge brings it back */
+body.side-hidden .bench { grid-template-columns: minmax(0, 1fr); }
+body.side-hidden .bench > .side { display: none; }
+.side-show { display: none; position: fixed; left: 0; top: 50%; z-index: 30; writing-mode: vertical-rl; transform: rotate(180deg); border-radius: 0 var(--r) var(--r) 0; padding: 12px 6px; }
+body.side-hidden:has(.bench) .side-show { display: inline-flex; }
+.chart-tools { display: flex; gap: 2px; margin-left: auto; }
 .toast { display: flex; align-items: center; gap: 14px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); }
 .toast button { background: none; border: 0; color: var(--accent); font-weight: 600; cursor: pointer; padding: 0; font-size: 14px; }
 :root[data-theme="light"] .toast button { color: #ff8a4a; }
@@ -541,6 +547,7 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
   </nav>
 </header>
 
+<button id="sideShow" class="btn sm side-show" data-act="side-toggle" title="Show the input panel">Show inputs</button>
 <main id="view"></main>
 <footer class="site-foot">
   <p><b>HangarLab</b> gives planning estimates, not guarantees. Check them against bench tests and test flights, and follow your local aviation rules; the regulation notes are not legal advice.</p>

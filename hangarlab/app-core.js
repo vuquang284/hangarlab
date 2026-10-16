@@ -4,7 +4,7 @@
 'use strict';
 
 // app version: bump on every update and add a CHANGELOG.md entry. 0.x + '-dev' while in development; 1.0.0 = first public release
-const APP_VERSION = '0.7.4-dev';
+const APP_VERSION = '0.8.0-dev';
 const U = window.UAS;
 const KEY = 'uas-workbench.v1'; // storage key kept from the old name so saved work still loads
 const $ = (s, el = document) => el.querySelector(s);
@@ -379,7 +379,7 @@ const group = (title, body, open = true) => {
   const k = gKey(title), st = (S.ui && S.ui.groups && S.ui.groups[k]);
   return `<details class="group" data-g="${esc(k)}"${(st ?? open) ? ' open' : ''}><summary>${title}</summary><div class="fields">${body}</div></details>`;
 };
-const sideTools = `<div class="side-tools"><button class="btn ghost sm" data-act="groups-open">Expand all</button><button class="btn ghost sm" data-act="groups-close">Collapse all</button></div>`;
+const sideTools = `<div class="side-tools"><button class="btn ghost sm" data-act="groups-open">Expand all</button><button class="btn ghost sm" data-act="groups-close">Collapse all</button><button class="btn ghost sm" data-act="side-toggle" title="Hide the input panel to give the results the full width">Hide panel</button></div>`;
 const motorOpts = () => S.lib.motors.map((m) => [m.id, `${m.name}${m.kv ? ` · ${m.kv}KV` : ''}`]);
 const propOpts = () => S.lib.props.map((x) => [x.id, `${x.name}${x.diam ? ` · ${x.diam}×${x.pitch}"` : ''}${x.data ? ' · data' : ''}`]);
 // motor + prop pickers with a line saying where the thrust numbers come from
@@ -494,9 +494,49 @@ function chart(id, cfg) {
     hooks: { drawAxes: cfg.under ? [cfg.under] : [], draw: [(u) => drawMarks(u, cfg)], setCursor: cfg.onCursor ? [cfg.onCursor] : [] },
   };
   const u = new uPlot(opts, cfg.data, el);
+  u.hlLegend = cfg.series.map((s) => ({ label: s.label, color: s.color, dash: !!s.dash }));
   charts[id] = u;
   ro_.observe(el);
+  chartTools(el);
   return u;
+}
+// Copy / Save buttons in the chart card's header
+function chartTools(el) {
+  const h = el.closest('.card') && el.closest('.card').querySelector('.card-h');
+  if (!h || h.querySelector('.chart-tools')) return;
+  h.insertAdjacentHTML('beforeend', `<div class="chart-tools"><button class="btn ghost sm" data-act="chart-copy" data-chart="${el.id}" title="Copy the chart as a picture">Copy</button><button class="btn ghost sm" data-act="chart-save" data-chart="${el.id}" title="Save the chart as a PNG picture">Save PNG</button></div>`);
+}
+const chartTitle = (id) => { const c = document.getElementById(id) && document.getElementById(id).closest('.card'); const t = c && c.querySelector('.card-h h2'); return t ? t.textContent.trim() : 'Chart'; };
+// the chart as a PNG: title, the plot (uPlot draws axes on its canvas) and a legend, on the panel color
+function chartPng(id, title) {
+  const u = charts[id];
+  if (!u) return Promise.reject(new Error('Chart not drawn yet.'));
+  const src = u.ctx.canvas, k = src.width / (u.width || src.width) || 1, pad = 14 * k, head = 30 * k, leg = 26 * k;
+  const c = document.createElement('canvas');
+  c.width = src.width + pad * 2; c.height = src.height + head + leg + pad;
+  const x = c.getContext('2d'), font = (w, s) => `${w} ${s * k}px Barlow, "Segoe UI", sans-serif`;
+  x.fillStyle = cssv('--panel') || '#232321'; x.fillRect(0, 0, c.width, c.height);
+  x.fillStyle = cssv('--fg') || '#ecebe6'; x.font = font(600, 15); x.textBaseline = 'middle';
+  x.fillText(title || chartTitle(id), pad, head / 2 + pad / 3);
+  x.drawImage(src, pad, head);
+  let lx = pad; const ly = head + src.height + leg / 2;
+  x.font = font(500, 12);
+  for (const s of u.hlLegend || []) {
+    x.strokeStyle = s.color; x.lineWidth = 2.5 * k; x.setLineDash(s.dash ? [5 * k, 4 * k] : []);
+    x.beginPath(); x.moveTo(lx, ly); x.lineTo(lx + 18 * k, ly); x.stroke(); x.setLineDash([]);
+    x.fillStyle = cssv('--muted') || '#a8a69d'; x.fillText(s.label, lx + 24 * k, ly);
+    lx += 24 * k + x.measureText(s.label).width + 18 * k;
+  }
+  return new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('Could not make the picture.'))), 'image/png'));
+}
+async function chartCopy(id) {
+  try {
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': chartPng(id) })]);
+    toast('Chart copied. Paste it into a document or chat.');
+  } catch (e) { toast('Copying pictures is blocked here. Use Save PNG instead.'); }
+}
+async function chartSave(id) {
+  try { download(`${fileBase(P())}-${chartTitle(id).toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`, await chartPng(id)); } catch (e) { toast(e.message); }
 }
 
 // ---------- header ----------

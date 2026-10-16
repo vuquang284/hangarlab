@@ -122,19 +122,198 @@ function curveRows(p, R) {
   return out;
 }
 
+// The worked calculation: every input, then each result as a live Excel formula of those inputs, next to the app's value.
+// Items: { sec } | { label, sym, v | f, unit, how, app }. `f` uses {sym} for other cells. Parts the app solves numerically
+// (thrust curves, prop data, drag build-up) come in as inputs with their source, so the formulas still add up to the app.
+function workedCalc(p, R, mp) {
+  const it = [], sec = (t) => it.push({ sec: t });
+  const inp = (label, sym, v, unit, how) => it.push({ label, sym, v: fin(+v) ? +v : v, unit, how });
+  const calc = (label, sym, f, unit, how, app) => it.push({ label, sym, f, unit, how, app: fin(app) ? app : undefined });
+  const b = R.bat;
+  sec('Air');
+  inp('Field altitude (above sea level)', 'h', p.env.alt, 'm', 'Design input');
+  inp('Air temperature', 'T', p.env.temp, '°C', 'Design input');
+  calc('Air pressure', 'pa', '101325*(1-2.25577E-5*{h})^5.25588', 'Pa', 'p = 101325 · (1 − 2.25577×10⁻⁵ · h)^5.25588 (standard atmosphere)');
+  calc('Air density', 'rho', '{pa}/(287.05*({T}+273.15))', 'kg/m³', 'ρ = p / (287.05 · (T + 273.15))', R.rho);
+  calc('Density ratio', 'sigma', '{rho}/1.225', '', 'σ = ρ / 1.225 (sea-level density)', R.sigma);
+  sec('Battery');
+  inp('Cell nominal voltage', 'vc', b.chem.nom, 'V', `${b.chem.label}`);
+  inp('Cells in series (all packs)', 'S', b.S, '', `${p.batt.s}S per pack × ${b.packs} pack(s) in ${p.batt.conn || 'parallel'}`);
+  inp('Cells in parallel (all packs)', 'P', b.P, '', `${p.batt.p || 1}P per pack`);
+  inp('Cell capacity', 'mah', +p.batt.cellMah || 0, 'mAh', p.batt.name);
+  calc('Pack voltage', 'V', '{S}*{vc}', 'V', 'V = S · V_cell', b.V);
+  calc('Capacity', 'Ah', '{P}*{mah}/1000', 'Ah', 'Ah = P · mAh / 1000', b.Ah);
+  calc('Energy', 'Wh', '{V}*{Ah}', 'Wh', 'Wh = V · Ah', b.Wh);
+  inp('Usable share', 'use', p.batt.usable, '%', 'Design input (depth of discharge you plan to use)');
+  inp('Cold-weather factor', 'cold', b.coldF || 1, '', b.coldF ? `Capacity loss at ${p.env.temp} °C` : 'No loss above 10 °C');
+  calc('Usable energy', 'Wu', '{Wh}*{use}/100*{cold}', 'Wh', 'Wu = Wh · usable % · cold factor', b.usableWh);
+  inp('Continuous rating', 'C', p.batt.c, 'C', 'Pack label');
+  calc('Max continuous current', 'Ic', '{C}*{Ah}', 'A', 'I = C · Ah', b.iMaxCont);
+  sec('Weight and electronics');
+  calc('All-up weight', 'AUW', 'SUM(BOM!E2:E{bomEnd})', 'g', 'Sum of the BOM sheet\'s Total g column', R.Wg);
+  calc('Weight force', 'W', '{AUW}/1000*9.80665', 'N', 'W = AUW/1000 · g', R.WN);
+  inp('Electronics power', 'pAv', R.pAv, 'W', `BOM average watts on regulated rails ÷ ${p.becEff || 90} % regulator efficiency, plus battery-bus items`);
+  if (R.h) {
+    const n = +p.mr.n, coax = (U.LAYOUTS[p.mr.layout] || {}).coax;
+    sec(p.type === 'vtol' ? 'Hover (lift motors)' : 'Hover');
+    inp('Lift motors', 'n', n, '', `${U.LAYOUTS[p.mr.layout].label} · ${R.h.set.name}`);
+    inp('Hover thrust factor', 'kH', R.kHover || 1, '', p.type === 'vtol' ? 'Extra thrust for the airframe in the prop wash' : 'None for multirotors');
+    calc('Thrust per motor', 'Tm', '{AUW}*{kH}/{n}', 'g', 'T = AUW · kH / n', R.h.tPer);
+    inp('Power per motor at sea level', 'Pm0', (R.h.pMotors / n) * Math.sqrt(R.sigma), 'W', `Read from the ${R.h.set.physics ? 'physics estimate' : 'thrust-stand data'} at that thrust${coax ? ', ×1.22 for coaxial' : ''}`);
+    calc('Power per motor here', 'Pm', '{Pm0}/SQRT({sigma})', 'W', 'P = P_sea level / √σ (thinner air needs more power)');
+    calc('Hover power (total)', 'Ph', '{n}*{Pm}+{pAv}', 'W', 'P = n · P_motor + electronics', R.hoverP);
+    calc('Hover current', 'Ih', '{Ph}/{V}', 'A', 'I = P / V', R.hoverI);
+    if (p.type === 'multirotor') calc('Hover time', 'th', '{Wu}/{Ph}*60', 'min', 't = Wu / P · 60', R.hoverMin);
+    inp('Hover throttle', 'thr', R.h.thr, '%', 'Read from the thrust curve at that thrust');
+    inp('Max thrust per motor (sea level)', 'Tmax', R.h.c.tmax, 'g', 'Full throttle on the thrust curve');
+    inp('Coaxial thrust factor', 'cf', coax ? 0.85 : 1, '', coax ? 'Lower rotor works in the upper one\'s wash' : 'Not coaxial');
+    calc('Max thrust (total)', 'Tt', '{n}*{Tmax}*{sigma}*{cf}', 'g', 'T = n · T_max · σ · coax factor', R.h.tmaxTot);
+    calc('Thrust-to-weight', 'tw', '{Tt}/({AUW}*{kH})', '', 'T/W = T_total / (AUW · kH)', R.h.tw);
+    inp('Full-throttle current per motor', 'Im', R.h.iMaxMotor, 'A', 'Full throttle on the thrust curve');
+    if (p.type === 'multirotor') calc('Peak current', 'Ipk', '{n}*{Im}+{pAv}/{V}', 'A', 'I = n · I_motor + electronics / V', R.maxI);
+  }
+  if (R.cruise) {
+    const f = p.fw;
+    sec(p.type === 'vtol' ? 'Cruise (wing-borne)' : 'Cruise');
+    inp('Wingspan', 'b', f.span, 'm', 'Design input');
+    inp('Wing area', 'Sw', f.area, 'm²', 'Design input');
+    calc('Aspect ratio', 'AR', '{b}^2/{Sw}', '', 'AR = b² / S', R.AR);
+    inp('Cruise speed', 'Vc', f.vc, 'm/s', 'Design input');
+    calc('Dynamic pressure', 'q', '0.5*{rho}*{Vc}^2', 'Pa', 'q = ½ ρ V²');
+    calc('Lift coefficient', 'CL', '{W}/({q}*{Sw})', '', 'CL = W / (q · S)', R.cruise.CL);
+    inp('Zero-lift drag coefficient', 'CD0', R.cd0, '', R.drag ? 'Drag build-up at cruise (see the Drag build-up rows on Summary)' : 'Design input');
+    inp('Oswald efficiency', 'e', R.e, '', f.drag && f.drag.eAuto ? 'Estimated from aspect ratio' : 'Design input');
+    calc('Drag coefficient', 'CD', '{CD0}+{CL}^2/(PI()*{e}*{AR})', '', 'CD = CD0 + CL² / (π · e · AR)');
+    calc('Drag (theory)', 'D0', '{q}*{Sw}*{CD}', 'N', 'D = q · S · CD');
+    inp('Drag correction', 'k', R.kUsed, '', { calibrated: 'Calibrated from your flight', learned: 'Learned from your calibrated flights', default: 'Default gap between theory and real flights' }[R.kSource] || R.kSource);
+    calc('Drag', 'D', '{k}*{D0}', 'N', 'D = k · D_theory');
+    calc('Power to push the air', 'Pa', '{D}*{Vc}', 'W', 'P = D · V');
+    const Pprop = R.cruise.P - R.pAv;
+    if (R.propModel) inp('Motor × prop efficiency at cruise', 'eta', Pprop > 0 ? airPower(R, f) / Pprop : 0, '', 'Solved from the prop data and motor model at cruise');
+    else { inp('Prop efficiency', 'etaP', f.etaP, '%', 'Design input'); inp('Motor + ESC efficiency', 'etaD', f.etaD, '%', 'Design input'); inp('Prop type factor', 'pk', f.propOther ? 0.85 : 1, '', f.propOther ? 'Prop differs from its data (−15 %)' : '—'); calc('Overall efficiency', 'eta', '{etaP}/100*{etaD}/100*{pk}', '', 'η = η_prop · η_motor · factor'); }
+    calc('Propulsion power', 'Pp', '{Pa}/{eta}', 'W', 'P = P_air / η', Pprop);
+    calc('Cruise power (total)', 'Pc', '{Pp}+{pAv}', 'W', 'P = P_propulsion + electronics', R.cruise.P);
+    calc('Cruise current', 'Icr', '{Pc}/{V}', 'A', 'I = P / V', R.cruise.I);
+    if (p.type === 'fixedwing') {
+      calc('Endurance at cruise', 'tc', '{Wu}/{Pc}*60', 'min', 't = Wu / P · 60', R.cruise.minutes);
+      calc('Range at cruise', 'Rc', '{Vc}*{tc}*60/1000', 'km', 'R = V · t', R.cruise.km);
+    }
+    inp('Max lift coefficient', 'CLm', f.clmax, '', 'Design input');
+    calc('Stall speed', 'Vs', 'SQRT(2*{W}/({rho}*{Sw}*{CLm}))', 'm/s', 'Vs = √(2W / (ρ · S · CLmax))', R.vs);
+    calc('Wing loading', 'WL', '{AUW}/1000/{Sw}', 'kg/m²', 'AUW / S', R.wingLoad);
+  }
+  if (mp) {
+    sec('Mission');
+    inp('Extra reserve', 'res', +p.mission.reserve || 0, '%', 'Design input');
+    calc('Energy available', 'Ea', '{Wu}*(1-{res}/100)', 'Wh', 'Wu · (1 − reserve)', mp.avail);
+    const es = [];
+    mp.rows.forEach((r, i) => {
+      const k = 's' + i;
+      inp(`${r.label}: ${r.v} ${r.unit}${r.dir && r.dir !== 'none' ? ` (${r.dir}wind)` : ''} · power`, k + 'P', r.P, 'W', 'From the power curve above');
+      inp(`${r.label} · time`, k + 't', r.t, 's', r.err || (r.type === 'cruise' ? 'distance / ground speed' : r.type === 'climb' ? 'height / climb rate' : 'segment duration'));
+      calc(`${r.label} · energy`, k + 'E', `{${k}P}*{${k}t}/3600`, 'Wh', 'E = P · t / 3600', r.E);
+      es.push(`{${k}E}`);
+    });
+    calc('Energy used', 'Eu', es.join('+') || '0', 'Wh', 'Sum of the segments (nominal power)', mp.total);
+    calc('Energy left at landing', 'El', '{Ea}-{Eu}', 'Wh', 'Available − used', mp.avail - mp.total);
+  }
+  return it;
+}
+// air power at cruise (D · V) with the same terms as the sheet, for the implied efficiency when prop data is used
+const airPower = (R, f) => { const V = +f.vc, q = 0.5 * R.rho * V * V, CL = R.cruise.CL; return R.kUsed * q * f.area * (R.cd0 + (CL * CL) / (Math.PI * R.e * R.AR)) * V; };
+
+// the Design charts drawn off-screen (so export works from any tab) and turned into PNGs
+async function designChartImages(p, R) {
+  const box = document.createElement('div');
+  box.style.cssText = 'position:fixed;left:-10000px;top:0;width:900px';
+  const defs = [['speed', R.fwCurve ? 'Power vs airspeed' : 'Power and range vs airspeed'], ['pay', 'Payload trade'], ['batt', 'Battery size trade'], ['motor', 'Motor curve']];
+  const ids = {};
+  box.innerHTML = defs.map(([k]) => `<div class="chart" id="xc-${k}" style="width:900px"></div>`).join('');
+  document.body.appendChild(box);
+  for (const [k] of defs) ids[k] = 'xc-' + k;
+  const out = {};
+  try {
+    designCharts(p, R, ids);
+    await new Promise((r) => setTimeout(r, 60));
+    for (const [k, title] of defs) if (charts[ids[k]]) out[k] = await chartPng(ids[k], title);
+  } finally {
+    for (const k of Object.values(ids)) { const e = document.getElementById(k); if (e) ro_.unobserve(e); if (charts[k]) { charts[k].destroy(); delete charts[k]; } }
+    box.remove();
+  }
+  return out;
+}
+const blobB64 = (b) => new Promise((res) => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(b); });
+const loadExcelJS = () => loadScript('https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js', 'ExcelJS', 'Excel writer');
+
 async function exportXlsx(p) {
-  let X;
-  try { X = await loadXLSX(); } catch (e) { return toast(e.message); }
+  let EX;
+  try { EX = await loadExcelJS(); } catch (e) { return toast(e.message); }
+  toast('Building the workbook…');
   const { rows, R, pl } = calcRows(p);
-  const wb = X.utils.book_new();
-  const sheet = (name, aoa, widths) => { const ws = X.utils.aoa_to_sheet(aoa); if (widths) ws['!cols'] = widths.map((w) => ({ wch: w })); X.utils.book_append_sheet(wb, ws, name.slice(0, 31)); };
-  sheet('Calculations', rows, [18, 40, 22, 8]);
-  sheet('BOM', bomRowsFor(p), [13, 40, 6, 9, 9, 9, 8, 8, 12, 40]);
+  const mp = U.missionPlan(p, S.lib, R);
+  const wb = new EX.Workbook();
+  wb.creator = 'HangarLab'; wb.calcProperties.fullCalcOnLoad = true;
+  const head = (ws, row = 1) => { const r = ws.getRow(row); r.font = { bold: true }; r.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEDEBE5' } }; };
+  const sheet = (name, aoa, widths) => { const ws = wb.addWorksheet(name.slice(0, 31)); ws.addRows(aoa); if (widths) ws.columns = widths.map((w) => ({ width: w })); head(ws); ws.views = [{ state: 'frozen', ySplit: 1 }]; return ws; };
+  const BLUE = { color: { argb: 'FF1F4E99' } };
+
+  // Worked calculations: inputs in blue, results as live formulas, with the app's value beside each result
+  const items = workedCalc(p, R, mp);
+  const bom = bomRowsFor(p);
+  const wc = wb.addWorksheet('Worked calculations');
+  wc.columns = [{ width: 38 }, { width: 8 }, { width: 14 }, { width: 8 }, { width: 62 }, { width: 14 }];
+  wc.addRow([`${p.name}: worked calculation`]).font = { bold: true, size: 14 };
+  wc.addRow(['Blue values are inputs taken from the design (change them to try alternatives); black values are Excel formulas of the cells above. "App shows" is HangarLab\'s own result for comparison.']).font = { italic: true, color: { argb: 'FF666666' } };
+  wc.addRow([]);
+  wc.addRow(['Quantity', 'Symbol', 'Value', 'Unit', 'How it is worked out', 'App shows']); head(wc, 4);
+  const addr = {};
+  items.forEach((x, i) => { if (!x.sec) addr[x.sym] = `C${5 + i}`; });
+  let row = 5;
+  for (const x of items) {
+    if (x.sec) { const r = wc.getRow(row); r.getCell(1).value = x.sec; r.font = { bold: true, color: { argb: 'FFD9530A' } }; row++; continue; }
+    const r = wc.getRow(row);
+    r.getCell(1).value = x.label; r.getCell(2).value = x.sym; r.getCell(4).value = x.unit || ''; r.getCell(5).value = x.how || '';
+    if (x.f != null) {
+      const f = x.f.replace('{bomEnd}', String(bom.length)).replace(/\{(\w+)\}/g, (m, s) => addr[s] || '0');
+      r.getCell(3).value = { formula: f, result: x.app };
+      if (x.app != null) r.getCell(6).value = +(+x.app).toFixed(4);
+    } else { r.getCell(3).value = typeof x.v === 'number' ? +x.v.toFixed(6) : x.v; r.getCell(3).font = BLUE; }
+    row++;
+  }
+
+  sheet('Summary', rows, [18, 40, 22, 8]);
+  // BOM with live totals, so the worked calculation's weight follows edits here
+  const wbBom = sheet('BOM', bom, [13, 40, 6, 9, 9, 9, 8, 8, 12, 8, 10, 10, 40, 40]);
+  for (let i = 2; i <= bom.length; i++) {
+    wbBom.getCell(`E${i}`).value = { formula: `C${i}*D${i}`, result: bom[i - 1][4] };
+    if (bom[i - 1][10] !== '') wbBom.getCell(`L${i}`).value = { formula: `C${i}*K${i}`, result: bom[i - 1][11] };
+  }
+  const tot = wbBom.addRow(['Total', '', '', '', { formula: `SUM(E2:E${bom.length})`, result: R.Wg }]); tot.font = { bold: true };
   sheet('Power rails', [['Rail', 'Regulator', 'Avg W', 'Peak W', 'Avg A', 'Peak A', 'Rated A', 'Items']].concat(pl.rails.map((r) => [r.rail, r.kind, +r.avgW.toFixed(2), +r.peakW.toFixed(2), +r.iAvg.toFixed(3), +r.iPk.toFixed(3), r.rail === 'VBAT' ? '' : r.rec, r.items.map((i) => i.name).join('; ')])), [9, 24, 8, 8, 8, 8, 8, 60]);
   const links = rfLinks(p);
   if (links.length) sheet('RF links', [['Link', 'MHz', 'TX dBm', 'TX dBi', 'RX dBi', 'Loss dB', 'Sens dBm', 'Path loss dB', 'Margin dB', 'Max range km']].concat(links.map((x) => { const r = U.link(x.l, p.rf); return [x.name, x.l.mhz, x.l.tx, x.l.txG, x.l.rxG, x.l.loss, x.l.sens, +r.loss.toFixed(1), +r.margin.toFixed(1), +r.maxKm.toFixed(2)]; })), [30, 8, 8, 8, 8, 8, 9, 11, 10, 12]);
-  for (const [name, aoa] of Object.entries(curveRows(p, R))) sheet(name, aoa, aoa[0].map(() => 14));
-  const buf = X.write(wb, { type: 'array', bookType: 'xlsx' });
+
+  // chart pictures: next to their data, and all together on a Charts sheet
+  let imgs = {};
+  try { imgs = await designChartImages(p, R); } catch (e) { /* charts unavailable (chart library offline): data only */ }
+  const pic = async (ws, blob, col, rowAt) => {
+    const id = wb.addImage({ base64: await blobB64(blob), extension: 'png' });
+    const bm = await createImageBitmap(blob), w = 640, h = Math.round((bm.height / bm.width) * w);
+    ws.addImage(id, { tl: { col, row: rowAt }, ext: { width: w, height: h } });
+    return Math.ceil(h / 20) + 2;
+  };
+  const curveImg = { 'Speed-power': 'speed', 'Battery trade': 'batt', 'Payload trade': 'pay', 'Motor curve': 'motor' };
+  for (const [name, aoa] of Object.entries(curveRows(p, R))) {
+    const ws = sheet(name, aoa, aoa[0].map(() => 14));
+    if (imgs[curveImg[name]]) await pic(ws, imgs[curveImg[name]], aoa[0].length + 1, 1);
+  }
+  if (Object.keys(imgs).length) {
+    const cs = wb.addWorksheet('Charts');
+    let at = 0;
+    for (const k of ['speed', 'pay', 'batt', 'motor']) if (imgs[k]) at += await pic(cs, imgs[k], 0, at);
+  }
+  wb.views = [{ activeTab: 0 }];
+  const buf = await wb.xlsx.writeBuffer();
   download(`${fileBase(p)}.xlsx`, new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
 }
 
@@ -189,7 +368,7 @@ function exportDialog() {
     <p class="note">Exports <b>${esc(p.name)}</b> as it stands now. Excel and CSV values are plain numbers, ready for your own formulas.</p>
     <div class="exp-grid">
       <button class="exp" data-act="tpl-download"><b>Component template</b><span>.xlsx · blank workbook for components, motors, props, batteries, airframes and thrust tests; import it in Parts Library</span></button>
-      <button class="exp" data-act="ex-xlsx"><b>Excel workbook</b><span>.xlsx · calculations, BOM, power rails, RF links, speed-power, battery and payload trades, motor curve</span></button>
+      <button class="exp" data-act="ex-xlsx"><b>Excel workbook</b><span>.xlsx · worked calculation with live formulas, charts, summary, BOM, power rails, RF links, speed-power, battery and payload trades, motor curve</span></button>
       <button class="exp" data-act="print-report"><b>Print / save as PDF</b><span>the design report, straight to your printer or a PDF</span></button>
       <button class="exp" data-act="ex-html"><b>Design report</b><span>.html · one printable page</span></button>
       <button class="exp" data-act="checklist"><b>Pre-flight checklist</b><span>printable, built from this design's battery, radios and parts</span></button>
@@ -273,7 +452,7 @@ function renderSettings(el) {
         <p class="note" style="margin:8px 0 6px">HangarLab gives planning estimates, not guarantees. Check them against bench tests and test flights and follow your local aviation rules; the regulation notes are not legal advice. Your designs, library and logs stay in this browser. Map, terrain and parameter data are downloaded from their public sources when you open those views, and a link you give to Add from link is read through HangarLab's server. Visits are counted anonymously (Cloudflare Web Analytics, no cookies).</p>
         <p class="note" style="margin:0 0 6px"><a href="https://github.com/vuquang284/hangarlab/issues/new" target="_blank" rel="noopener">Report a problem or suggest a feature</a> (GitHub Issues).</p>
         <p class="note" style="margin:0 0 6px"><b>License:</b> HangarLab is open source under the <a href="https://github.com/vuquang284/hangarlab/blob/main/LICENSE" target="_blank" rel="noopener">GNU AGPL-3.0</a>; <a href="https://github.com/vuquang284/hangarlab" target="_blank" rel="noopener">source code on GitHub</a>. The name and logo are not covered.</p>
-        <p class="note" style="margin:0 0 6px"><b>Libraries:</b> uPlot (MIT), Leaflet (BSD-2), three.js (MIT), SheetJS (Apache-2.0), LZMA-JS (MIT). Fonts: Barlow, Barlow Condensed, Roboto Mono (OFL / Apache-2.0).</p>
+        <p class="note" style="margin:0 0 6px"><b>Libraries:</b> uPlot (MIT), Leaflet (BSD-2), three.js (MIT), SheetJS (Apache-2.0), ExcelJS (MIT), LZMA-JS (MIT). Fonts: Barlow, Barlow Condensed, Roboto Mono (OFL / Apache-2.0).</p>
         <p class="note" style="margin:0"><b>Data:</b> satellite imagery © Esri, Maxar, Earthstar Geographics; street map © OpenStreetMap contributors; terrain heights from AWS Terrain Tiles (Mapzen, with SRTM, GMTED, ETOPO1 and other public sources); ArduPilot parameter descriptions from autotest.ardupilot.org (GPLv3); APC Propellers PER3 performance files. The flight-log viewer, health check and 3D map follow ArduPilot UAV Log Viewer, LogAnalyzer and Mission Planner but share no code with them.</p></div>
     </div></div>`;
   settingsLive();

@@ -397,30 +397,37 @@ function liveDesign() {
   }
   $('#numbers').innerHTML = kv.join('');
 
+  designCharts(p, R);
+}
+
+// the four Design charts; `ids` names the elements to draw into (the export draws them off-screen)
+function designCharts(p, R, ids = { speed: 'chSpeed', batt: 'chBatt', pay: 'chPay', motor: 'chMotor' }) {
+  const note = (id, t) => { if (ids.speed === 'chSpeed') { const e = document.getElementById(id); if (e) e.textContent = t; } };
+  const empty = (id, h) => { const e = document.getElementById(id); if (e) e.innerHTML = h; };
   // speed / power
   const acc = cssv('--c1'), cy = cssv('--c2');
   if (p.type === 'multirotor' && R.ff && R.ff.length) {
-    $('#spNote').textContent = 'Momentum theory + frame drag';
-    chart('chSpeed', {
+    note('spNote', 'Momentum theory + frame drag');
+    chart(ids.speed, {
       xLabel: 'Airspeed (m/s)', u: ['m/s', null, 'km'], data: [R.ff.map((x) => x.V), R.ff.map((x) => x.P), R.ff.map((x) => x.km)],
       axes: [{ scale: 'y', label: 'Electrical power (W)' }, { scale: 'km', label: 'Range (km)' }],
       series: [{ label: 'Power W', color: acc, dec: 0 }, { label: 'Range km', color: cy, scale: 'km', dec: 2 }],
       points: [{ x: R.bestRange.V, y: R.bestRange.km, scale: 'km', color: cy, label: 'best range' }],
     });
   } else if (R.fwCurve) {
-    $('#spNote').textContent = R.calK ? 'Calibrated drag polar' : 'Drag polar';
-    chart('chSpeed', {
+    note('spNote', R.calK ? 'Calibrated drag polar' : 'Drag polar');
+    chart(ids.speed, {
       xLabel: 'Airspeed (m/s)', u: ['m/s', null, 'km', 'm/s'], data: [R.fwCurve.map((x) => x.V), R.fwCurve.map((x) => x.P), R.fwCurve.map((x) => (p.type === 'vtol' ? null : x.km)), R.fwCurve.map((x) => x.roc)],
       axes: [{ scale: 'y', label: 'Electrical power (W)' }, { scale: 'km', label: imperial() ? 'Range (mi) · climb (mph)' : 'Range (km) · climb (m/s)' }],
       series: [{ label: 'Power W', color: acc, dec: 0 }, { label: 'Range km', color: cy, scale: 'km' }, { label: 'Climb m/s', color: cssv('--c3'), scale: 'km', dash: [5, 4], w: 1.5 }],
       marks: [{ x: R.vs, label: 'stall', color: cssv('--crit') }, { x: p.fw.vc, label: 'cruise', color: acc }],
       points: [{ x: R.bestEnd.V, y: R.bestEnd.P, color: acc, label: 'min power' }],
     });
-  } else $('#chSpeed').innerHTML = '<p class="faint">Set a prop diameter to model forward flight.</p>';
+  } else empty(ids.speed, '<p class="faint">Set a prop diameter to model forward flight.</p>');
 
   // battery sweep
   const sw = U.batterySweep(p, S.lib);
-  chart('chBatt', {
+  chart(ids.batt, {
     xLabel: 'Capacity (mAh)', xDec: 0, u: [null, null, 'kg'], data: [sw.map((x) => x.mah), sw.map((x) => x.minutes), sw.map((x) => x.auw / 1000)],
     axes: [{ scale: 'y', label: p.type === 'multirotor' ? 'Hover time (min)' : 'Cruise time (min)' }, { scale: 'kg', label: 'AUW (kg)' }],
     series: [{ label: 'Minutes', color: acc }, { label: 'AUW kg', color: cy, scale: 'kg', dash: [5, 4], dec: 2 }],
@@ -430,8 +437,8 @@ function liveDesign() {
   // payload trade
   const ps = U.payloadSweep(p, S.lib);
   const lift = p.type !== 'fixedwing';
-  $('#payNote').textContent = lift ? 'Endurance and hover throttle vs payload' : 'Endurance and range vs payload';
-  chart('chPay', {
+  note('payNote', lift ? 'Endurance and hover throttle vs payload' : 'Endurance and range vs payload');
+  chart(ids.pay, {
     xLabel: 'Payload (g)', xDec: 0, u: ['g', null, lift ? null : 'km'], data: [ps.map((x) => x.g), ps.map((x) => x.minutes), ps.map((x) => (lift ? x.thr : x.km))],
     axes: [{ scale: 'y', label: p.type === 'multirotor' ? 'Hover time (min)' : 'Cruise time (min)' }, { scale: 'y2', label: lift ? 'Hover throttle (%)' : 'Range (km)' }],
     series: [{ label: 'Minutes', color: acc }, { label: lift ? 'Throttle %' : 'Range km', color: cy, scale: 'y2', dash: [5, 4], dec: lift ? 0 : 1 }],
@@ -443,15 +450,15 @@ function liveDesign() {
   if (set && set.rows.length) {
     const c = U.curve(set, R.bat.V);
     const rows = c.rows.map((r) => ({ t: r.thr ?? c.throttleAt(r.g * (c.tmax / c.rows[c.rows.length - 1].g)), g: r.g * (c.tmax / c.rows[c.rows.length - 1].g), a: r.a * (c.imax / c.rows[c.rows.length - 1].a) })).sort((a, b) => a.t - b.t);
-    $('#motNote').textContent = `${set.name} · ${set.physics ? 'physics estimate' : c.estimated ? 'estimated' : 'bench data'} · at ${fmt(R.bat.V, 1)} V`;
+    note('motNote', `${set.name} · ${set.physics ? 'physics estimate' : c.estimated ? 'estimated' : 'bench data'} · at ${fmt(R.bat.V, 1)} V`);
     const hp = R.h ? [{ x: R.h.thr, y: R.h.tPer / R.sigma, color: acc, label: 'hover' }] : [];
-    chart('chMotor', {
+    chart(ids.motor, {
       xLabel: 'Throttle (%)', xDec: 0, u: [null, 'g', null], data: [rows.map((r) => r.t), rows.map((r) => r.g), rows.map((r) => r.a)],
       axes: [{ scale: 'y', label: 'Thrust (g)' }, { scale: 'A', label: 'Current (A)' }],
       series: [{ label: 'Thrust g', color: acc, dec: 0, pts: true }, { label: 'Current A', color: cy, scale: 'A', pts: true }],
       points: p.type === 'fixedwing' ? [] : hp,
     });
-  } else $('#chMotor').innerHTML = '<p class="faint">Pick a motor and prop with kV and prop size, or add bench data.</p>';
+  } else empty(ids.motor, '<p class="faint">Pick a motor and prop with kV and prop size, or add bench data.</p>');
 }
 
 // ---------- library links: BOM rows and the flight pack mirror their library item ----------

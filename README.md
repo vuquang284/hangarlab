@@ -46,7 +46,7 @@ No account and nothing to install: it runs in your browser, and your designs are
 - **Health check** (board power, vibration, GPS, compass interference, motor balance, CPU load, errors, battery).
 - Parameter descriptions and range checks from ArduPilot.
 
-**Export**: Excel workbook, printable report / PDF, CSV, pre-flight checklist, ArduPilot `.param` starting values, and full workspace backups.
+**Export**: Excel workbook with a worked calculation (every input and the formula behind each result, live in Excel) and the charts as pictures, printable report / PDF, CSV, pre-flight checklist, ArduPilot `.param` starting values, and full workspace backups.
 
 ## Privacy
 
@@ -127,7 +127,7 @@ The `app-*.js` files are plain scripts that share one global scope, so their loa
 
 ## Credits and data sources
 
-- Libraries: [uPlot](https://github.com/leeoniya/uPlot) (MIT), [Leaflet](https://leafletjs.com) (BSD-2), [three.js](https://threejs.org) (MIT), [SheetJS](https://sheetjs.com) (Apache-2.0), [LZMA-JS](https://github.com/LZMA-JS/LZMA-JS) (MIT). Fonts: Barlow, Barlow Condensed, Roboto Mono (OFL / Apache-2.0).
+- Libraries: [uPlot](https://github.com/leeoniya/uPlot) (MIT), [Leaflet](https://leafletjs.com) (BSD-2), [three.js](https://threejs.org) (MIT), [SheetJS](https://sheetjs.com) (Apache-2.0), [ExcelJS](https://github.com/exceljs/exceljs) (MIT), [LZMA-JS](https://github.com/LZMA-JS/LZMA-JS) (MIT). Fonts: Barlow, Barlow Condensed, Roboto Mono (OFL / Apache-2.0).
 - Satellite imagery © Esri, Maxar, Earthstar Geographics. Street map © OpenStreetMap contributors.
 - Terrain heights: [AWS Terrain Tiles](https://registry.opendata.aws/terrain-tiles/) (Mapzen; SRTM, GMTED, ETOPO1 and other public sources).
 - ArduPilot parameter descriptions from autotest.ardupilot.org (GPLv3), loaded at run time.
@@ -144,4 +144,4 @@ Not covered by that license:
 
 - **The HangarLab name and logos** (`assets/`, `hangarlab/favicon.png`, `hangarlab/og-image.png`). Forks should use their own name and logo.
 - **APC propeller data** (`hangarlab/apc.js`), which remains under APC Propellers' terms.
-- **Third-party libraries** loaded by the app (uPlot, Leaflet, three.js, SheetJS, LZMA-JS), which keep their own licenses as listed under Credits.
+- **Third-party libraries** loaded by the app (uPlot, Leaflet, three.js, SheetJS, ExcelJS, LZMA-JS), which keep their own licenses as listed under Credits.

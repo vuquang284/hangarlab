@@ -140,6 +140,7 @@ function render() {
   updateFleet();
   killCharts();
   renderHeader();
+  document.body.classList.toggle('side-hidden', !!(S.ui && S.ui.sideHidden));
   const el = $('#view');
   const keepScroll = window.scrollY;
   VIEWS[S.tab][0](el);
@@ -445,6 +446,9 @@ document.addEventListener('click', (e) => {
       save(); toast(`${x.name} → ${p.name} (${role === 'mr' ? 'lift' : 'cruise'})`); break;
     }
     case 'lib-del': withUndo(`Removed ${S.lib[b.dataset.kind][i].name || 'item'}`, () => S.lib[b.dataset.kind].splice(i, 1)); break;
+    case 'chart-copy': chartCopy(b.dataset.chart); break;
+    case 'chart-save': chartSave(b.dataset.chart); break;
+    case 'side-toggle': S.ui = S.ui || {}; S.ui.sideHidden = !S.ui.sideHidden; document.body.classList.toggle('side-hidden', S.ui.sideHidden); save(); break;
     case 'groups-open': case 'groups-close': {
       const open = b.dataset.act === 'groups-open';
       S.ui = S.ui || {}; S.ui.groups = S.ui.groups || {};
