@@ -22,6 +22,7 @@ No account and nothing to install: it runs in your browser, and your designs are
 - ESC and motor limits: full-throttle current and power against the ESC (current and cell range) and the motor's own ratings.
 - Part finders that try every motor + prop pair or battery pack in your library and rank them by endurance within limits.
 - **Simple / Detailed** input modes, and a guided **New design** setup.
+- Charts you can copy or save as pictures, and a collapsible input sidebar (Ctrl/⌘ + B).
 
 **Compare**: designs side by side, with the best value in each row highlighted.
 
@@ -46,11 +47,11 @@ No account and nothing to install: it runs in your browser, and your designs are
 - **Health check** (board power, vibration, GPS, compass interference, motor balance, CPU load, errors, battery).
 - Parameter descriptions and range checks from ArduPilot.
 
-**Export**: Excel workbook with a worked calculation (every input and the formula behind each result, live in Excel) and the charts as pictures, printable report / PDF, CSV, pre-flight checklist, ArduPilot `.param` starting values, and full workspace backups.
+**Export**: calculation workbook (Excel: every input and the formula behind each result, live, plus the charts), copy results, printable report / PDF, parts list (CSV) and a full backup, in metric or imperial units to match the app.
 
 ## Privacy
 
-Everything runs in the browser. Designs, the parts library and opened logs stay in that browser's storage and are never uploaded. Map imagery, terrain heights and ArduPilot parameter descriptions are downloaded from their public sources when you open those views. A product link given to **Add from link** is fetched through HangarLab's server (a Cloudflare Pages Function) so the page can be read; nothing else is sent. Visits are counted anonymously with Cloudflare Web Analytics (no cookies). Use **Export → Workspace backup** to move your work to another browser or computer.
+Everything runs in the browser. Designs, the parts library and opened logs stay in that browser's storage and are never uploaded. Map imagery, terrain heights and ArduPilot parameter descriptions are downloaded from their public sources when you open those views. A product link given to **Add from link** is fetched through HangarLab's server (a Cloudflare Pages Function) so the page can be read; nothing else is sent. Visits are counted anonymously with Cloudflare Web Analytics (no cookies). Use **Export → Full backup** to move your work to another browser or computer.
 
 ## Disclaimer
 
@@ -60,7 +61,7 @@ HangarLab gives planning estimates, not guarantees. Check the numbers against be
 
 Open **[hangarlab.app](https://hangarlab.app)** in any modern browser, on a computer, tablet or phone.
 
-- **Your work stays on your device.** Back it up with **Export → Workspace backup**, and import it on another browser or computer.
+- **Your work stays on your device.** Back it up with **Export → Full backup**, and import it on another browser or computer.
 - **Offline copy:** save [hangarlab.app/HangarLab.html](https://hangarlab.app/HangarLab.html) (or `hangarlab/HangarLab.html` from this repository) and open it; it works without the website. Maps, terrain and 3D views still need an internet connection.
 - **New versions** appear automatically the next time you open the site. Your saved designs are upgraded, never lost. The version is shown at the bottom right.
 - **Found a bug or want a feature?** [Open an issue](https://github.com/vuquang284/hangarlab/issues/new).
@@ -87,7 +88,7 @@ Requires Node.js (any current LTS) for the tools below. Run them from the reposi
 | --- | --- |
 | `node tools/test.js` | Self-check of the flight model, battery maths, log parsing and imports. |
 | `node tools/build.js` | Rebuilds `HangarLab.html` from `index.html` and the scripts. Run it and commit the result after any source change; CI fails if it is out of date. |
-| `node tools/make_defaults.js <backup.json> [--designs]` | Makes an exported workspace backup the built-in library (and optionally the example designs). `--reset` goes back to the library in `data.js`. |
+| `node tools/make_defaults.js <backup.json> [--designs]` | Makes an exported full backup the built-in library (and optionally the example designs). `--reset` goes back to the library in `data.js`. |
 | `python tools/make_template.py` | Rebuilds the Excel import template (`tools/HangarLab template.xlsx`) and `hangarlab/template.js` (needs `openpyxl`). |
 
 ### Files
@@ -110,7 +111,7 @@ Requires Node.js (any current LTS) for the tools below. Run them from the reposi
 | `app-rfmap.js` | Radio Link coverage map. |
 | `app-wizard.js` | New design wizard. |
 | `app-tour.js` | First-visit guided tour. |
-| `app-export.js` | Dialogs, export, checklist and Settings. |
+| `app-export.js` | Dialogs, export (Excel workbook with the worked calculation, report, parts list, backup) and Settings. |
 | `app-main.js` | Quick start, Compare tab, events and start-up. |
 | `_headers` | Cache headers for the live site. |
 | `favicon.png`, `og-image.png` | Browser icon and the link preview image. |

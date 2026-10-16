@@ -4,7 +4,7 @@
 'use strict';
 
 // app version: bump on every update and add a CHANGELOG.md entry. 0.x + '-dev' while in development; 1.0.0 = first public release
-const APP_VERSION = '0.8.1-dev';
+const APP_VERSION = '0.9.0-dev';
 const U = window.UAS;
 const KEY = 'uas-workbench.v1'; // storage key kept from the old name so saved work still loads
 const $ = (s, el = document) => el.querySelector(s);
@@ -401,7 +401,7 @@ function propPick(base, V) {
   const c = U.combo(S.lib, o.motor, o.prop, V);
   const t = c && c.test;
   const dd = c && c.drive;
-  const extra = !c || t ? '' : dd && dd.motorModel && dd.propData ? ' Static thrust and power are solved from the motor constants and prop data.' : ` Improve it with ${[!(dd && dd.propData) && 'prop data', !(dd && dd.motorModel) && 'motor Rm/I0', 'a thrust test'].filter(Boolean).join(', ')} in Library.`;
+  const extra = !c || t ? '' : dd && dd.motorModel && dd.propData ? ' Static thrust and power are solved from the motor constants and prop data.' : ` Improve it with ${[!(dd && dd.propData) && 'prop data', !(dd && dd.motorModel) && 'motor Rm/I0', 'a thrust test'].filter(Boolean).join(', ')} in Parts Library.`;
   const src = !c ? 'Pick a motor and a prop.' : t ? `<b>Bench data</b>: ${t.rows.length} point${t.rows.length > 1 ? 's' : ''} at ${t.v} V.${dd && dd.propData ? ' Prop data used for forward flight.' : ''}` : `<b>${esc(c.source)}</b>.${extra}`;
   return `${sel(base + '.motor', 'Motor', motorOpts(), { wide: true, rebuild: true })}${sel(base + '.prop', 'Prop', propOpts(), { wide: true, rebuild: true })}<p class="hint src${t || (c && c.drive && c.drive.motorModel && c.drive.propData) ? '' : ' est'}">${src}</p>`;
 }
@@ -511,7 +511,7 @@ function chart(id, cfg) {
 function chartTools(el) {
   const h = el.closest('.card') && el.closest('.card').querySelector('.card-h');
   if (!h || h.querySelector('.chart-tools')) return;
-  h.insertAdjacentHTML('beforeend', `<div class="chart-tools"><button class="btn ghost sm" data-act="chart-copy" data-chart="${el.id}" title="Copy the chart as a picture">Copy</button><button class="btn ghost sm" data-act="chart-save" data-chart="${el.id}" title="Save the chart as a PNG picture">Save PNG</button></div>`);
+  h.insertAdjacentHTML('beforeend', `<div class="chart-tools"><button class="btn ghost icon sm" data-act="chart-copy" data-chart="${el.id}" title="Copy chart as picture" aria-label="Copy chart as picture"><svg class="i"><use href="#i-copy"/></svg></button><button class="btn ghost icon sm" data-act="chart-save" data-chart="${el.id}" title="Save chart as PNG" aria-label="Save chart as PNG"><svg class="i"><use href="#i-download"/></svg></button></div>`);
 }
 const chartTitle = (id) => { const c = document.getElementById(id) && document.getElementById(id).closest('.card'); const t = c && c.querySelector('.card-h h2'); return t ? t.textContent.trim() : 'Chart'; };
 // the chart as a PNG: title, the plot (uPlot draws axes on its canvas) and a legend, on the panel color
@@ -543,7 +543,7 @@ async function chartCopy(id) {
   } catch (e) { toast('Copying pictures is blocked here. Use Save PNG instead.'); }
 }
 async function chartSave(id) {
-  try { download(`${fileBase(P())}-${chartTitle(id).toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`, await chartPng(id)); } catch (e) { toast(e.message); }
+  try { download(`${fileBase(P(), chartTitle(id).toLowerCase().replace(/[^a-z0-9]+/g, '-'))}.png`, await chartPng(id)); } catch (e) { toast(e.message); }
 }
 
 // ---------- header ----------

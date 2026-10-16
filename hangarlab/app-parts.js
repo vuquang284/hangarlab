@@ -139,7 +139,7 @@ function liveMass() {
 
 function pasteDialog() {
   openDlg('Paste rows from a spreadsheet', `
-    <p class="note">Copy rows from Excel or Google Sheets and paste. Columns in your "Weight Breakdown" order are recognized: <b>Component, Unit g, Qty, Total, Link, Subsystem</b>. Shorter rows work too: <b>Component, Unit g, Qty, Subsystem</b>. Header rows are skipped. Starting from scratch? <a href="#" data-act="tpl-download">Download the component template</a>.</p>
+    <p class="note">Copy rows from Excel or Google Sheets and paste. Columns in your "Weight Breakdown" order are recognized: <b>Component, Unit g, Qty, Total, Link, Subsystem</b>. Shorter rows work too: <b>Component, Unit g, Qty, Subsystem</b>. Header rows are skipped. Starting from scratch? <a href="#" data-act="tpl-download">Download the parts import template</a>.</p>
     <textarea id="pasteBox" rows="10" placeholder="Cube Orange+ Mini\t53\t1\t53\thttps://…\tAvionics"></textarea>`,
     `<button class="btn" data-act="dlg-close">Cancel</button><button class="btn primary" data-act="paste-go">Add rows</button>`);
 }

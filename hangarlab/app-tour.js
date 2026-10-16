@@ -9,9 +9,9 @@ const TOUR = [
   { sel: '.side details.group', title: 'Inputs', text: 'Change anything on the left. Every number on the right updates as you type, and Ctrl+Z undoes.' },
   { sel: '#readouts', title: 'Results', text: 'Weight, endurance, range and the other key numbers. More results are folded underneath, and Checks lists anything to fix.' },
   { sel: '#tabs', title: 'One tab per job', text: 'Compare designs, list parts and weight, size the electrical system, plan radio links, and pick 3D printing materials.' },
-  { sel: '[data-tab="library"]', title: 'Parts Library', text: 'Add your own motors, props, batteries and parts (or import the Excel template). Every design draws from it.' },
+  { sel: '[data-tab="library"]', title: 'Parts Library', text: 'Add your own motors, props, batteries, ESCs and parts: type them in, paste a product link, or import the Excel template. Every design draws from it.' },
   { sel: '[data-tab="logs"]', title: 'Flight Logs', text: 'Open an ArduPilot log to check a flight, see it on a 3D map, and calibrate your design from real data.' },
-  { sel: '[data-act="export"]', title: 'Export and backup', text: 'Reports, Excel, a pre-flight checklist, ArduPilot parameters, and backups of all your work. Your data stays in this browser, so back it up.' },
+  { sel: '[data-act="export"]', title: 'Export and backup', text: 'A calculation workbook (Excel), a printable report, a parts list, and backups of all your work. Your data stays in this browser, so back it up.' },
   { sel: '[data-act="shortcuts"]', title: 'Help any time', text: 'The ? button opens the guide, and you can replay this tour from there.' },
 ];
 let tourStep = -1;

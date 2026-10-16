@@ -284,11 +284,19 @@ table.bom tbody tr:not(.grp):not(.total):hover td { background: color-mix(in srg
 .hint.src.est { background: color-mix(in srgb, var(--warn) 13%, transparent); }
 
 /* export dialog */
-.exp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr)); gap: 8px; }
-.exp { display: grid; gap: 4px; align-content: start; text-align: left; padding: 12px; border: 1px solid var(--line-2); border-radius: var(--r); background: var(--panel-2); cursor: pointer; }
-.exp:hover { border-color: var(--accent); }
-.exp b { font-family: var(--display); font-size: 14px; }
-.exp span { font-size: 12px; color: var(--muted); }
+.exp-h { margin: 14px 0 4px; font: 600 11px var(--body); color: var(--faint); text-transform: uppercase; letter-spacing: 0.08em; }
+.xlist .exp-h:first-child { margin-top: 0; }
+.xr { display: flex; align-items: stretch; gap: 4px; border-radius: var(--r); }
+.xr:hover { background: var(--panel-2); }
+.xr-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 8px 10px; background: none; border: 0; color: inherit; text-align: left; cursor: pointer; border-radius: var(--r); font: inherit; }
+.xr-main svg.i { width: 18px; height: 18px; color: var(--muted); }
+.xr-main:hover svg.i, .xr-main:focus-visible svg.i { color: var(--accent); }
+.xr-t { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.xr-t b { font: 600 14px var(--body); }
+.xr-t span { font-size: 12px; color: var(--muted); }
+.xr-tag { align-self: center; flex: none; font: 500 11px var(--mono); color: var(--muted); border: 1px solid var(--line-2); border-radius: 3px; padding: 2px 6px; background: none; }
+button.xr-alt { cursor: pointer; margin-right: 6px; }
+button.xr-alt:hover, .xr-main:hover .xr-tag { color: var(--accent); border-color: var(--accent); }
 
 /* uPlot (inlined stylesheet, themed) */
 .uplot, .uplot *, .uplot *::before, .uplot *::after { box-sizing: border-box; }
@@ -336,7 +344,10 @@ body.side-hidden .side { overflow: visible; padding-right: 0; }
 body.side-hidden .side > :not(.side-top), body.side-hidden .side-top > :not(.side-tog) { display: none; }
 @media (max-width: 900px) { body.side-hidden .bench { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) { .bench { transition: none; } }
-.chart-tools { display: flex; gap: 2px; margin-left: auto; }
+.chart-tools { display: flex; gap: 2px; margin-left: auto; opacity: 0; transition: opacity 0.12s; }
+/* chart copy/save icons appear when the pointer is over the chart card (always shown on touch screens) */
+.card:hover .chart-tools, .chart-tools:focus-within { opacity: 1; }
+@media (hover: none) { .chart-tools { opacity: 1; } }
 .toast { display: flex; align-items: center; gap: 14px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); }
 .toast button { background: none; border: 0; color: var(--accent); font-weight: 600; cursor: pointer; padding: 0; font-size: 14px; }
 :root[data-theme="light"] .toast button { color: #ff8a4a; }
@@ -505,6 +516,12 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></symbol>
   <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-sheet" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 3v18"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="i-print" viewBox="0 0 24 24"><path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
   <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9.5 4v16"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
   <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
@@ -533,7 +550,7 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
       <!-- phones: the less-used buttons fold into this menu; wider screens show them inline (display: contents, Import moved before Export with order) -->
       <button class="btn ghost icon more-btn" id="moreBtn" aria-label="More" aria-expanded="false" aria-controls="moreMenu">⋯</button>
       <div class="more" id="moreMenu">
-        <button class="btn" data-act="import" title="Import a workspace backup (.json)" aria-label="Import"><svg class="i menu-only" aria-hidden="true"><use href="#i-upload"/></svg>Import</button>
+        <button class="btn" data-act="import" title="Import a full backup (.json)" aria-label="Import"><svg class="i menu-only" aria-hidden="true"><use href="#i-upload"/></svg>Import</button>
         <button class="btn ghost icon" id="themeBtn" data-act="theme" aria-label="Switch theme"></button>
         <button class="btn ghost icon" data-act="shortcuts" title="Quick start guide (?)" aria-label="Quick start guide">?</button>
         <button class="btn ghost icon" id="setBtn" data-tab="settings" title="Settings (9)" aria-label="Settings"><svg class="i"><use href="#i-gear"/></svg></button>

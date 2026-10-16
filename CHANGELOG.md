@@ -10,6 +10,14 @@ Numbering ([semantic versioning](https://semver.org), major.minor.patch):
 
 To record an update: bump `APP_VERSION` at the top of `hangarlab/app-core.js`, add an entry here, run `node tools/build.js`, commit, then tag it (`git tag v0.1.1-dev && git push --tags`). The version shows at the bottom right of every page.
 
+## 0.9.0-dev (2026-10-16)
+
+- **Export menu** is a clean list grouped as Results and calculations, Design report, Parts and Backup, with clearer names (Calculation workbook, Copy results, Report file, Parts list (BOM), Parts import template, Full backup). Removed: the Calculations CSV, the pre-flight checklist and the ArduPilot parameter file. File names read `<design>-<what>-<date>`. Automatic backups live in Settings → Saving & backups.
+- **Calculation workbook:** the Worked calculations sheet starts with Constants and Assumptions, has an Input column (constants grey, assumptions and inputs blue) and a Result column of live Excel formulas, each with its unit, the equation in words, and a plain-English meaning. Numbers show as soon as the file opens. Sheet names match the Performance charts; chart pictures have the same size and proportions as on screen.
+- **Units:** every export (workbook, Copy results, report, parts list) follows the Metric/Imperial switch. In Imperial the workbook lists its unit conversions as constants and the formulas convert through them.
+- **Charts:** Copy and Save are small icons that appear when you hover over a chart.
+- Consistency: Parts Library heading and weight columns, template and backup naming, chart titles ("Motor thrust curve"), and the quick start, tour and shortcuts (Ctrl/⌘ + B) brought up to date.
+
 ## 0.8.1-dev (2026-10-16)
 
 - The input panel now collapses like Claude's sidebar: a panel icon at its top left closes it to a slim rail that keeps the same icon to open it again (Ctrl/⌘ + B also works). Replaces the Hide panel button and the Show inputs tab.

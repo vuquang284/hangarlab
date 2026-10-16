@@ -6,9 +6,9 @@
 const LIB_COLS = {
   motors: [['name', 'Motor', 'text', 210], ['brand', 'Brand', 'text', 100], ['kv', 'kV', 'number', 64], ['rm', 'Rm Ω', 'number', 70], ['i0', 'I0 A', 'number', 58], ['g', 'Weight g', 'number', 70, 'g>oz'], ['maxA', 'Max A', 'number', 60], ['maxW', 'Max W', 'number', 66], ['link', 'Link', 'text', 140], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
   props: [['name', 'Prop', 'text', 200], ['brand', 'Brand', 'text', 100], ['diam', 'Diameter in', 'number', 76], ['pitch', 'Pitch in', 'number', 70], ['g', 'Weight g', 'number', 76, 'g>oz'], ['link', 'Link', 'text', 160], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
-  batteries: [['name', 'Pack', 'text', 240], ['brand', 'Brand', 'text', 110], ['chem', 'Chem', 'chem'], ['s', 'Cells S', 'number', 54], ['p', 'Cells P', 'number', 54], ['cellMah', 'Cell mAh', 'number', 76], ['g', 'Pack g', 'number', 70, 'g>oz'], ['c', 'Cont. C', 'number', 54], ['cPeak', 'Peak C', 'number', 54], ['link', 'Link', 'text', 120], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
-  printed: [['name', 'Part', 'text', 190], ['mat', 'Material', 'mat'], ['vol', 'Volume cm³', 'number', 70, 'cm³>in³'], ['area', 'Area cm²', 'number', 70, 'cm²>in²'], ['walls', 'Walls', 'number', 50], ['tb', 'Top/bot layers', 'number', 56], ['infill', 'Infill %', 'number', 56], ['g', 'Mass g', 'number', 66, 'g>oz'], ['notes', 'Notes', 'text', 140], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
-  parts: [['name', 'Name', 'text', 220], ['sub', 'Subsystem', 'sub', 110], ['g', 'g', 'number', 70, 'g>oz'], ['rail', 'Rail', 'rail'], ['w', 'Avg W', 'number', 60], ['pw', 'Peak W', 'number', 60], ['rf', 'RF Freq', 'rf'], ['link', 'Link', 'text', 140], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
+  batteries: [['name', 'Pack', 'text', 240], ['brand', 'Brand', 'text', 110], ['chem', 'Chem', 'chem'], ['s', 'Cells S', 'number', 54], ['p', 'Cells P', 'number', 54], ['cellMah', 'Cell mAh', 'number', 76], ['g', 'Weight g', 'number', 70, 'g>oz'], ['c', 'Cont. C', 'number', 54], ['cPeak', 'Peak C', 'number', 54], ['link', 'Link', 'text', 120], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
+  printed: [['name', 'Part', 'text', 190], ['mat', 'Material', 'mat'], ['vol', 'Volume cm³', 'number', 70, 'cm³>in³'], ['area', 'Area cm²', 'number', 70, 'cm²>in²'], ['walls', 'Walls', 'number', 50], ['tb', 'Top/bot layers', 'number', 56], ['infill', 'Infill %', 'number', 56], ['g', 'Weight g', 'number', 66, 'g>oz'], ['notes', 'Notes', 'text', 140], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
+  parts: [['name', 'Name', 'text', 220], ['sub', 'Subsystem', 'sub', 110], ['g', 'Weight g', 'number', 70, 'g>oz'], ['rail', 'Rail', 'rail'], ['w', 'Avg W', 'number', 60], ['pw', 'Peak W', 'number', 60], ['rf', 'RF Freq', 'rf'], ['link', 'Link', 'text', 140], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
   escs: [['name', 'ESC', 'text', 210], ['brand', 'Brand', 'text', 100], ['use', 'For', 'escUse'], ['a', 'Cont. A', 'number', 62], ['burst', 'Burst A', 'number', 62], ['sMin', 'Min S', 'number', 54], ['sMax', 'Max S', 'number', 54], ['g', 'Weight g', 'number', 66, 'g>oz'], ['link', 'Link', 'text', 120], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
   airframes: [['name', 'Name', 'text', 200], ['type', 'Type', 'afType'], ['span', 'Span m', 'number', 70, 'm>in'], ['area', 'Wing m²', 'number', 80, 'm²>ft²'], ['length', 'Length m', 'number', 70, 'm>in'], ['wb', 'Wheelbase mm', 'number', 80], ['layout', 'Layout', 'layout'], ['maxProp', 'Max prop in', 'number', 70], ['g', 'Weight g', 'number', 80, 'g>oz'], ['notes', 'Notes', 'text', 160], ['link', 'Link', 'text', 140], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
 };
@@ -156,7 +156,7 @@ function renderLibrary(el) {
       ${t === 'motors' ? `<button class="btn" data-act="spec-import" data-kind="motors">Import / paste motor specs</button><button class="btn" data-act="bulk-import">Import thrust spreadsheet (all sheets)</button><button class="btn ghost" data-act="mt-all">${mtOpen.size ? 'Collapse' : 'Expand'} all thrust data</button><span class="note">Rm and I0 enable the motor model ${tip('Rm: winding resistance in ohms (values over 1.5 are read as mΩ). I0: no-load current in amps.')}</span>` : ''}
       ${t === 'props' ? `<button class="btn" data-act="apc-import">Import APC .dat / .zip</button><button class="btn" data-act="spec-import" data-kind="props">Import / paste prop list</button><span class="note">Prop data drives cruise efficiency ${tip('Ct and Cp versus advance ratio at each RPM, e.g. APC PER3 files. Also used for motor + prop pairs without a thrust test.')}</span>` : ''}</div>`;
   }
-  el.innerHTML = `<div class="card"><div class="card-h"><h2>Component library</h2>
+  el.innerHTML = `<div class="card"><div class="card-h"><h2>Parts Library</h2>
       <div class="row"><span class="note">Shared by every design.</span><button class="btn sm" data-act="team-open"${window.claude && window.claude.use ? '' : ' hidden'} title="Share this library with everyone who can open the app">Team library</button><button class="btn sm" data-act="tpl-download" title="Excel workbook with a sheet per component type">Download template</button><button class="btn sm primary" data-act="tpl-import">Import workbook</button></div></div>
     <div class="row" style="margin-bottom:12px"><label class="f" style="min-width:240px"><span>Library section</span><select id="libSection">${tabs.map(([k, l, n]) => `<option value="${k}"${k === t ? ' selected' : ''}>${l} (${n})</option>`).join('')}</select></label></div>
     <div class="sub-tabs">${tabs.map(([k, l, n]) => `<button class="btn${k === t ? ' primary' : ''}" data-libtab="${k}">${l} <span class="num" style="opacity:.7">${n}</span></button>`).join('')}</div>${body}${subsBody}</div>`;
@@ -169,7 +169,7 @@ function downloadTemplate() {
   if (!b64) return toast('Template not bundled in this build.');
   const bin = atob(b64), u8 = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
-  download('HangarLab template.xlsx', new Blob([u8], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+  download('hangarlab-parts-import-template.xlsx', new Blob([u8], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
 }
 // header row → objects, using a regex per field
 function sheetObjects(rows, fields) {
@@ -281,7 +281,7 @@ async function importWorkbook(file) {
   }
   save(); render();
   const what = Object.entries(per).map(([k, c]) => `${c} ${k}`).join(', ');
-  toast(what ? `Imported ${what} (${n.a} new, ${n.u} updated)` : 'No template sheets found (Components, Motors, Motor thrust data, Props, Batteries, Airframes).', what ? { label: 'Undo', fn: undo } : null);
+  toast(what ? `Imported ${what} (${n.a} new, ${n.u} updated)` : 'No template sheets found (Components, Motors, Motor thrust data, Props, Batteries, ESCs, Airframes).', what ? { label: 'Undo', fn: undo } : null);
 }
 
 // ---------- team library (shared through the published app's database) ----------
@@ -300,7 +300,7 @@ async function teamDialog() {
     `<button class="btn" data-act="dlg-close">Close</button><button class="btn" data-act="team-push" disabled>Share my library</button><button class="btn primary" data-act="team-pull" disabled>Get team library</button>`);
   const db = await teamStore(), st = $('#teamStat');
   if (!st) return;
-  if (!db) { st.textContent = 'Not available here: the team library works in the published app when you are signed in to claude.ai. Here, share a workspace backup (Export) instead.'; return; }
+  if (!db) { st.textContent = 'Not available here: the team library works in the published app when you are signed in to claude.ai. Here, share a full backup (Export) instead.'; return; }
   try { const snap = await db.collection('teamlib').limit(1000).get(); st.textContent = `${snap.size} item${snap.size === 1 ? '' : 's'} in the team library.`; }
   catch (e) { st.textContent = `Could not read the team library (${e.code || e.message}).`; return; }
   document.querySelectorAll('[data-act="team-push"],[data-act="team-pull"]').forEach((x) => { x.disabled = false; });

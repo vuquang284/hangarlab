@@ -137,7 +137,7 @@ function designInputs() {
           <input type="number" data-k="mission.segs.${j}.v"${key ? ` data-u="${key}"` : ''} value="${key ? toDisp(sg.v, key) : sg.v}" step="any" min="0" style="width:64px" aria-label="Amount"><em>${key && imperial() ? uName(key) : u}</em>
           ${sg.type === 'cruise' ? `<select data-k="mission.segs.${j}.dir" aria-label="Wind direction">${dirs.map(([k2, l]) => `<option value="${k2}"${k2 === (sg.dir || 'none') ? ' selected' : ''}>${l}</option>`).join('')}</select>` : ''}
           <button class="btn ghost sm" data-act="seg-up" data-i="${j}" aria-label="Move up"${j ? '' : ' disabled'}>↑</button><button class="btn ghost sm danger" data-act="seg-del" data-i="${j}" aria-label="Remove">×</button></div>`; }).join('')}
-        <button class="btn sm" data-act="seg-add" style="margin-top:6px">+ Add segment</button></div>
+        <button class="btn sm" data-act="seg-add" style="margin-top:6px">Add segment</button></div>
       <p class="hint">Climb and descend are in meters of height. Energy available = battery usable capacity (its unused part is the landing reserve), minus any extra reserve.</p>`, false);
   }
   if (!isSimple()) h += group('Electronics', `${num('becEff', 'BEC / regulator efficiency', { unit: '%' })}<p class="hint" id="avHint"></p>`, false);
@@ -340,7 +340,7 @@ function renderDesign(el) {
         <div class="card"><div class="card-h"><h2 id="spTitle">Power vs airspeed</h2><p id="spNote"></p></div><div class="chart" id="chSpeed"></div></div>
         <div class="card"><div class="card-h"><h2>Payload trade</h2><p id="payNote"></p></div><div class="chart" id="chPay"></div></div>
         <div class="card"><div class="card-h"><h2>Battery size trade</h2><p>Pack weight scales with capacity</p></div><div class="chart" id="chBatt"></div></div>
-        <div class="card"><div class="card-h"><h2>Motor bench curve</h2><p id="motNote"></p></div><div class="chart" id="chMotor"></div></div>
+        <div class="card"><div class="card-h"><h2>Motor thrust curve</h2><p id="motNote"></p></div><div class="chart" id="chMotor"></div></div>
         <div class="card"><div class="card-h"><h2>Numbers</h2><p>For reports</p></div><dl class="kv" id="numbers"></dl></div>
       </div>
     </section></div>`;
@@ -400,10 +400,12 @@ function liveDesign() {
   designCharts(p, R);
 }
 
+let designChartW = 0;
 // the four Design charts; `ids` names the elements to draw into (the export draws them off-screen)
 function designCharts(p, R, ids = { speed: 'chSpeed', batt: 'chBatt', pay: 'chPay', motor: 'chMotor' }) {
   const note = (id, t) => { if (ids.speed === 'chSpeed') { const e = document.getElementById(id); if (e) e.textContent = t; } };
   const empty = (id, h) => { const e = document.getElementById(id); if (e) e.innerHTML = h; };
+  if (ids.speed === 'chSpeed') { const e = document.getElementById('chSpeed'); if (e && e.clientWidth) designChartW = e.clientWidth; }
   // speed / power
   const acc = cssv('--c1'), cy = cssv('--c2');
   if (p.type === 'multirotor' && R.ff && R.ff.length) {

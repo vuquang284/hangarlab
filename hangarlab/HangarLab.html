@@ -284,11 +284,19 @@ table.bom tbody tr:not(.grp):not(.total):hover td { background: color-mix(in srg
 .hint.src.est { background: color-mix(in srgb, var(--warn) 13%, transparent); }
 
 /* export dialog */
-.exp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr)); gap: 8px; }
-.exp { display: grid; gap: 4px; align-content: start; text-align: left; padding: 12px; border: 1px solid var(--line-2); border-radius: var(--r); background: var(--panel-2); cursor: pointer; }
-.exp:hover { border-color: var(--accent); }
-.exp b { font-family: var(--display); font-size: 14px; }
-.exp span { font-size: 12px; color: var(--muted); }
+.exp-h { margin: 14px 0 4px; font: 600 11px var(--body); color: var(--faint); text-transform: uppercase; letter-spacing: 0.08em; }
+.xlist .exp-h:first-child { margin-top: 0; }
+.xr { display: flex; align-items: stretch; gap: 4px; border-radius: var(--r); }
+.xr:hover { background: var(--panel-2); }
+.xr-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 8px 10px; background: none; border: 0; color: inherit; text-align: left; cursor: pointer; border-radius: var(--r); font: inherit; }
+.xr-main svg.i { width: 18px; height: 18px; color: var(--muted); }
+.xr-main:hover svg.i, .xr-main:focus-visible svg.i { color: var(--accent); }
+.xr-t { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.xr-t b { font: 600 14px var(--body); }
+.xr-t span { font-size: 12px; color: var(--muted); }
+.xr-tag { align-self: center; flex: none; font: 500 11px var(--mono); color: var(--muted); border: 1px solid var(--line-2); border-radius: 3px; padding: 2px 6px; background: none; }
+button.xr-alt { cursor: pointer; margin-right: 6px; }
+button.xr-alt:hover, .xr-main:hover .xr-tag { color: var(--accent); border-color: var(--accent); }
 
 /* uPlot (inlined stylesheet, themed) */
 .uplot, .uplot *, .uplot *::before, .uplot *::after { box-sizing: border-box; }
@@ -336,7 +344,10 @@ body.side-hidden .side { overflow: visible; padding-right: 0; }
 body.side-hidden .side > :not(.side-top), body.side-hidden .side-top > :not(.side-tog) { display: none; }
 @media (max-width: 900px) { body.side-hidden .bench { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) { .bench { transition: none; } }
-.chart-tools { display: flex; gap: 2px; margin-left: auto; }
+.chart-tools { display: flex; gap: 2px; margin-left: auto; opacity: 0; transition: opacity 0.12s; }
+/* chart copy/save icons appear when the pointer is over the chart card (always shown on touch screens) */
+.card:hover .chart-tools, .chart-tools:focus-within { opacity: 1; }
+@media (hover: none) { .chart-tools { opacity: 1; } }
 .toast { display: flex; align-items: center; gap: 14px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); }
 .toast button { background: none; border: 0; color: var(--accent); font-weight: 600; cursor: pointer; padding: 0; font-size: 14px; }
 :root[data-theme="light"] .toast button { color: #ff8a4a; }
@@ -505,6 +516,12 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></symbol>
   <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-sheet" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 3v18"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="i-print" viewBox="0 0 24 24"><path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
   <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9.5 4v16"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
   <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
@@ -533,7 +550,7 @@ table.mis td.bad { color: var(--crit); font-weight: 600; }
       <!-- phones: the less-used buttons fold into this menu; wider screens show them inline (display: contents, Import moved before Export with order) -->
       <button class="btn ghost icon more-btn" id="moreBtn" aria-label="More" aria-expanded="false" aria-controls="moreMenu">⋯</button>
       <div class="more" id="moreMenu">
-        <button class="btn" data-act="import" title="Import a workspace backup (.json)" aria-label="Import"><svg class="i menu-only" aria-hidden="true"><use href="#i-upload"/></svg>Import</button>
+        <button class="btn" data-act="import" title="Import a full backup (.json)" aria-label="Import"><svg class="i menu-only" aria-hidden="true"><use href="#i-upload"/></svg>Import</button>
         <button class="btn ghost icon" id="themeBtn" data-act="theme" aria-label="Switch theme"></button>
         <button class="btn ghost icon" data-act="shortcuts" title="Quick start guide (?)" aria-label="Quick start guide">?</button>
         <button class="btn ghost icon" id="setBtn" data-tab="settings" title="Settings (9)" aria-label="Settings"><svg class="i"><use href="#i-gear"/></svg></button>
@@ -2550,7 +2567,7 @@ var uPlot=function(){"use strict";const l="u-off",e="u-label",t="width",n="heigh
 'use strict';
 
 // app version: bump on every update and add a CHANGELOG.md entry. 0.x + '-dev' while in development; 1.0.0 = first public release
-const APP_VERSION = '0.8.1-dev';
+const APP_VERSION = '0.9.0-dev';
 const U = window.UAS;
 const KEY = 'uas-workbench.v1'; // storage key kept from the old name so saved work still loads
 const $ = (s, el = document) => el.querySelector(s);
@@ -2947,7 +2964,7 @@ function propPick(base, V) {
   const c = U.combo(S.lib, o.motor, o.prop, V);
   const t = c && c.test;
   const dd = c && c.drive;
-  const extra = !c || t ? '' : dd && dd.motorModel && dd.propData ? ' Static thrust and power are solved from the motor constants and prop data.' : ` Improve it with ${[!(dd && dd.propData) && 'prop data', !(dd && dd.motorModel) && 'motor Rm/I0', 'a thrust test'].filter(Boolean).join(', ')} in Library.`;
+  const extra = !c || t ? '' : dd && dd.motorModel && dd.propData ? ' Static thrust and power are solved from the motor constants and prop data.' : ` Improve it with ${[!(dd && dd.propData) && 'prop data', !(dd && dd.motorModel) && 'motor Rm/I0', 'a thrust test'].filter(Boolean).join(', ')} in Parts Library.`;
   const src = !c ? 'Pick a motor and a prop.' : t ? `<b>Bench data</b>: ${t.rows.length} point${t.rows.length > 1 ? 's' : ''} at ${t.v} V.${dd && dd.propData ? ' Prop data used for forward flight.' : ''}` : `<b>${esc(c.source)}</b>.${extra}`;
   return `${sel(base + '.motor', 'Motor', motorOpts(), { wide: true, rebuild: true })}${sel(base + '.prop', 'Prop', propOpts(), { wide: true, rebuild: true })}<p class="hint src${t || (c && c.drive && c.drive.motorModel && c.drive.propData) ? '' : ' est'}">${src}</p>`;
 }
@@ -3057,7 +3074,7 @@ function chart(id, cfg) {
 function chartTools(el) {
   const h = el.closest('.card') && el.closest('.card').querySelector('.card-h');
   if (!h || h.querySelector('.chart-tools')) return;
-  h.insertAdjacentHTML('beforeend', `<div class="chart-tools"><button class="btn ghost sm" data-act="chart-copy" data-chart="${el.id}" title="Copy the chart as a picture">Copy</button><button class="btn ghost sm" data-act="chart-save" data-chart="${el.id}" title="Save the chart as a PNG picture">Save PNG</button></div>`);
+  h.insertAdjacentHTML('beforeend', `<div class="chart-tools"><button class="btn ghost icon sm" data-act="chart-copy" data-chart="${el.id}" title="Copy chart as picture" aria-label="Copy chart as picture"><svg class="i"><use href="#i-copy"/></svg></button><button class="btn ghost icon sm" data-act="chart-save" data-chart="${el.id}" title="Save chart as PNG" aria-label="Save chart as PNG"><svg class="i"><use href="#i-download"/></svg></button></div>`);
 }
 const chartTitle = (id) => { const c = document.getElementById(id) && document.getElementById(id).closest('.card'); const t = c && c.querySelector('.card-h h2'); return t ? t.textContent.trim() : 'Chart'; };
 // the chart as a PNG: title, the plot (uPlot draws axes on its canvas) and a legend, on the panel color
@@ -3089,7 +3106,7 @@ async function chartCopy(id) {
   } catch (e) { toast('Copying pictures is blocked here. Use Save PNG instead.'); }
 }
 async function chartSave(id) {
-  try { download(`${fileBase(P())}-${chartTitle(id).toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`, await chartPng(id)); } catch (e) { toast(e.message); }
+  try { download(`${fileBase(P(), chartTitle(id).toLowerCase().replace(/[^a-z0-9]+/g, '-'))}.png`, await chartPng(id)); } catch (e) { toast(e.message); }
 }
 
 // ---------- header ----------
@@ -3259,7 +3276,7 @@ function designInputs() {
           <input type="number" data-k="mission.segs.${j}.v"${key ? ` data-u="${key}"` : ''} value="${key ? toDisp(sg.v, key) : sg.v}" step="any" min="0" style="width:64px" aria-label="Amount"><em>${key && imperial() ? uName(key) : u}</em>
           ${sg.type === 'cruise' ? `<select data-k="mission.segs.${j}.dir" aria-label="Wind direction">${dirs.map(([k2, l]) => `<option value="${k2}"${k2 === (sg.dir || 'none') ? ' selected' : ''}>${l}</option>`).join('')}</select>` : ''}
           <button class="btn ghost sm" data-act="seg-up" data-i="${j}" aria-label="Move up"${j ? '' : ' disabled'}>↑</button><button class="btn ghost sm danger" data-act="seg-del" data-i="${j}" aria-label="Remove">×</button></div>`; }).join('')}
-        <button class="btn sm" data-act="seg-add" style="margin-top:6px">+ Add segment</button></div>
+        <button class="btn sm" data-act="seg-add" style="margin-top:6px">Add segment</button></div>
       <p class="hint">Climb and descend are in meters of height. Energy available = battery usable capacity (its unused part is the landing reserve), minus any extra reserve.</p>`, false);
   }
   if (!isSimple()) h += group('Electronics', `${num('becEff', 'BEC / regulator efficiency', { unit: '%' })}<p class="hint" id="avHint"></p>`, false);
@@ -3462,7 +3479,7 @@ function renderDesign(el) {
         <div class="card"><div class="card-h"><h2 id="spTitle">Power vs airspeed</h2><p id="spNote"></p></div><div class="chart" id="chSpeed"></div></div>
         <div class="card"><div class="card-h"><h2>Payload trade</h2><p id="payNote"></p></div><div class="chart" id="chPay"></div></div>
         <div class="card"><div class="card-h"><h2>Battery size trade</h2><p>Pack weight scales with capacity</p></div><div class="chart" id="chBatt"></div></div>
-        <div class="card"><div class="card-h"><h2>Motor bench curve</h2><p id="motNote"></p></div><div class="chart" id="chMotor"></div></div>
+        <div class="card"><div class="card-h"><h2>Motor thrust curve</h2><p id="motNote"></p></div><div class="chart" id="chMotor"></div></div>
         <div class="card"><div class="card-h"><h2>Numbers</h2><p>For reports</p></div><dl class="kv" id="numbers"></dl></div>
       </div>
     </section></div>`;
@@ -3522,10 +3539,12 @@ function liveDesign() {
   designCharts(p, R);
 }
 
+let designChartW = 0;
 // the four Design charts; `ids` names the elements to draw into (the export draws them off-screen)
 function designCharts(p, R, ids = { speed: 'chSpeed', batt: 'chBatt', pay: 'chPay', motor: 'chMotor' }) {
   const note = (id, t) => { if (ids.speed === 'chSpeed') { const e = document.getElementById(id); if (e) e.textContent = t; } };
   const empty = (id, h) => { const e = document.getElementById(id); if (e) e.innerHTML = h; };
+  if (ids.speed === 'chSpeed') { const e = document.getElementById('chSpeed'); if (e && e.clientWidth) designChartW = e.clientWidth; }
   // speed / power
   const acc = cssv('--c1'), cy = cssv('--c2');
   if (p.type === 'multirotor' && R.ff && R.ff.length) {
@@ -3765,7 +3784,7 @@ function liveMass() {
 
 function pasteDialog() {
   openDlg('Paste rows from a spreadsheet', `
-    <p class="note">Copy rows from Excel or Google Sheets and paste. Columns in your "Weight Breakdown" order are recognized: <b>Component, Unit g, Qty, Total, Link, Subsystem</b>. Shorter rows work too: <b>Component, Unit g, Qty, Subsystem</b>. Header rows are skipped. Starting from scratch? <a href="#" data-act="tpl-download">Download the component template</a>.</p>
+    <p class="note">Copy rows from Excel or Google Sheets and paste. Columns in your "Weight Breakdown" order are recognized: <b>Component, Unit g, Qty, Total, Link, Subsystem</b>. Shorter rows work too: <b>Component, Unit g, Qty, Subsystem</b>. Header rows are skipped. Starting from scratch? <a href="#" data-act="tpl-download">Download the parts import template</a>.</p>
     <textarea id="pasteBox" rows="10" placeholder="Cube Orange+ Mini\t53\t1\t53\thttps://…\tAvionics"></textarea>`,
     `<button class="btn" data-act="dlg-close">Cancel</button><button class="btn primary" data-act="paste-go">Add rows</button>`);
 }
@@ -4195,9 +4214,9 @@ function stlView(v) {
 const LIB_COLS = {
   motors: [['name', 'Motor', 'text', 210], ['brand', 'Brand', 'text', 100], ['kv', 'kV', 'number', 64], ['rm', 'Rm Ω', 'number', 70], ['i0', 'I0 A', 'number', 58], ['g', 'Weight g', 'number', 70, 'g>oz'], ['maxA', 'Max A', 'number', 60], ['maxW', 'Max W', 'number', 66], ['link', 'Link', 'text', 140], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
   props: [['name', 'Prop', 'text', 200], ['brand', 'Brand', 'text', 100], ['diam', 'Diameter in', 'number', 76], ['pitch', 'Pitch in', 'number', 70], ['g', 'Weight g', 'number', 76, 'g>oz'], ['link', 'Link', 'text', 160], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
-  batteries: [['name', 'Pack', 'text', 240], ['brand', 'Brand', 'text', 110], ['chem', 'Chem', 'chem'], ['s', 'Cells S', 'number', 54], ['p', 'Cells P', 'number', 54], ['cellMah', 'Cell mAh', 'number', 76], ['g', 'Pack g', 'number', 70, 'g>oz'], ['c', 'Cont. C', 'number', 54], ['cPeak', 'Peak C', 'number', 54], ['link', 'Link', 'text', 120], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
-  printed: [['name', 'Part', 'text', 190], ['mat', 'Material', 'mat'], ['vol', 'Volume cm³', 'number', 70, 'cm³>in³'], ['area', 'Area cm²', 'number', 70, 'cm²>in²'], ['walls', 'Walls', 'number', 50], ['tb', 'Top/bot layers', 'number', 56], ['infill', 'Infill %', 'number', 56], ['g', 'Mass g', 'number', 66, 'g>oz'], ['notes', 'Notes', 'text', 140], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
-  parts: [['name', 'Name', 'text', 220], ['sub', 'Subsystem', 'sub', 110], ['g', 'g', 'number', 70, 'g>oz'], ['rail', 'Rail', 'rail'], ['w', 'Avg W', 'number', 60], ['pw', 'Peak W', 'number', 60], ['rf', 'RF Freq', 'rf'], ['link', 'Link', 'text', 140], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
+  batteries: [['name', 'Pack', 'text', 240], ['brand', 'Brand', 'text', 110], ['chem', 'Chem', 'chem'], ['s', 'Cells S', 'number', 54], ['p', 'Cells P', 'number', 54], ['cellMah', 'Cell mAh', 'number', 76], ['g', 'Weight g', 'number', 70, 'g>oz'], ['c', 'Cont. C', 'number', 54], ['cPeak', 'Peak C', 'number', 54], ['link', 'Link', 'text', 120], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
+  printed: [['name', 'Part', 'text', 190], ['mat', 'Material', 'mat'], ['vol', 'Volume cm³', 'number', 70, 'cm³>in³'], ['area', 'Area cm²', 'number', 70, 'cm²>in²'], ['walls', 'Walls', 'number', 50], ['tb', 'Top/bot layers', 'number', 56], ['infill', 'Infill %', 'number', 56], ['g', 'Weight g', 'number', 66, 'g>oz'], ['notes', 'Notes', 'text', 140], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
+  parts: [['name', 'Name', 'text', 220], ['sub', 'Subsystem', 'sub', 110], ['g', 'Weight g', 'number', 70, 'g>oz'], ['rail', 'Rail', 'rail'], ['w', 'Avg W', 'number', 60], ['pw', 'Peak W', 'number', 60], ['rf', 'RF Freq', 'rf'], ['link', 'Link', 'text', 140], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
   escs: [['name', 'ESC', 'text', 210], ['brand', 'Brand', 'text', 100], ['use', 'For', 'escUse'], ['a', 'Cont. A', 'number', 62], ['burst', 'Burst A', 'number', 62], ['sMin', 'Min S', 'number', 54], ['sMax', 'Max S', 'number', 54], ['g', 'Weight g', 'number', 66, 'g>oz'], ['link', 'Link', 'text', 120], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
   airframes: [['name', 'Name', 'text', 200], ['type', 'Type', 'afType'], ['span', 'Span m', 'number', 70, 'm>in'], ['area', 'Wing m²', 'number', 80, 'm²>ft²'], ['length', 'Length m', 'number', 70, 'm>in'], ['wb', 'Wheelbase mm', 'number', 80], ['layout', 'Layout', 'layout'], ['maxProp', 'Max prop in', 'number', 70], ['g', 'Weight g', 'number', 80, 'g>oz'], ['notes', 'Notes', 'text', 160], ['link', 'Link', 'text', 140], ['cost', 'Cost', 'number', 64], ['buy', 'Buy link', 'text', 140]],
 };
@@ -4345,7 +4364,7 @@ function renderLibrary(el) {
       ${t === 'motors' ? `<button class="btn" data-act="spec-import" data-kind="motors">Import / paste motor specs</button><button class="btn" data-act="bulk-import">Import thrust spreadsheet (all sheets)</button><button class="btn ghost" data-act="mt-all">${mtOpen.size ? 'Collapse' : 'Expand'} all thrust data</button><span class="note">Rm and I0 enable the motor model ${tip('Rm: winding resistance in ohms (values over 1.5 are read as mΩ). I0: no-load current in amps.')}</span>` : ''}
       ${t === 'props' ? `<button class="btn" data-act="apc-import">Import APC .dat / .zip</button><button class="btn" data-act="spec-import" data-kind="props">Import / paste prop list</button><span class="note">Prop data drives cruise efficiency ${tip('Ct and Cp versus advance ratio at each RPM, e.g. APC PER3 files. Also used for motor + prop pairs without a thrust test.')}</span>` : ''}</div>`;
   }
-  el.innerHTML = `<div class="card"><div class="card-h"><h2>Component library</h2>
+  el.innerHTML = `<div class="card"><div class="card-h"><h2>Parts Library</h2>
       <div class="row"><span class="note">Shared by every design.</span><button class="btn sm" data-act="team-open"${window.claude && window.claude.use ? '' : ' hidden'} title="Share this library with everyone who can open the app">Team library</button><button class="btn sm" data-act="tpl-download" title="Excel workbook with a sheet per component type">Download template</button><button class="btn sm primary" data-act="tpl-import">Import workbook</button></div></div>
     <div class="row" style="margin-bottom:12px"><label class="f" style="min-width:240px"><span>Library section</span><select id="libSection">${tabs.map(([k, l, n]) => `<option value="${k}"${k === t ? ' selected' : ''}>${l} (${n})</option>`).join('')}</select></label></div>
     <div class="sub-tabs">${tabs.map(([k, l, n]) => `<button class="btn${k === t ? ' primary' : ''}" data-libtab="${k}">${l} <span class="num" style="opacity:.7">${n}</span></button>`).join('')}</div>${body}${subsBody}</div>`;
@@ -4358,7 +4377,7 @@ function downloadTemplate() {
   if (!b64) return toast('Template not bundled in this build.');
   const bin = atob(b64), u8 = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
-  download('HangarLab template.xlsx', new Blob([u8], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+  download('hangarlab-parts-import-template.xlsx', new Blob([u8], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
 }
 // header row → objects, using a regex per field
 function sheetObjects(rows, fields) {
@@ -4470,7 +4489,7 @@ async function importWorkbook(file) {
   }
   save(); render();
   const what = Object.entries(per).map(([k, c]) => `${c} ${k}`).join(', ');
-  toast(what ? `Imported ${what} (${n.a} new, ${n.u} updated)` : 'No template sheets found (Components, Motors, Motor thrust data, Props, Batteries, Airframes).', what ? { label: 'Undo', fn: undo } : null);
+  toast(what ? `Imported ${what} (${n.a} new, ${n.u} updated)` : 'No template sheets found (Components, Motors, Motor thrust data, Props, Batteries, ESCs, Airframes).', what ? { label: 'Undo', fn: undo } : null);
 }
 
 // ---------- team library (shared through the published app's database) ----------
@@ -4489,7 +4508,7 @@ async function teamDialog() {
     `<button class="btn" data-act="dlg-close">Close</button><button class="btn" data-act="team-push" disabled>Share my library</button><button class="btn primary" data-act="team-pull" disabled>Get team library</button>`);
   const db = await teamStore(), st = $('#teamStat');
   if (!st) return;
-  if (!db) { st.textContent = 'Not available here: the team library works in the published app when you are signed in to claude.ai. Here, share a workspace backup (Export) instead.'; return; }
+  if (!db) { st.textContent = 'Not available here: the team library works in the published app when you are signed in to claude.ai. Here, share a full backup (Export) instead.'; return; }
   try { const snap = await db.collection('teamlib').limit(1000).get(); st.textContent = `${snap.size} item${snap.size === 1 ? '' : 's'} in the team library.`; }
   catch (e) { st.textContent = `Could not read the team library (${e.code || e.message}).`; return; }
   document.querySelectorAll('[data-act="team-push"],[data-act="team-pull"]').forEach((x) => { x.disabled = false; });
@@ -5689,7 +5708,7 @@ document.addEventListener('dblclick', (e) => { if (!m3 || e.target !== m3.render
 
 let rfMap = null; // { map, L, base, layers }
 let rfTerrain = null; // { key, elev }
-let rfView = null; // last map centre/zoom, kept across tab re-renders
+let rfView = null; // last map center/zoom, kept across tab re-renders
 // move the ground station without re-rendering the tab, so the map keeps its view
 function rfSetGcs(ll) {
   const p = P();
@@ -5951,9 +5970,9 @@ const TOUR = [
   { sel: '.side details.group', title: 'Inputs', text: 'Change anything on the left. Every number on the right updates as you type, and Ctrl+Z undoes.' },
   { sel: '#readouts', title: 'Results', text: 'Weight, endurance, range and the other key numbers. More results are folded underneath, and Checks lists anything to fix.' },
   { sel: '#tabs', title: 'One tab per job', text: 'Compare designs, list parts and weight, size the electrical system, plan radio links, and pick 3D printing materials.' },
-  { sel: '[data-tab="library"]', title: 'Parts Library', text: 'Add your own motors, props, batteries and parts (or import the Excel template). Every design draws from it.' },
+  { sel: '[data-tab="library"]', title: 'Parts Library', text: 'Add your own motors, props, batteries, ESCs and parts: type them in, paste a product link, or import the Excel template. Every design draws from it.' },
   { sel: '[data-tab="logs"]', title: 'Flight Logs', text: 'Open an ArduPilot log to check a flight, see it on a 3D map, and calibrate your design from real data.' },
-  { sel: '[data-act="export"]', title: 'Export and backup', text: 'Reports, Excel, a pre-flight checklist, ArduPilot parameters, and backups of all your work. Your data stays in this browser, so back it up.' },
+  { sel: '[data-act="export"]', title: 'Export and backup', text: 'A calculation workbook (Excel), a printable report, a parts list, and backups of all your work. Your data stays in this browser, so back it up.' },
   { sel: '[data-act="shortcuts"]', title: 'Help any time', text: 'The ? button opens the guide, and you can replay this tour from there.' },
 ];
 let tourStep = -1;
@@ -6027,7 +6046,8 @@ function closeDlg() { const d = $('#dlg'); if (d.open) d.close(); }
 
 // ---------- export ----------
 const stamp = () => new Date().toISOString().slice(0, 10);
-const fileBase = (p) => `${p.name.replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-') || 'design'}-${stamp()}`;
+// file names: <design>-<what>-<date>, e.g. Example-fixed-wing-calculations-2026-10-16
+const fileBase = (p, kind) => `${p.name.replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-') || 'design'}${kind ? '-' + kind : ''}-${stamp()}`;
 // inside claude.ai the page cannot start downloads itself; the viewer's `downloads` capability shows a save prompt instead
 async function download(name, data, type) {
   const blob = data instanceof Blob ? data : new Blob([data], { type });
@@ -6128,122 +6148,161 @@ function bomRowsFor(p) {
 }
 function curveRows(p, R) {
   const out = {};
-  if (R.ff) out['Speed-power'] = [['Airspeed m/s', 'Power W', 'Endurance min', 'Range km', 'Tilt deg']].concat(R.ff.map((x) => [x.V, +x.P.toFixed(1), +x.minutes.toFixed(2), +x.km.toFixed(3), +x.tilt.toFixed(1)]));
-  else if (R.fwCurve) out['Speed-power'] = [['Airspeed m/s', 'Power W', 'Endurance min', 'Range km', 'Climb m/s', 'CL']].concat(R.fwCurve.map((x) => [+x.V.toFixed(2), +x.P.toFixed(1), +x.minutes.toFixed(2), +x.km.toFixed(3), +x.roc.toFixed(2), +x.CL.toFixed(3)]));
-  out['Battery trade'] = [['Capacity mAh', 'Pack g', 'AUW g', 'Minutes']].concat(U.batterySweep(p, S.lib).map((x) => [Math.round(x.mah), +x.g.toFixed(1), +x.auw.toFixed(1), fin(x.minutes) ? +x.minutes.toFixed(2) : '']));
+  if (R.ff) out['Power vs airspeed'] = [['Airspeed m/s', 'Power W', 'Endurance min', 'Range km', 'Tilt deg']].concat(R.ff.map((x) => [x.V, +x.P.toFixed(1), +x.minutes.toFixed(2), +x.km.toFixed(3), +x.tilt.toFixed(1)]));
+  else if (R.fwCurve) out['Power vs airspeed'] = [['Airspeed m/s', 'Power W', 'Endurance min', 'Range km', 'Climb m/s', 'CL']].concat(R.fwCurve.map((x) => [+x.V.toFixed(2), +x.P.toFixed(1), +x.minutes.toFixed(2), +x.km.toFixed(3), +x.roc.toFixed(2), +x.CL.toFixed(3)]));
+  out['Battery size trade'] = [['Capacity mAh', 'Pack g', 'AUW g', 'Minutes']].concat(U.batterySweep(p, S.lib).map((x) => [Math.round(x.mah), +x.g.toFixed(1), +x.auw.toFixed(1), fin(x.minutes) ? +x.minutes.toFixed(2) : '']));
   out['Payload trade'] = [['Payload g', 'Minutes', 'Hover throttle %', 'Range km']].concat(U.payloadSweep(p, S.lib).map((x) => [Math.round(x.g), fin(x.minutes) ? +x.minutes.toFixed(2) : '', fin(x.thr) ? +x.thr.toFixed(1) : '', fin(x.km) ? +x.km.toFixed(2) : '']));
   const set = R.h ? R.h.set : R.cruiseSet;
-  if (set && set.rows.length) out['Motor curve'] = [['Throttle %', 'Thrust g', 'Current A', `${set.name} · ${set.physics ? 'physics estimate' : `bench at ${set.v} V`}`]].concat(set.rows.map((r) => [r[0] ?? '', +(+r[1]).toFixed(1), +(+r[2]).toFixed(2)]));
+  if (set && set.rows.length) out['Motor thrust curve'] = [['Throttle %', 'Thrust g', 'Current A', `${set.name} · ${set.physics ? 'physics estimate' : `bench at ${set.v} V`}`]].concat(set.rows.map((r) => [r[0] ?? '', +(+r[1]).toFixed(1), +(+r[2]).toFixed(2)]));
   return out;
 }
 
-// The worked calculation: every input, then each result as a live Excel formula of those inputs, next to the app's value.
-// Items: { sec } | { label, sym, v | f, unit, how, app }. `f` uses {sym} for other cells. Parts the app solves numerically
-// (thrust curves, prop data, drag build-up) come in as inputs with their source, so the formulas still add up to the app.
+// The worked calculation: constants and assumptions first, then every input, then each result as a live Excel formula
+// of the cells above. Items: { sec } | { label, sym, v | f, unit, how, kind }. `f` uses {sym} for other cells. Parts the
+// app solves numerically (thrust curves, prop data, drag build-up) come in as inputs with their source, so the formulas
+// still add up to the app's numbers.
 function workedCalc(p, R, mp) {
   const it = [], sec = (t) => it.push({ sec: t });
-  const inp = (label, sym, v, unit, how) => it.push({ label, sym, v: fin(+v) ? +v : v, unit, how });
-  const calc = (label, sym, f, unit, how, app) => it.push({ label, sym, f, unit, how, app: fin(app) ? app : undefined });
-  const b = R.bat;
+  const put = (kind) => (label, sym, v, unit, how) => it.push({ label, sym, v: fin(+v) ? +v : v, unit, how, kind });
+  const con = put('const'), asm = put('assume'), inp = put('input');
+  const calc = (label, sym, f, unit, how) => it.push({ label, sym, f, unit, how, kind: 'calc' });
+  const b = R.bat, coax = R.h && (U.LAYOUTS[p.mr.layout] || {}).coax, f = p.fw;
+  sec('Constants');
+  con('Sea-level standard pressure', 'P0', 101325, 'Pa', 'International Standard Atmosphere');
+  con('Pressure lapse coefficient', 'kP', 2.25577e-5, '1/m', 'Standard atmosphere, below 11 km');
+  con('Pressure lapse exponent', 'nP', 5.25588, '', 'Standard atmosphere, below 11 km');
+  con('Gas constant of dry air', 'Rair', 287.05, 'J/(kg·K)', 'Physics');
+  con('Celsius to kelvin', 'TK', 273.15, 'K', 'Physics');
+  con('Sea-level standard density', 'rho0', 1.225, 'kg/m³', 'International Standard Atmosphere');
+  con('Gravity', 'g', 9.80665, 'm/s²', 'Standard gravity');
+  sec('Assumptions');
+  asm('Usable share of the battery', 'use', p.batt.usable, '%', 'Design input: how deep you plan to discharge');
+  asm('Cold-weather capacity factor', 'cold', b.coldF || 1, '', b.coldF ? `Typical capacity loss at ${p.env.temp} °C` : 'No loss at 10 °C and above');
+  asm('Regulator efficiency', 'bec', p.becEff || 90, '%', 'Used in the electronics power below');
+  if (R.h) {
+    asm('Hover thrust factor', 'kH', R.kHover || 1, '', p.type === 'vtol' ? 'Extra thrust for the airframe in the prop wash' : 'None for multirotors');
+    asm('Coaxial thrust factor', 'cf', coax ? 0.85 : 1, '', coax ? "Lower rotor works in the upper one's wash" : 'Not coaxial');
+    asm('Coaxial power factor', 'cp', coax ? 1.22 : 1, '', coax ? 'Extra power for the same thrust, coaxial pair' : 'Not coaxial');
+  }
+  if (R.cruise) {
+    asm('Drag correction', 'k', R.kUsed, '', { calibrated: 'Calibrated from your flight', learned: 'Learned from your calibrated flights', default: 'Default gap between theory and real flights' }[R.kSource] || R.kSource);
+    if (!R.propModel) {
+      asm('Prop efficiency', 'etaP', f.etaP, '%', 'Design input');
+      asm('Motor + ESC efficiency', 'etaD', f.etaD, '%', 'Design input');
+      asm('Prop type factor', 'pk', f.propOther ? 0.85 : 1, '', f.propOther ? 'Prop differs from its data (−15 %)' : 'Prop matches its data');
+    }
+  }
   sec('Air');
   inp('Field altitude (above sea level)', 'h', p.env.alt, 'm', 'Design input');
   inp('Air temperature', 'T', p.env.temp, '°C', 'Design input');
-  calc('Air pressure', 'pa', '101325*(1-2.25577E-5*{h})^5.25588', 'Pa', 'p = 101325 · (1 − 2.25577×10⁻⁵ · h)^5.25588 (standard atmosphere)');
-  calc('Air density', 'rho', '{pa}/(287.05*({T}+273.15))', 'kg/m³', 'ρ = p / (287.05 · (T + 273.15))', R.rho);
-  calc('Density ratio', 'sigma', '{rho}/1.225', '', 'σ = ρ / 1.225 (sea-level density)', R.sigma);
+  calc('Air pressure', 'pa', '{P0}*(1-{kP}*{h})^{nP}', 'Pa', 'p = P0 · (1 − kP · h)^nP');
+  calc('Air density', 'rho', '{pa}/({Rair}*({T}+{TK}))', 'kg/m³', 'ρ = p / (R · (T + 273.15))');
+  calc('Density ratio', 'sigma', '{rho}/{rho0}', '', 'σ = ρ / ρ0');
   sec('Battery');
-  inp('Cell nominal voltage', 'vc', b.chem.nom, 'V', `${b.chem.label}`);
+  inp('Cell nominal voltage', 'vc', b.chem.nom, 'V', b.chem.label);
   inp('Cells in series (all packs)', 'S', b.S, '', `${p.batt.s}S per pack × ${b.packs} pack(s) in ${p.batt.conn || 'parallel'}`);
   inp('Cells in parallel (all packs)', 'P', b.P, '', `${p.batt.p || 1}P per pack`);
   inp('Cell capacity', 'mah', +p.batt.cellMah || 0, 'mAh', p.batt.name);
-  calc('Pack voltage', 'V', '{S}*{vc}', 'V', 'V = S · V_cell', b.V);
-  calc('Capacity', 'Ah', '{P}*{mah}/1000', 'Ah', 'Ah = P · mAh / 1000', b.Ah);
-  calc('Energy', 'Wh', '{V}*{Ah}', 'Wh', 'Wh = V · Ah', b.Wh);
-  inp('Usable share', 'use', p.batt.usable, '%', 'Design input (depth of discharge you plan to use)');
-  inp('Cold-weather factor', 'cold', b.coldF || 1, '', b.coldF ? `Capacity loss at ${p.env.temp} °C` : 'No loss above 10 °C');
-  calc('Usable energy', 'Wu', '{Wh}*{use}/100*{cold}', 'Wh', 'Wu = Wh · usable % · cold factor', b.usableWh);
+  calc('Pack voltage', 'V', '{S}*{vc}', 'V', 'V = S · V_cell');
+  calc('Capacity', 'Ah', '{P}*{mah}/1000', 'Ah', 'Ah = P · mAh / 1000');
+  calc('Energy', 'Wh', '{V}*{Ah}', 'Wh', 'Wh = V · Ah');
+  calc('Usable energy', 'Wu', '{Wh}*{use}/100*{cold}', 'Wh', 'Wu = Wh · usable % · cold factor');
   inp('Continuous rating', 'C', p.batt.c, 'C', 'Pack label');
-  calc('Max continuous current', 'Ic', '{C}*{Ah}', 'A', 'I = C · Ah', b.iMaxCont);
+  calc('Max continuous current', 'Ic', '{C}*{Ah}', 'A', 'I = C · Ah');
   sec('Weight and electronics');
-  calc('All-up weight', 'AUW', 'SUM(BOM!E2:E{bomEnd})', 'g', 'Sum of the BOM sheet\'s Total g column', R.Wg);
-  calc('Weight force', 'W', '{AUW}/1000*9.80665', 'N', 'W = AUW/1000 · g', R.WN);
-  inp('Electronics power', 'pAv', R.pAv, 'W', `BOM average watts on regulated rails ÷ ${p.becEff || 90} % regulator efficiency, plus battery-bus items`);
+  calc('All-up weight', 'AUW', 'SUM(BOM!E2:E{bomEnd})', 'g', "Sum of the BOM sheet's Total g column");
+  calc('Weight force', 'W', '{AUW}/1000*{g}', 'N', 'W = AUW / 1000 · g');
+  inp('Electronics power', 'pAv', R.pAv, 'W', 'BOM average watts on regulated rails ÷ regulator efficiency, plus battery-bus items');
   if (R.h) {
-    const n = +p.mr.n, coax = (U.LAYOUTS[p.mr.layout] || {}).coax;
+    const n = +p.mr.n;
     sec(p.type === 'vtol' ? 'Hover (lift motors)' : 'Hover');
     inp('Lift motors', 'n', n, '', `${U.LAYOUTS[p.mr.layout].label} · ${R.h.set.name}`);
-    inp('Hover thrust factor', 'kH', R.kHover || 1, '', p.type === 'vtol' ? 'Extra thrust for the airframe in the prop wash' : 'None for multirotors');
-    calc('Thrust per motor', 'Tm', '{AUW}*{kH}/{n}', 'g', 'T = AUW · kH / n', R.h.tPer);
-    inp('Power per motor at sea level', 'Pm0', (R.h.pMotors / n) * Math.sqrt(R.sigma), 'W', `Read from the ${R.h.set.physics ? 'physics estimate' : 'thrust-stand data'} at that thrust${coax ? ', ×1.22 for coaxial' : ''}`);
-    calc('Power per motor here', 'Pm', '{Pm0}/SQRT({sigma})', 'W', 'P = P_sea level / √σ (thinner air needs more power)');
-    calc('Hover power (total)', 'Ph', '{n}*{Pm}+{pAv}', 'W', 'P = n · P_motor + electronics', R.hoverP);
-    calc('Hover current', 'Ih', '{Ph}/{V}', 'A', 'I = P / V', R.hoverI);
-    if (p.type === 'multirotor') calc('Hover time', 'th', '{Wu}/{Ph}*60', 'min', 't = Wu / P · 60', R.hoverMin);
+    calc('Thrust per motor', 'Tm', '{AUW}*{kH}/{n}', 'g', 'T = AUW · kH / n');
+    inp('Power per motor at sea level', 'Pm0', (R.h.pMotors / n) * Math.sqrt(R.sigma) / (coax ? 1.22 : 1), 'W', `Read from the ${R.h.set.physics ? 'physics estimate' : 'thrust-stand data'} at that thrust`);
+    calc('Power per motor here', 'Pm', '{Pm0}/SQRT({sigma})*{cp}', 'W', 'P = P_sea level / √σ · coax factor');
+    calc('Hover power (total)', 'Ph', '{n}*{Pm}+{pAv}', 'W', 'P = n · P_motor + electronics');
+    calc('Hover current', 'Ih', '{Ph}/{V}', 'A', 'I = P / V');
+    if (p.type === 'multirotor') calc('Hover time', 'th', '{Wu}/{Ph}*60', 'min', 't = Wu / P · 60');
     inp('Hover throttle', 'thr', R.h.thr, '%', 'Read from the thrust curve at that thrust');
     inp('Max thrust per motor (sea level)', 'Tmax', R.h.c.tmax, 'g', 'Full throttle on the thrust curve');
-    inp('Coaxial thrust factor', 'cf', coax ? 0.85 : 1, '', coax ? 'Lower rotor works in the upper one\'s wash' : 'Not coaxial');
-    calc('Max thrust (total)', 'Tt', '{n}*{Tmax}*{sigma}*{cf}', 'g', 'T = n · T_max · σ · coax factor', R.h.tmaxTot);
-    calc('Thrust-to-weight', 'tw', '{Tt}/({AUW}*{kH})', '', 'T/W = T_total / (AUW · kH)', R.h.tw);
+    calc('Max thrust (total)', 'Tt', '{n}*{Tmax}*{sigma}*{cf}', 'g', 'T = n · T_max · σ · coax factor');
+    calc('Thrust-to-weight', 'tw', '{Tt}/({AUW}*{kH})', '', 'T/W = T_total / (AUW · kH)');
     inp('Full-throttle current per motor', 'Im', R.h.iMaxMotor, 'A', 'Full throttle on the thrust curve');
-    if (p.type === 'multirotor') calc('Peak current', 'Ipk', '{n}*{Im}+{pAv}/{V}', 'A', 'I = n · I_motor + electronics / V', R.maxI);
+    if (p.type === 'multirotor') calc('Peak current', 'Ipk', '{n}*{Im}+{pAv}/{V}', 'A', 'I = n · I_motor + electronics / V');
   }
   if (R.cruise) {
-    const f = p.fw;
     sec(p.type === 'vtol' ? 'Cruise (wing-borne)' : 'Cruise');
     inp('Wingspan', 'b', f.span, 'm', 'Design input');
     inp('Wing area', 'Sw', f.area, 'm²', 'Design input');
-    calc('Aspect ratio', 'AR', '{b}^2/{Sw}', '', 'AR = b² / S', R.AR);
+    calc('Aspect ratio', 'AR', '{b}^2/{Sw}', '', 'AR = b² / S');
     inp('Cruise speed', 'Vc', f.vc, 'm/s', 'Design input');
     calc('Dynamic pressure', 'q', '0.5*{rho}*{Vc}^2', 'Pa', 'q = ½ ρ V²');
-    calc('Lift coefficient', 'CL', '{W}/({q}*{Sw})', '', 'CL = W / (q · S)', R.cruise.CL);
+    calc('Lift coefficient', 'CL', '{W}/({q}*{Sw})', '', 'CL = W / (q · S)');
     inp('Zero-lift drag coefficient', 'CD0', R.cd0, '', R.drag ? 'Drag build-up at cruise (see the Drag build-up rows on Summary)' : 'Design input');
     inp('Oswald efficiency', 'e', R.e, '', f.drag && f.drag.eAuto ? 'Estimated from aspect ratio' : 'Design input');
     calc('Drag coefficient', 'CD', '{CD0}+{CL}^2/(PI()*{e}*{AR})', '', 'CD = CD0 + CL² / (π · e · AR)');
     calc('Drag (theory)', 'D0', '{q}*{Sw}*{CD}', 'N', 'D = q · S · CD');
-    inp('Drag correction', 'k', R.kUsed, '', { calibrated: 'Calibrated from your flight', learned: 'Learned from your calibrated flights', default: 'Default gap between theory and real flights' }[R.kSource] || R.kSource);
     calc('Drag', 'D', '{k}*{D0}', 'N', 'D = k · D_theory');
     calc('Power to push the air', 'Pa', '{D}*{Vc}', 'W', 'P = D · V');
     const Pprop = R.cruise.P - R.pAv;
     if (R.propModel) inp('Motor × prop efficiency at cruise', 'eta', Pprop > 0 ? airPower(R, f) / Pprop : 0, '', 'Solved from the prop data and motor model at cruise');
-    else { inp('Prop efficiency', 'etaP', f.etaP, '%', 'Design input'); inp('Motor + ESC efficiency', 'etaD', f.etaD, '%', 'Design input'); inp('Prop type factor', 'pk', f.propOther ? 0.85 : 1, '', f.propOther ? 'Prop differs from its data (−15 %)' : '—'); calc('Overall efficiency', 'eta', '{etaP}/100*{etaD}/100*{pk}', '', 'η = η_prop · η_motor · factor'); }
-    calc('Propulsion power', 'Pp', '{Pa}/{eta}', 'W', 'P = P_air / η', Pprop);
-    calc('Cruise power (total)', 'Pc', '{Pp}+{pAv}', 'W', 'P = P_propulsion + electronics', R.cruise.P);
-    calc('Cruise current', 'Icr', '{Pc}/{V}', 'A', 'I = P / V', R.cruise.I);
+    else calc('Overall efficiency', 'eta', '{etaP}/100*{etaD}/100*{pk}', '', 'η = η_prop · η_motor · factor');
+    calc('Propulsion power', 'Pp', '{Pa}/{eta}', 'W', 'P = P_air / η');
+    calc('Cruise power (total)', 'Pc', '{Pp}+{pAv}', 'W', 'P = P_propulsion + electronics');
+    calc('Cruise current', 'Icr', '{Pc}/{V}', 'A', 'I = P / V');
     if (p.type === 'fixedwing') {
-      calc('Endurance at cruise', 'tc', '{Wu}/{Pc}*60', 'min', 't = Wu / P · 60', R.cruise.minutes);
-      calc('Range at cruise', 'Rc', '{Vc}*{tc}*60/1000', 'km', 'R = V · t', R.cruise.km);
+      calc('Endurance at cruise', 'tc', '{Wu}/{Pc}*60', 'min', 't = Wu / P · 60');
+      calc('Range at cruise', 'Rc', '{Vc}*{tc}*60/1000', 'km', 'R = V · t');
     }
     inp('Max lift coefficient', 'CLm', f.clmax, '', 'Design input');
-    calc('Stall speed', 'Vs', 'SQRT(2*{W}/({rho}*{Sw}*{CLm}))', 'm/s', 'Vs = √(2W / (ρ · S · CLmax))', R.vs);
-    calc('Wing loading', 'WL', '{AUW}/1000/{Sw}', 'kg/m²', 'AUW / S', R.wingLoad);
+    calc('Stall speed', 'Vs', 'SQRT(2*{W}/({rho}*{Sw}*{CLm}))', 'm/s', 'Vs = √(2W / (ρ · S · CLmax))');
+    calc('Wing loading', 'WL', '{AUW}/1000/{Sw}', 'kg/m²', 'AUW / S');
   }
   if (mp) {
     sec('Mission');
     inp('Extra reserve', 'res', +p.mission.reserve || 0, '%', 'Design input');
-    calc('Energy available', 'Ea', '{Wu}*(1-{res}/100)', 'Wh', 'Wu · (1 − reserve)', mp.avail);
+    calc('Energy available', 'Ea', '{Wu}*(1-{res}/100)', 'Wh', 'Wu · (1 − reserve)');
     const es = [];
     mp.rows.forEach((r, i) => {
       const k = 's' + i;
       inp(`${r.label}: ${r.v} ${r.unit}${r.dir && r.dir !== 'none' ? ` (${r.dir}wind)` : ''} · power`, k + 'P', r.P, 'W', 'From the power curve above');
       inp(`${r.label} · time`, k + 't', r.t, 's', r.err || (r.type === 'cruise' ? 'distance / ground speed' : r.type === 'climb' ? 'height / climb rate' : 'segment duration'));
-      calc(`${r.label} · energy`, k + 'E', `{${k}P}*{${k}t}/3600`, 'Wh', 'E = P · t / 3600', r.E);
+      calc(`${r.label} · energy`, k + 'E', `{${k}P}*{${k}t}/3600`, 'Wh', 'E = P · t / 3600');
       es.push(`{${k}E}`);
     });
-    calc('Energy used', 'Eu', es.join('+') || '0', 'Wh', 'Sum of the segments (nominal power)', mp.total);
-    calc('Energy left at landing', 'El', '{Ea}-{Eu}', 'Wh', 'Available − used', mp.avail - mp.total);
+    calc('Energy used', 'Eu', es.join('+') || '0', 'Wh', 'Sum of the segments (nominal power)');
+    calc('Energy left at landing', 'El', '{Ea}-{Eu}', 'Wh', 'Available − used');
   }
   return it;
 }
+// what each calculated value means, for the workbook's last column (mission segments: see WHAT_SEG)
+const WHAT = {
+  pa: 'Air pressure at the field altitude', rho: 'Air density at the field; thinner air needs more power for the same thrust and lift',
+  sigma: 'How dense the air is compared with sea level (1 = sea level)', V: 'Nominal voltage of the whole battery',
+  Ah: 'Charge the battery holds', Wh: 'Total energy stored in the battery', Wu: 'Energy you can actually use in flight',
+  Ic: 'Highest current the battery can supply continuously', AUW: 'Take-off weight of the whole aircraft', W: 'Weight as a force, for lift and thrust',
+  Tm: 'Thrust each lift motor makes to hover', Pm: 'Electrical power each lift motor draws in hover at this altitude', Ph: 'Battery power while hovering, electronics included',
+  Ih: 'Battery current while hovering', th: 'How long it can hover on the usable energy', Tt: 'Thrust of all lift motors at full throttle',
+  tw: 'Thrust-to-weight ratio; about 2 or more gives good control margin', Ipk: 'Battery current at full throttle on all motors',
+  AR: 'How long and slender the wing is; higher means less induced drag', q: 'Air pressure from moving at cruise speed',
+  CL: 'How hard the wing works to carry the weight at cruise', CD: 'Total drag of the aircraft at cruise as a coefficient',
+  D0: 'Drag from theory before the correction', D: 'Drag force at cruise', Pa: 'Power needed to push the aircraft through the air',
+  eta: 'Share of battery power that becomes thrust power', Pp: 'Battery power for the cruise motor(s)', Pc: 'Battery power in cruise, electronics included',
+  Icr: 'Battery current in cruise', tc: 'Flight time at cruise speed on the usable energy', Rc: 'Distance at cruise speed on the usable energy',
+  Vs: 'Slowest speed the wing can hold the aircraft up', WL: 'Weight carried per square meter of wing',
+  Ea: 'Energy available for the mission after the reserve', Eu: 'Energy the whole mission uses', El: 'Energy left when you land; negative means it does not make it',
+};
 // air power at cruise (D · V) with the same terms as the sheet, for the implied efficiency when prop data is used
 const airPower = (R, f) => { const V = +f.vc, q = 0.5 * R.rho * V * V, CL = R.cruise.CL; return R.kUsed * q * f.area * (R.cd0 + (CL * CL) / (Math.PI * R.e * R.AR)) * V; };
 
 // the Design charts drawn off-screen (so export works from any tab) and turned into PNGs
 async function designChartImages(p, R) {
+  const W = designChartW || 560; // width of the charts as last shown on the Performance tab
   const box = document.createElement('div');
-  box.style.cssText = 'position:fixed;left:-10000px;top:0;width:900px';
-  const defs = [['speed', R.fwCurve ? 'Power vs airspeed' : 'Power and range vs airspeed'], ['pay', 'Payload trade'], ['batt', 'Battery size trade'], ['motor', 'Motor curve']];
+  box.style.cssText = `position:fixed;left:-10000px;top:0;width:${W}px`;
+  const defs = [['speed', 'Power vs airspeed'], ['pay', 'Payload trade'], ['batt', 'Battery size trade'], ['motor', 'Motor thrust curve']];
   const ids = {};
-  box.innerHTML = defs.map(([k]) => `<div class="chart" id="xc-${k}" style="width:900px"></div>`).join('');
+  box.innerHTML = defs.map(([k]) => `<div class="chart" id="xc-${k}" style="width:${W}px"></div>`).join('');
   document.body.appendChild(box);
   for (const [k] of defs) ids[k] = 'xc-' + k;
   const out = {};
@@ -6256,6 +6315,18 @@ async function designChartImages(p, R) {
     box.remove();
   }
   return out;
+}
+// exports follow the app's Metric/Imperial setting: the same units the app converts (mass, length, area, speed,
+// distance, wing loading, temperature); W, V, A, Wh, N, Pa and density stay as they are
+const impKey = (unit) => (imperial() && unit ? uKey(unit) : null);
+const impNum = (v, k) => (k && typeof v === 'number' && fin(v) ? +toImp(v, k).toPrecision(8) : v);
+// [Section, Parameter, Value, Unit] rows
+const impRows = (rows) => rows.map((r, i) => { const k = i && impKey(r[3]); return k && typeof r[2] === 'number' ? [r[0], r[1], impNum(r[2], k), uName(k)] : r; });
+// tables whose header cells end in a unit ("Total g", "Airspeed m/s"): convert those columns and rename the header
+function impTable(aoa) {
+  if (!imperial()) return aoa;
+  const keys = aoa[0].map((h) => { const m = String(h).match(/ (g|kg|m|m²|m\/s|km|mm|°C)$/); return m ? uKey(m[1]) : null; });
+  return aoa.map((r, i) => r.map((v, j) => (!keys[j] ? v : i ? impNum(v, keys[j]) : String(v).replace(/ \S+$/, ' ' + uName(keys[j])))));
 }
 const blobB64 = (b) => new Promise((res) => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(b); });
 const loadExcelJS = () => loadScript('https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js', 'ExcelJS', 'Excel writer');
@@ -6272,54 +6343,84 @@ async function exportXlsx(p) {
   const sheet = (name, aoa, widths) => { const ws = wb.addWorksheet(name.slice(0, 31)); ws.addRows(aoa); if (widths) ws.columns = widths.map((w) => ({ width: w })); head(ws); ws.views = [{ state: 'frozen', ySplit: 1 }]; return ws; };
   const BLUE = { color: { argb: 'FF1F4E99' } };
 
-  // Worked calculations: inputs in blue, results as live formulas, with the app's value beside each result
+  // Worked calculations: inputs (constants grey, assumptions and design inputs blue) in one column, results as live
+  // formulas in another, each with its unit; formulas point at the Input or Result cell they use
+  const IMP = imperial();
   const items = workedCalc(p, R, mp);
-  const bom = bomRowsFor(p);
+  const bomSI = bomRowsFor(p), bom = impTable(bomSI);
+  // imperial: the conversion factors used go in with the constants, and each formula converts to SI and back
+  const used = [...new Set(items.filter((x) => !x.sec && impKey(x.unit)).map((x) => impKey(x.unit)))];
+  const cvSym = {};
+  if (used.length) {
+    const cv = [];
+    for (const k of used) {
+      if (k.startsWith('°C')) { cv.push({ label: '°F per °C', sym: 'cvF1', v: 1.8, unit: '', how: 'Unit conversion', kind: 'const' }, { label: '°F at 0 °C', sym: 'cvF0', v: 32, unit: '', how: 'Unit conversion', kind: 'const' }); continue; }
+      cvSym[k] = 'cv' + cv.length;
+      cv.push({ label: `${uName(k)} per ${k.split('>')[0]}`, sym: cvSym[k], v: UCONV[k], unit: '', how: 'Unit conversion', kind: 'const' });
+    }
+    items.splice(items.findIndex((x) => x.sec === 'Assumptions'), 0, ...cv);
+  }
+  const bySym = {}; for (const x of items) if (!x.sec) bySym[x.sym] = x;
   const wc = wb.addWorksheet('Worked calculations');
-  wc.columns = [{ width: 38 }, { width: 8 }, { width: 14 }, { width: 8 }, { width: 62 }, { width: 14 }];
-  wc.addRow([`${p.name}: worked calculation`]).font = { bold: true, size: 14 };
-  wc.addRow(['Blue values are inputs taken from the design (change them to try alternatives); black values are Excel formulas of the cells above. "App shows" is HangarLab\'s own result for comparison.']).font = { italic: true, color: { argb: 'FF666666' } };
+  wc.columns = [{ width: 36 }, { width: 8 }, { width: 13 }, { width: 9 }, { width: 46 }, { width: 13 }, { width: 9 }, { width: 64 }];
+  wc.addRow([`${p.name}: worked calculation${IMP ? ' (imperial units)' : ''}`]).font = { bold: true, size: 14 };
+  wc.addRow(['Inputs: grey = constant, blue = assumption or design input (change them to try alternatives). Results are live Excel formulas of the cells above; click one to see its formula.']).font = { italic: true, color: { argb: 'FF666666' } };
   wc.addRow([]);
-  wc.addRow(['Quantity', 'Symbol', 'Value', 'Unit', 'How it is worked out', 'App shows']); head(wc, 4);
+  wc.addRow(['Item', 'Symbol', 'Input', 'Unit', 'Equation or source', 'Result', 'Unit', 'What it means']); head(wc, 4);
+  wc.views = [{ state: 'frozen', ySplit: 4 }];
   const addr = {};
-  items.forEach((x, i) => { if (!x.sec) addr[x.sym] = `C${5 + i}`; });
+  items.forEach((x, i) => { if (!x.sec) addr[x.sym] = `${x.f != null ? 'F' : 'C'}${5 + i}`; });
+  const GREY = { color: { argb: 'FF7A7A7A' } }, SEC = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFBE9DF' } };
+  // each result is also worked out here and stored with its formula, so the numbers show even before Excel recalculates
+  // (Protected View, previews); the expressions are our own formula strings with numbers substituted
+  const val = {}, bomSum = bomSI.slice(1).reduce((a, r) => a + (+r[4] || 0), 0);
+  const evalF = (f) => { try { const v = Function(`return (${f.replace(/SUM\(BOM!E2:E\{bomEnd\}\)/, String(bomSum)).replace(/\{(\w+)\}/g, (m, k) => `(${+val[k] || 0})`).replace(/\^/g, '**').replace(/SQRT/g, 'Math.sqrt').replace(/PI\(\)/g, 'Math.PI')})`)(); return fin(v) ? v : undefined; } catch (e) { return undefined; } };
   let row = 5;
   for (const x of items) {
-    if (x.sec) { const r = wc.getRow(row); r.getCell(1).value = x.sec; r.font = { bold: true, color: { argb: 'FFD9530A' } }; row++; continue; }
-    const r = wc.getRow(row);
-    r.getCell(1).value = x.label; r.getCell(2).value = x.sym; r.getCell(4).value = x.unit || ''; r.getCell(5).value = x.how || '';
+    const r = wc.getRow(row++);
+    if (x.sec) { r.getCell(1).value = x.sec; r.font = { bold: true, color: { argb: 'FFD9530A' } }; for (let c = 1; c <= 8; c++) r.getCell(c).fill = SEC; continue; }
+    val[x.sym] = x.f != null ? evalF(x.f) : x.v;
+    r.getCell(1).value = x.label; r.getCell(2).value = x.sym; r.getCell(2).font = { italic: true }; r.getCell(5).value = x.how || '';
+    const k = impKey(x.unit);
+    // a cell in SI inside a formula: imperial cells are converted back on the way in
+    const si = (sym) => { const c = addr[sym], kk = impKey(bySym[sym] && bySym[sym].unit); return !kk ? c : kk.startsWith('°C') ? `((${c}-${addr.cvF0})/${addr.cvF1})` : `(${c}/${addr[cvSym[kk]]})`; };
     if (x.f != null) {
-      const f = x.f.replace('{bomEnd}', String(bom.length)).replace(/\{(\w+)\}/g, (m, s) => addr[s] || '0');
-      r.getCell(3).value = { formula: f, result: x.app };
-      if (x.app != null) r.getCell(6).value = +(+x.app).toFixed(4);
-    } else { r.getCell(3).value = typeof x.v === 'number' ? +x.v.toFixed(6) : x.v; r.getCell(3).font = BLUE; }
-    row++;
+      let f = x.f.replace('SUM(BOM!E2:E{bomEnd})', IMP ? `(SUM(BOM!E2:E${bom.length})/${addr[cvSym['g>oz']]})` : `SUM(BOM!E2:E${bom.length})`).replace(/\{(\w+)\}/g, (m, s) => si(s));
+      if (k) f = k.startsWith('°C') ? `(${f})*${addr.cvF1}+${addr.cvF0}` : `(${f})*${addr[cvSym[k]]}`;
+      r.getCell(6).value = { formula: f, result: impNum(val[x.sym], k) }; r.getCell(6).font = { bold: true };
+      r.getCell(7).value = k ? uName(k) : x.unit || '';
+      r.getCell(8).value = WHAT[x.sym] || (/^s\d+E$/.test(x.sym) ? 'Energy this mission segment uses' : '');
+    } else {
+      r.getCell(3).value = typeof x.v === 'number' ? +(k ? toImp(x.v, k) : x.v).toPrecision(10) : x.v;
+      r.getCell(3).font = x.kind === 'const' ? GREY : BLUE;
+      r.getCell(4).value = k ? uName(k) : x.unit || '';
+    }
   }
 
-  sheet('Summary', rows, [18, 40, 22, 8]);
+  sheet('Summary', IMP ? impRows(rows) : rows, [18, 40, 22, 8]);
   // BOM with live totals, so the worked calculation's weight follows edits here
   const wbBom = sheet('BOM', bom, [13, 40, 6, 9, 9, 9, 8, 8, 12, 8, 10, 10, 40, 40]);
   for (let i = 2; i <= bom.length; i++) {
     wbBom.getCell(`E${i}`).value = { formula: `C${i}*D${i}`, result: bom[i - 1][4] };
     if (bom[i - 1][10] !== '') wbBom.getCell(`L${i}`).value = { formula: `C${i}*K${i}`, result: bom[i - 1][11] };
   }
-  const tot = wbBom.addRow(['Total', '', '', '', { formula: `SUM(E2:E${bom.length})`, result: R.Wg }]); tot.font = { bold: true };
+  const tot = wbBom.addRow(['Total', '', '', '', { formula: `SUM(E2:E${bom.length})`, result: impNum(R.Wg, impKey('g')) }]); tot.font = { bold: true };
   sheet('Power rails', [['Rail', 'Regulator', 'Avg W', 'Peak W', 'Avg A', 'Peak A', 'Rated A', 'Items']].concat(pl.rails.map((r) => [r.rail, r.kind, +r.avgW.toFixed(2), +r.peakW.toFixed(2), +r.iAvg.toFixed(3), +r.iPk.toFixed(3), r.rail === 'VBAT' ? '' : r.rec, r.items.map((i) => i.name).join('; ')])), [9, 24, 8, 8, 8, 8, 8, 60]);
   const links = rfLinks(p);
-  if (links.length) sheet('RF links', [['Link', 'MHz', 'TX dBm', 'TX dBi', 'RX dBi', 'Loss dB', 'Sens dBm', 'Path loss dB', 'Margin dB', 'Max range km']].concat(links.map((x) => { const r = U.link(x.l, p.rf); return [x.name, x.l.mhz, x.l.tx, x.l.txG, x.l.rxG, x.l.loss, x.l.sens, +r.loss.toFixed(1), +r.margin.toFixed(1), +r.maxKm.toFixed(2)]; })), [30, 8, 8, 8, 8, 8, 9, 11, 10, 12]);
+  if (links.length) sheet('RF links', impTable([['Link', 'MHz', 'TX dBm', 'TX dBi', 'RX dBi', 'Loss dB', 'Sens dBm', 'Path loss dB', 'Margin dB', 'Max range km']].concat(links.map((x) => { const r = U.link(x.l, p.rf); return [x.name, x.l.mhz, x.l.tx, x.l.txG, x.l.rxG, x.l.loss, x.l.sens, +r.loss.toFixed(1), +r.margin.toFixed(1), +r.maxKm.toFixed(2)]; }))), [30, 8, 8, 8, 8, 8, 9, 11, 10, 12]);
 
   // chart pictures: next to their data, and all together on a Charts sheet
   let imgs = {};
   try { imgs = await designChartImages(p, R); } catch (e) { /* charts unavailable (chart library offline): data only */ }
   const pic = async (ws, blob, col, rowAt) => {
     const id = wb.addImage({ base64: await blobB64(blob), extension: 'png' });
-    const bm = await createImageBitmap(blob), w = 640, h = Math.round((bm.height / bm.width) * w);
+    const bm = await createImageBitmap(blob), k = window.devicePixelRatio || 1, w = Math.round(bm.width / k), h = Math.round(bm.height / k); // same size as on screen
     ws.addImage(id, { tl: { col, row: rowAt }, ext: { width: w, height: h } });
     return Math.ceil(h / 20) + 2;
   };
-  const curveImg = { 'Speed-power': 'speed', 'Battery trade': 'batt', 'Payload trade': 'pay', 'Motor curve': 'motor' };
-  for (const [name, aoa] of Object.entries(curveRows(p, R))) {
-    const ws = sheet(name, aoa, aoa[0].map(() => 14));
+  const curveImg = { 'Power vs airspeed': 'speed', 'Battery size trade': 'batt', 'Payload trade': 'pay', 'Motor thrust curve': 'motor' };
+  for (const [name, aoa0] of Object.entries(curveRows(p, R))) {
+    const aoa = impTable(aoa0), ws = sheet(name, aoa, aoa[0].map(() => 14));
     if (imgs[curveImg[name]]) await pic(ws, imgs[curveImg[name]], aoa[0].length + 1, 1);
   }
   if (Object.keys(imgs).length) {
@@ -6329,26 +6430,26 @@ async function exportXlsx(p) {
   }
   wb.views = [{ activeTab: 0 }];
   const buf = await wb.xlsx.writeBuffer();
-  download(`${fileBase(p)}.xlsx`, new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+  download(`${fileBase(p, 'calculations')}.xlsx`, new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
 }
 
 // standalone, printable report (light theme, no scripts)
 function reportHtml(p) {
-  const { rows } = calcRows(p);
+  const rows = impRows(calcRows(p).rows);
   const sections = {};
   for (const r of rows.slice(1)) (sections[r[0]] = sections[r[0]] || []).push(r);
   const fmtv = (v) => (typeof v === 'number' ? v.toLocaleString('en-US', { maximumFractionDigits: 3 }) : esc(v));
-  const bom = bomRowsFor(p).slice(1);
+  const bomT = impTable(bomRowsFor(p)), bom = bomT.slice(1), wU = bomT[0][4].replace('Total ', '');
   const subs = [...new Set(bom.map((r) => r[0]))];
   const light = (s) => { const t = S.theme; S.theme = 'light'; const c = subColor(s); S.theme = t; return c; };
-  const bomHtml = subs.map((s) => { const rs = bom.filter((r) => r[0] === s); return `<tr class="g"><td colspan="5"><i style="background:${light(s)}"></i>${esc(s)} · ${rs.reduce((a, r) => a + r[4], 0).toFixed(1)} g</td></tr>` + rs.map((r) => `<tr><td>${esc(r[1])}</td><td class="n">${r[2]}</td><td class="n">${r[3]}</td><td class="n">${r[4]}</td><td>${r[5]}${r[6] ? ` · ${r[6]} W` : ''}</td></tr>`).join(''); }).join('');
+  const bomHtml = subs.map((s) => { const rs = bom.filter((r) => r[0] === s); return `<tr class="g"><td colspan="5"><i style="background:${light(s)}"></i>${esc(s)} · ${rs.reduce((a, r) => a + r[4], 0).toFixed(1)} ${wU}</td></tr>` + rs.map((r) => `<tr><td>${esc(r[1])}</td><td class="n">${r[2]}</td><td class="n">${r[3]}</td><td class="n">${r[4]}</td><td>${r[5]}${r[6] ? ` · ${r[6]} W` : ''}</td></tr>`).join(''); }).join('');
   return `<!doctype html><html lang="en"><meta charset="utf-8"><title>${esc(p.name)} — HangarLab report</title>
 <style>body{font:13px/1.45 "Segoe UI",system-ui,sans-serif;color:#15212b;max-width:900px;margin:32px auto;padding:0 20px}h1{font-size:22px;margin:0}h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#546472;border-bottom:1px solid #d6dde3;padding-bottom:4px;margin:26px 0 8px}
 table{border-collapse:collapse;width:100%}td{padding:3px 6px;border-bottom:1px solid #eef1f4;vertical-align:top}td.n{text-align:right;font-variant-numeric:tabular-nums}.k{color:#546472;width:45%}tr.g td{font-weight:600;background:#f4f6f8}tr.g i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
 .sub{color:#8794a0}@media print{body{margin:0}h2{break-after:avoid}}</style>
 <h1>${esc(p.name)}</h1><p class="sub">${TYPE_LABEL[p.type]} · exported ${new Date().toLocaleString()} from HangarLab</p>
 ${Object.entries(sections).map(([s, rs]) => `<h2>${esc(s)}</h2><table>${rs.map((r) => `<tr><td class="k">${esc(r[1])}</td><td>${fmtv(r[2])} ${esc(r[3])}</td></tr>`).join('')}</table>`).join('')}
-<h2>Bill of materials</h2><table><tr><td class="k"><b>Item</b></td><td class="n"><b>Qty</b></td><td class="n"><b>Unit g</b></td><td class="n"><b>Total g</b></td><td><b>Rail</b></td></tr>${bomHtml}</table>
+<h2>Bill of materials</h2><table><tr><td class="k"><b>Item</b></td><td class="n"><b>Qty</b></td><td class="n"><b>Unit ${wU}</b></td><td class="n"><b>Total ${wU}</b></td><td><b>Rail</b></td></tr>${bomHtml}</table>
 </html>`;
 }
 
@@ -6360,42 +6461,29 @@ function printHtml(html) {
   f.onload = () => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch (e) { download('hangarlab-print.html', html, 'text/html'); toast('Printing is blocked here: downloaded the page instead. Open it and print to PDF.'); } setTimeout(() => f.remove(), 60000); };
   document.body.appendChild(f);
 }
-function checklistHtml(p) {
-  const R = U.compute(p, S.lib, { lite: true }), b = R.bat, bom = U.fullBom(p, S.lib);
-  const radios = bom.filter((r) => r.rf).map((r) => `${r.name} (${(U.BANDS[r.rf] || {}).label || r.rf})`);
-  const cg = U.cgOf(p, S.lib), mp = U.missionPlan(p, S.lib, U.compute(p, S.lib));
-  const sec = (t, items) => `<h2>${t}</h2><ul>${items.filter(Boolean).map((x) => `<li><span class="box"></span>${x}</li>`).join('')}</ul>`;
-  return `<!doctype html><html lang="en"><meta charset="utf-8"><title>${esc(p.name)} — pre-flight checklist</title>
-<style>body{font:14px/1.5 system-ui,sans-serif;color:#15212b;max-width:720px;margin:24px auto;padding:0 18px}h1{font-size:20px;margin:0}h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#546472;border-bottom:1px solid #d6dde3;padding-bottom:3px;margin:18px 0 6px}ul{list-style:none;padding:0;margin:0}li{display:flex;gap:10px;padding:4px 0;border-bottom:1px solid #eef1f4}.box{flex:none;width:14px;height:14px;border:1.5px solid #15212b;border-radius:3px;margin-top:3px}.sub{color:#546472;margin:2px 0 0}@media print{body{margin:0}}</style>
-<h1>${esc(p.name)} — pre-flight checklist</h1><p class="sub">${TYPE_LABEL[p.type]} · AUW ${fmt(R.Wg, 0)} g · HangarLab · ${new Date().toLocaleDateString()}</p>
-${sec('Site & weather', ['Airspace checked, permissions in hand', `Wind under ${fmt(p.type === 'multirotor' ? (R.vmax || 10) * 0.66 : Math.min((R.vmaxLevel || 20) * 0.66, p.fw.vc * 0.5), 0)} m/s`, `Air temperature near the planned ${p.env.temp} °C${b.coldF ? ' (cold: shorter flights)' : ''}`, 'Take-off / landing area clear, people briefed'])}
-${sec('Battery', [`${b.packs > 1 ? `${b.packs}× ` : ''}${esc(p.batt.name || 'flight pack')}: ${b.S}S${b.P}P ${b.chem.label}`, `Fully charged: ${fmt(b.vMax, 1)} V (${b.chem.max} V per cell)`, 'No swelling, damage or hot cells; balance leads secure', 'Pack strapped and connector locked', `Land at ${p.mission && +p.mission.reserve ? `${p.mission.reserve} % extra reserve, ` : ''}${fmt(100 - (+p.batt.usable || 80), 0)} % left (usable ${p.batt.usable || 80} %)`])}
-${sec('Airframe & propulsion', [`${p.type === 'fixedwing' ? p.fw.n : p.mr.n} props tight, right way round, undamaged`, 'Motors spin freely, no rubbing; bells and mounts tight', p.type !== 'multirotor' ? 'Control surfaces move the right way, no slop; hinges and horns secure' : 'Arms locked, frame bolts tight', cg.x != null ? (p.type === 'multirotor' ? `CG within 10 mm of the center (plan: ${fmt(cg.x, 0)} mm)` : `CG at ${fmt(cg.pct, 0)} % MAC (plan), check with the payload fitted`) : 'CG checked with the payload fitted', +p.payload.g ? `${esc(p.payload.name || 'Payload')} (${fmt(+p.payload.g, 0)} g) secured` : ''])}
-${sec('Radios & avionics', ['Transmitter on, model selected, range check', ...radios.map((r) => `${esc(r)} linked, antennas undamaged`), 'GPS lock, enough satellites, home position set', 'Compass and accelerometer healthy; arming checks pass', 'Failsafe set: radio loss and low battery actions', bom.some((r) => /remote\s?id|\brid\b|beacon/i.test(r.name)) ? 'Remote ID broadcasting' : 'Remote ID (if required) broadcasting'])}
-${sec('Mission', [mp ? `Mission plan ${mp.ok ? 'fits' : mp.okNominal ? 'is tight' : 'DOES NOT FIT'}: ${fmt(mp.total, 0)} of ${fmt(mp.avail, 0)} Wh` : 'Mission plan loaded', 'Geofence and RTL altitude set', 'Logging enabled'])}
-${sec('After landing', ['Disarm, then unplug the battery', 'Note pack voltage and mAh used', 'Save the log; add it to the flight history in HangarLab'])}
-</html>`;
-}
+// one row per export: icon, name, one-line description, file type on the right
+const EXPORTS = [
+  ['Results and calculations', [
+    ['ex-xlsx', 'sheet', 'Calculation workbook', 'Every input, the formula behind each result, and the charts', '.xlsx'],
+    ['ex-copy', 'copy', 'Copy results', 'Every result with its unit, to paste into Sheets or a document', 'Copy'],
+  ]],
+  ['Design report', [
+    ['print-report', 'print', 'Print or save as PDF', 'The design report on one page', 'PDF'],
+    ['ex-html', 'file', 'Report file', 'The same report to keep or send', '.html'],
+  ]],
+  ['Parts', [
+    ['ex-bom', 'list', 'Parts list (BOM)', 'Quantity, weight, cost and buy link for every part', '.csv'],
+    ['tpl-download', 'sheet', 'Parts import template', 'Blank workbook to fill in and import in Parts Library', '.xlsx'],
+  ]],
+  ['Backup', [
+    ['ex-json', 'download', 'Full backup', 'Every design and the parts library; bring it back with Import', '.json'],
+  ]],
+]
 function exportDialog() {
   const p = P();
-  const bk = backups();
-  openDlg('Export', `
-    <p class="note">Exports <b>${esc(p.name)}</b> as it stands now. Excel and CSV values are plain numbers, ready for your own formulas.</p>
-    <div class="exp-grid">
-      <button class="exp" data-act="tpl-download"><b>Component template</b><span>.xlsx · blank workbook for components, motors, props, batteries, airframes and thrust tests; import it in Parts Library</span></button>
-      <button class="exp" data-act="ex-xlsx"><b>Excel workbook</b><span>.xlsx · worked calculation with live formulas, charts, summary, BOM, power rails, RF links, speed-power, battery and payload trades, motor curve</span></button>
-      <button class="exp" data-act="print-report"><b>Print / save as PDF</b><span>the design report, straight to your printer or a PDF</span></button>
-      <button class="exp" data-act="ex-html"><b>Design report</b><span>.html · one printable page</span></button>
-      <button class="exp" data-act="checklist"><b>Pre-flight checklist</b><span>printable, built from this design's battery, radios and parts</span></button>
-      <button class="exp" data-act="ex-param"><b>ArduPilot parameters</b><span>.param · battery, failsafe, motor and airspeed starting values for this design; load in Mission Planner / QGC</span></button>
-      <button class="exp" data-act="checklist-dl"><b>Checklist file</b><span>.html · keep it on a phone or tablet in the field</span></button>
-      <button class="exp" data-act="ex-csv"><b>Calculations</b><span>.csv · every number with section and unit</span></button>
-      <button class="exp" data-act="ex-bom"><b>Bill of materials</b><span>.csv · all components incl. motors, props, pack, payload</span></button>
-      <button class="exp" data-act="ex-copy"><b>Copy calculations</b><span>paste straight into Excel or Google Sheets</span></button>
-      <button class="exp" data-act="ex-json"><b>Workspace backup</b><span>.json · every design and the whole library, for Import</span></button>
-    </div>
-    <p class="hint">Downloads are blocked in some embedded viewers; Copy works everywhere.</p>
-    <div><h3 style="margin:6px 0 8px">Automatic backups</h3>${bk.length ? `<div class="checks">${bk.map((x, j) => `<div class="chk" style="align-items:center"><span class="grow">${new Date(x.t).toLocaleString()} <span class="faint">· ${esc(x.why)}</span></span><button class="btn sm" data-act="restore" data-i="${j}">Restore</button></div>`).join('')}</div>` : '<p class="hint">None yet. A copy is kept each time the app opens (at most every 12 hours) and before any upgrade.</p>'}</div>`,
+  const row = ([act, icon, name, desc, tag, alt]) => `<div class="xr"><button class="xr-main" data-act="${act}"><svg class="i"><use href="#i-${icon}"/></svg><span class="xr-t"><b>${name}</b><span>${desc}</span></span><span class="xr-tag">${tag}</span></button>${alt ? `<button class="xr-tag xr-alt" data-act="${alt[0]}" title="Download as a file">${alt[1]}</button>` : ''}</div>`;
+  openDlg(`Export <span class="faint">· ${esc(p.name)}</span>`, `<div class="xlist">${EXPORTS.map(([g, rows]) => `<h3 class="exp-h">${g}</h3>${rows.map(row).join('')}`).join('')}</div>
+    <p class="hint" style="margin-top:12px">Downloads are blocked in some embedded viewers; Copy results works everywhere. Automatic backups are in <a href="#" data-act="exp-backups">Settings → Saving &amp; backups</a>.</p>`,
     `<button class="btn" data-act="dlg-close">Done</button>`);
 }
 function importWorkspace(text) {
@@ -6422,7 +6510,7 @@ function renderSettings(el) {
       <div class="card"><h2>Appearance</h2><div class="fields" style="padding:10px 0 0">
         ${sel('theme', 'Theme', [['dark', 'Dark'], ['light', 'Light']], { st: true, rebuild: true })}
         ${sel('units', 'Units', [['metric', 'Metric (SI)'], ['imperial', 'Imperial (in, oz, mph, °F)']], { st: true, rebuild: true })}
-        <p class="hint">Values are always stored in metric; exports stay metric.</p></div></div>
+        <p class="hint">Values are always stored in metric; exports use the units chosen here.</p></div></div>
 
       <div class="card"><h2>Estimates</h2><div class="fields" style="padding:10px 0 0">
         ${num('settings.calc.defK', `Default drag correction ${tip('Multiplies the drag build-up until you calibrate a real flight. 1.0 = raw physics. Typical gap between build-up methods and real small aircraft is 1.1–1.3.')}`, { st: true, step: 0.05 })}
@@ -6455,12 +6543,12 @@ function renderSettings(el) {
         <dl class="kv" style="margin-bottom:12px"><dt>Storage used</dt><dd id="setStore"></dd><dt>Designs · library items</dt><dd>${S.projects.length} · ${LIB_KINDS.reduce((a, k) => a + (S.lib[k] || []).length, 0)}</dd><dt>Props with performance data</dt><dd>${propData}</dd></dl>
         <div class="fields" style="padding:0">${chk('settings.backups.on', 'Keep automatic backups (on open, at most every 12 h, and before upgrades)', { st: true })}</div>
         <div class="checks" style="margin:8px 0">${bk.map((x, j) => `<div class="chk" style="align-items:center"><span class="grow">${new Date(x.t).toLocaleString()} <span class="faint">· ${esc(x.why)}</span></span><button class="btn sm" data-act="restore" data-i="${j}">Restore</button></div>`).join('') || '<p class="hint">No backups yet.</p>'}</div>
-        <div class="row"><button class="btn sm" data-act="backup-now">Back up now</button><button class="btn sm" data-act="tpl-download">Component template (.xlsx)</button><button class="btn sm" data-act="export">Export workspace…</button><button class="btn sm" data-act="import">Import…</button></div></div>
+        <div class="row"><button class="btn sm" data-act="backup-now">Back up now</button><button class="btn sm" data-act="tpl-download">Parts import template (.xlsx)</button><button class="btn sm" data-act="export">Export…</button><button class="btn sm" data-act="import">Import…</button></div></div>
 
       <div class="card"><h2>Reset</h2><p class="note" style="margin:8px 0 10px">Both can be undone right after with Undo.</p>
         <div class="row"><button class="btn sm danger" data-act="clear-propdata"${propData ? '' : ' disabled'}>Remove all prop performance data</button><button class="btn sm danger" data-act="reset-examples">Replace everything with the example data</button></div></div>
 
-      <div class="card"><h2>Keyboard shortcuts</h2><dl class="kv" style="margin-top:8px"><dt>Switch tab</dt><dd>1 – 9</dd><dt>Undo</dt><dd>Ctrl/⌘ + Z</dd><dt>Export</dt><dd>Ctrl/⌘ + E</dd><dt>Quick start guide</dt><dd>?</dd></dl>
+      <div class="card"><h2>Keyboard shortcuts</h2><dl class="kv" style="margin-top:8px"><dt>Switch tab</dt><dd>1 – 9</dd><dt>Undo</dt><dd>Ctrl/⌘ + Z</dd><dt>Export</dt><dd>Ctrl/⌘ + E</dd><dt>Show / hide inputs</dt><dd>Ctrl/⌘ + B</dd><dt>Quick start guide</dt><dd>?</dd></dl>
         <div class="row" style="margin-top:12px"><button class="btn sm" data-act="shortcuts">Open quick start</button><button class="btn sm" data-tour="start">Replay the tour</button>${chk('settings.quickstart', 'Show the quick start next time the app opens', { st: true })}</div></div>
 
       <div class="card"><h2>About</h2>
@@ -6493,7 +6581,7 @@ const QS_STEPS = [
       <li><b>Compare</b> — designs side by side.</li>
       <li><b>BOM &amp; Weight</b> — every part with weight, cost, balance, supply rail and radio band.</li>
       <li><b>Electrical · Radio Link · 3D Printing</b> — regulators and wiring, link budgets, filament choice and printed-part mass.</li>
-      <li><b>Parts Library</b> — the motors, props, packs and parts every design draws from.</li>
+      <li><b>Parts Library</b> — the motors, props, battery packs, ESCs, parts and airframes every design draws from.</li>
       <li><b>Flight Logs</b> — open an ArduPilot log and compare it with the design.</li>
     </ol>
     <p class="hint">The example designs are loaded so every number has something to show. Change them freely; Undo is always one keystroke away.</p>` },
@@ -6503,14 +6591,15 @@ const QS_STEPS = [
       <li><b>Configuration</b>: multirotor, fixed-wing or hybrid VTOL.</li>
       <li><b>Battery</b>: load a pack from the library, set how many packs and series or parallel.</li>
       <li><b>Payload</b> mass.</li>
-      <li><b>Propulsion</b>: motor and prop. The green or amber note tells you whether thrust comes from bench data or an estimate.</li>
+      <li><b>Propulsion</b>: motor, prop and ESC (multirotors can load a frame too). The green or amber note tells you whether thrust comes from bench data or an estimate.</li>
       <li>Fixed-wing / VTOL: <b>wing area, span</b> and the drag inputs (fuselage size, add-ons such as a gimbal).</li>
     </ol>
     <p>The cards on the right show weight, thrust-to-weight, endurance and range. <b>Checks</b> lists anything to fix, and the red badge on the Performance tab counts them.</p>` },
   { title: '2 · Fill the library', tab: 'library', body: `
     <p>Better data gives better numbers. In <b>Parts Library</b>:</p>
     <ul class="qs-list">
-      <li><b>Download template</b> → fill in components, motors, props, packs, airframes and thrust tests in Excel → <b>Import workbook</b>.</li>
+      <li><b>Add from link</b>: paste a product page and the name, price and specs are filled in for you to check.</li>
+      <li><b>Download template</b> → fill in components, motors, props, packs, ESCs, airframes and thrust data in Excel → <b>Import workbook</b>.</li>
       <li><b>Props → Import APC .dat / .zip</b> for real propeller performance.</li>
       <li><b>Motors &amp; thrust data</b>: paste or load a thrust-stand sheet for each motor + prop pair.</li>
       <li>Motor <b>Rm and I0</b> from the datasheet turn on the motor model.</li>
@@ -6535,10 +6624,11 @@ const QS_STEPS = [
   { title: '5 · Saving, sharing and shortcuts', tab: null, body: `
     <ul class="qs-list">
       <li><b>Autosave</b>: every change is kept in this browser. Automatic backups are in <b>Settings</b>.</li>
-      <li><b>Export</b>: Excel workbook, report, CSV, or a workspace backup to move your work to another computer (<b>Import</b> in the top bar reads it).</li>
-      <li><b>Metric / Imperial</b> at the right of the tab bar; theme, estimates and advanced mode under <b>Settings</b> (gear icon).</li>
+      <li><b>Export</b>: calculation workbook (Excel), printable report, parts list, or a full backup to move your work to another computer (<b>Import</b> in the top bar reads it).</li>
+      <li><b>Metric / Imperial</b> at the right of the tab bar (exports use the same units); theme, estimates and advanced mode under <b>Settings</b> (gear icon).</li>
+      <li><b>Charts</b>: hover over one for the copy and save icons. The panel icon at the top left of the inputs hides them to give the results the full width.</li>
     </ul>
-    <dl class="kv" style="margin-top:10px"><dt>Switch tab</dt><dd>1 – 9</dd><dt>Undo</dt><dd>Ctrl/⌘ + Z</dd><dt>Export</dt><dd>Ctrl/⌘ + E</dd><dt>This guide</dt><dd>?</dd></dl>` },
+    <dl class="kv" style="margin-top:10px"><dt>Switch tab</dt><dd>1 – 9</dd><dt>Undo</dt><dd>Ctrl/⌘ + Z</dd><dt>Export</dt><dd>Ctrl/⌘ + E</dd><dt>Show / hide inputs</dt><dd>Ctrl/⌘ + B</dd><dt>This guide</dt><dd>?</dd></dl>` },
 ];
 let qsStep = 0;
 function quickStart(step = 0) {
@@ -6742,7 +6832,7 @@ document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-act],[data-tab],[data-settype],[data-libtab],[data-massview],[data-units],[data-detail]');
   if (!b) return;
   if (b.tagName === 'A' && b.getAttribute('href') === '#') e.preventDefault();
-  if (b.dataset.units) { S.units = b.dataset.units; save(); render(); toast(S.units === 'imperial' ? 'Imperial units (stored in metric; exports stay metric)' : 'Metric units'); return; }
+  if (b.dataset.units) { S.units = b.dataset.units; save(); render(); toast(S.units === 'imperial' ? 'Imperial units (exports use them too)' : 'Metric units'); return; }
   if (b.dataset.tab) { lvs.playing = false; if (lmap) { lmap.remove(); lmap = null; } S.tab = b.dataset.tab; save(); render(); window.scrollTo(0, 0); return; }
   if (b.dataset.settype) { P().type = b.dataset.settype; save(); render(); return; }
   if (b.dataset.libtab) { S.libTab = b.dataset.libtab; save(); render(); return; }
@@ -6777,21 +6867,21 @@ document.addEventListener('click', (e) => {
     }
     case 'del-go': {
       const save1 = $('#delSave') && $('#delSave').checked;
-      if (save1) download(`hangarlab-${fileBase(p)}.json`, JSON.stringify({ app: 'hangarlab', v: 5, projects: [p], lib: S.lib }, (k, v) => (['fleetK', 'fleetFrom', 'cfg', 'pwr', 'knownDefaults'].includes(k) ? undefined : v), 1), 'application/json');
+      if (save1) download(`${fileBase(p, 'deleted-backup')}.json`, JSON.stringify({ app: 'hangarlab', v: 5, projects: [p], lib: S.lib }, (k, v) => (['fleetK', 'fleetFrom', 'cfg', 'pwr', 'knownDefaults'].includes(k) ? undefined : v), 1), 'application/json');
       backup(JSON.stringify(S), `before deleting ${p.name}`);
       closeDlg();
       withUndo(`Deleted ${p.name}${save1 ? ' (copy downloaded)' : ''}`, () => { S.projects = S.projects.filter((x) => x.id !== p.id); S.active = S.projects[0].id; });
       break;
     }
     case 'export': exportDialog(); break;
+    case 'exp-backups': closeDlg(); S.tab = 'settings'; save(); render(); window.scrollTo(0, 0); break;
     case 'ex-xlsx': exportXlsx(p); break;
-    case 'ex-html': download(`${fileBase(p)}-report.html`, reportHtml(p), 'text/html'); break;
-    case 'ex-csv': download(`${fileBase(p)}-calculations.csv`, '﻿' + csvOf(calcRows(p).rows), 'text/csv'); break;
-    case 'ex-bom': download(`${fileBase(p)}-bom.csv`, '﻿' + csvOf(bomRowsFor(p)), 'text/csv'); break;
-    case 'ex-copy': copyText(tsvOf(calcRows(p).rows), 'Calculations'); break;
-    case 'ex-json': download(`hangarlab-${stamp()}.json`, JSON.stringify({ app: 'hangarlab', v: 5, projects: S.projects, lib: S.lib }, (k, v) => (['fleetK', 'fleetFrom', 'cfg', 'pwr', 'knownDefaults'].includes(k) ? undefined : v), 1), 'application/json'); break;
+    case 'ex-html': download(`${fileBase(p, 'report')}.html`, reportHtml(p), 'text/html'); break;
+    case 'ex-bom': download(`${fileBase(p, 'parts-list')}.csv`, '﻿' + csvOf(impTable(bomRowsFor(p))), 'text/csv'); break;
+    case 'ex-copy': copyText(tsvOf(impRows(calcRows(p).rows)), 'Results'); break;
+    case 'ex-json': download(`hangarlab-backup-${stamp()}.json`, JSON.stringify({ app: 'hangarlab', v: 5, projects: S.projects, lib: S.lib }, (k, v) => (['fleetK', 'fleetFrom', 'cfg', 'pwr', 'knownDefaults'].includes(k) ? undefined : v), 1), 'application/json'); break;
     case 'bom-copy': copyText(tsvOf(bomTableRows()), 'BOM'); break;
-    case 'bom-csv': download(`bom-${stamp()}.csv`, '﻿' + csvOf(bomTableRows()), 'text/csv'); break;
+    case 'bom-csv': download(`hangarlab-parts-list-${stamp()}.csv`, '﻿' + csvOf(bomTableRows()), 'text/csv'); break;
     case 'bom-sort': p.bom.sort((x, y) => subOrder(x.sub) - subOrder(y.sub) || String(x.sub).localeCompare(y.sub)); save(); render(); break;
     case 'import': $('#importFile').click(); break;
     case 'dlg-close': closeDlg(); break;
@@ -6856,15 +6946,6 @@ document.addEventListener('click', (e) => {
     case 'ver-del': withUndo('Version deleted', () => p.versions.splice(i, 1)); break;
     case 'fl-del': withUndo('Flight removed from history', () => p.flights.splice(i, 1)); break;
     case 'print-report': printHtml(reportHtml(p)); break;
-    case 'checklist': printHtml(checklistHtml(p)); break;
-    case 'ex-param': {
-      const R = U.compute(p, S.lib), rows = U.apParams(p, R);
-      const txt = [`# ${p.name}: starting parameters from HangarLab (${new Date().toISOString().slice(0, 10)})`, '# Check each value against your hardware before flying. Rule-of-thumb values are marked in the comments.']
-        .concat(rows.map(([k, v, n]) => `${k},${v}${n ? `\t# ${n}` : ''}`)).join('\n') + '\n';
-      download(`${fileBase(p)}.param`, txt, 'text/plain');
-      break;
-    }
-    case 'checklist-dl': download(`${fileBase(p)}-preflight.html`, checklistHtml(p), 'text/html'); break;
     case 'bom-unlink': { const r = p.bom[i]; delete r.ref; r.unlinked = true; save(); render(); toast(`${r.name} is now a custom row; library changes no longer reach it.`); break; }
     case 'bat-unlink': delete p.batt.ref; p.batt.unlinked = true; save(); render(); toast('Pack unlinked from the library'); break;
     case 'seg-add': p.mission.segs.push({ type: 'cruise', v: p.type === 'multirotor' ? 1 : 5, dir: 'none' }); save(); render(); break;

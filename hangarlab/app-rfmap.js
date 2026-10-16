@@ -6,7 +6,7 @@
 
 let rfMap = null; // { map, L, base, layers }
 let rfTerrain = null; // { key, elev }
-let rfView = null; // last map centre/zoom, kept across tab re-renders
+let rfView = null; // last map center/zoom, kept across tab re-renders
 // move the ground station without re-rendering the tab, so the map keeps its view
 function rfSetGcs(ll) {
   const p = P();

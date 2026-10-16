@@ -11,7 +11,7 @@ const QS_STEPS = [
       <li><b>Compare</b> — designs side by side.</li>
       <li><b>BOM &amp; Weight</b> — every part with weight, cost, balance, supply rail and radio band.</li>
       <li><b>Electrical · Radio Link · 3D Printing</b> — regulators and wiring, link budgets, filament choice and printed-part mass.</li>
-      <li><b>Parts Library</b> — the motors, props, packs and parts every design draws from.</li>
+      <li><b>Parts Library</b> — the motors, props, battery packs, ESCs, parts and airframes every design draws from.</li>
       <li><b>Flight Logs</b> — open an ArduPilot log and compare it with the design.</li>
     </ol>
     <p class="hint">The example designs are loaded so every number has something to show. Change them freely; Undo is always one keystroke away.</p>` },
@@ -21,14 +21,15 @@ const QS_STEPS = [
       <li><b>Configuration</b>: multirotor, fixed-wing or hybrid VTOL.</li>
       <li><b>Battery</b>: load a pack from the library, set how many packs and series or parallel.</li>
       <li><b>Payload</b> mass.</li>
-      <li><b>Propulsion</b>: motor and prop. The green or amber note tells you whether thrust comes from bench data or an estimate.</li>
+      <li><b>Propulsion</b>: motor, prop and ESC (multirotors can load a frame too). The green or amber note tells you whether thrust comes from bench data or an estimate.</li>
       <li>Fixed-wing / VTOL: <b>wing area, span</b> and the drag inputs (fuselage size, add-ons such as a gimbal).</li>
     </ol>
     <p>The cards on the right show weight, thrust-to-weight, endurance and range. <b>Checks</b> lists anything to fix, and the red badge on the Performance tab counts them.</p>` },
   { title: '2 · Fill the library', tab: 'library', body: `
     <p>Better data gives better numbers. In <b>Parts Library</b>:</p>
     <ul class="qs-list">
-      <li><b>Download template</b> → fill in components, motors, props, packs, airframes and thrust tests in Excel → <b>Import workbook</b>.</li>
+      <li><b>Add from link</b>: paste a product page and the name, price and specs are filled in for you to check.</li>
+      <li><b>Download template</b> → fill in components, motors, props, packs, ESCs, airframes and thrust data in Excel → <b>Import workbook</b>.</li>
       <li><b>Props → Import APC .dat / .zip</b> for real propeller performance.</li>
       <li><b>Motors &amp; thrust data</b>: paste or load a thrust-stand sheet for each motor + prop pair.</li>
       <li>Motor <b>Rm and I0</b> from the datasheet turn on the motor model.</li>
@@ -53,10 +54,11 @@ const QS_STEPS = [
   { title: '5 · Saving, sharing and shortcuts', tab: null, body: `
     <ul class="qs-list">
       <li><b>Autosave</b>: every change is kept in this browser. Automatic backups are in <b>Settings</b>.</li>
-      <li><b>Export</b>: Excel workbook, report, CSV, or a workspace backup to move your work to another computer (<b>Import</b> in the top bar reads it).</li>
-      <li><b>Metric / Imperial</b> at the right of the tab bar; theme, estimates and advanced mode under <b>Settings</b> (gear icon).</li>
+      <li><b>Export</b>: calculation workbook (Excel), printable report, parts list, or a full backup to move your work to another computer (<b>Import</b> in the top bar reads it).</li>
+      <li><b>Metric / Imperial</b> at the right of the tab bar (exports use the same units); theme, estimates and advanced mode under <b>Settings</b> (gear icon).</li>
+      <li><b>Charts</b>: hover over one for the copy and save icons. The panel icon at the top left of the inputs hides them to give the results the full width.</li>
     </ul>
-    <dl class="kv" style="margin-top:10px"><dt>Switch tab</dt><dd>1 – 9</dd><dt>Undo</dt><dd>Ctrl/⌘ + Z</dd><dt>Export</dt><dd>Ctrl/⌘ + E</dd><dt>This guide</dt><dd>?</dd></dl>` },
+    <dl class="kv" style="margin-top:10px"><dt>Switch tab</dt><dd>1 – 9</dd><dt>Undo</dt><dd>Ctrl/⌘ + Z</dd><dt>Export</dt><dd>Ctrl/⌘ + E</dd><dt>Show / hide inputs</dt><dd>Ctrl/⌘ + B</dd><dt>This guide</dt><dd>?</dd></dl>` },
 ];
 let qsStep = 0;
 function quickStart(step = 0) {
@@ -260,7 +262,7 @@ document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-act],[data-tab],[data-settype],[data-libtab],[data-massview],[data-units],[data-detail]');
   if (!b) return;
   if (b.tagName === 'A' && b.getAttribute('href') === '#') e.preventDefault();
-  if (b.dataset.units) { S.units = b.dataset.units; save(); render(); toast(S.units === 'imperial' ? 'Imperial units (stored in metric; exports stay metric)' : 'Metric units'); return; }
+  if (b.dataset.units) { S.units = b.dataset.units; save(); render(); toast(S.units === 'imperial' ? 'Imperial units (exports use them too)' : 'Metric units'); return; }
   if (b.dataset.tab) { lvs.playing = false; if (lmap) { lmap.remove(); lmap = null; } S.tab = b.dataset.tab; save(); render(); window.scrollTo(0, 0); return; }
   if (b.dataset.settype) { P().type = b.dataset.settype; save(); render(); return; }
   if (b.dataset.libtab) { S.libTab = b.dataset.libtab; save(); render(); return; }
@@ -295,21 +297,21 @@ document.addEventListener('click', (e) => {
     }
     case 'del-go': {
       const save1 = $('#delSave') && $('#delSave').checked;
-      if (save1) download(`hangarlab-${fileBase(p)}.json`, JSON.stringify({ app: 'hangarlab', v: 5, projects: [p], lib: S.lib }, (k, v) => (['fleetK', 'fleetFrom', 'cfg', 'pwr', 'knownDefaults'].includes(k) ? undefined : v), 1), 'application/json');
+      if (save1) download(`${fileBase(p, 'deleted-backup')}.json`, JSON.stringify({ app: 'hangarlab', v: 5, projects: [p], lib: S.lib }, (k, v) => (['fleetK', 'fleetFrom', 'cfg', 'pwr', 'knownDefaults'].includes(k) ? undefined : v), 1), 'application/json');
       backup(JSON.stringify(S), `before deleting ${p.name}`);
       closeDlg();
       withUndo(`Deleted ${p.name}${save1 ? ' (copy downloaded)' : ''}`, () => { S.projects = S.projects.filter((x) => x.id !== p.id); S.active = S.projects[0].id; });
       break;
     }
     case 'export': exportDialog(); break;
+    case 'exp-backups': closeDlg(); S.tab = 'settings'; save(); render(); window.scrollTo(0, 0); break;
     case 'ex-xlsx': exportXlsx(p); break;
-    case 'ex-html': download(`${fileBase(p)}-report.html`, reportHtml(p), 'text/html'); break;
-    case 'ex-csv': download(`${fileBase(p)}-calculations.csv`, '﻿' + csvOf(calcRows(p).rows), 'text/csv'); break;
-    case 'ex-bom': download(`${fileBase(p)}-bom.csv`, '﻿' + csvOf(bomRowsFor(p)), 'text/csv'); break;
-    case 'ex-copy': copyText(tsvOf(calcRows(p).rows), 'Calculations'); break;
-    case 'ex-json': download(`hangarlab-${stamp()}.json`, JSON.stringify({ app: 'hangarlab', v: 5, projects: S.projects, lib: S.lib }, (k, v) => (['fleetK', 'fleetFrom', 'cfg', 'pwr', 'knownDefaults'].includes(k) ? undefined : v), 1), 'application/json'); break;
+    case 'ex-html': download(`${fileBase(p, 'report')}.html`, reportHtml(p), 'text/html'); break;
+    case 'ex-bom': download(`${fileBase(p, 'parts-list')}.csv`, '﻿' + csvOf(impTable(bomRowsFor(p))), 'text/csv'); break;
+    case 'ex-copy': copyText(tsvOf(impRows(calcRows(p).rows)), 'Results'); break;
+    case 'ex-json': download(`hangarlab-backup-${stamp()}.json`, JSON.stringify({ app: 'hangarlab', v: 5, projects: S.projects, lib: S.lib }, (k, v) => (['fleetK', 'fleetFrom', 'cfg', 'pwr', 'knownDefaults'].includes(k) ? undefined : v), 1), 'application/json'); break;
     case 'bom-copy': copyText(tsvOf(bomTableRows()), 'BOM'); break;
-    case 'bom-csv': download(`bom-${stamp()}.csv`, '﻿' + csvOf(bomTableRows()), 'text/csv'); break;
+    case 'bom-csv': download(`hangarlab-parts-list-${stamp()}.csv`, '﻿' + csvOf(bomTableRows()), 'text/csv'); break;
     case 'bom-sort': p.bom.sort((x, y) => subOrder(x.sub) - subOrder(y.sub) || String(x.sub).localeCompare(y.sub)); save(); render(); break;
     case 'import': $('#importFile').click(); break;
     case 'dlg-close': closeDlg(); break;
@@ -374,15 +376,6 @@ document.addEventListener('click', (e) => {
     case 'ver-del': withUndo('Version deleted', () => p.versions.splice(i, 1)); break;
     case 'fl-del': withUndo('Flight removed from history', () => p.flights.splice(i, 1)); break;
     case 'print-report': printHtml(reportHtml(p)); break;
-    case 'checklist': printHtml(checklistHtml(p)); break;
-    case 'ex-param': {
-      const R = U.compute(p, S.lib), rows = U.apParams(p, R);
-      const txt = [`# ${p.name}: starting parameters from HangarLab (${new Date().toISOString().slice(0, 10)})`, '# Check each value against your hardware before flying. Rule-of-thumb values are marked in the comments.']
-        .concat(rows.map(([k, v, n]) => `${k},${v}${n ? `\t# ${n}` : ''}`)).join('\n') + '\n';
-      download(`${fileBase(p)}.param`, txt, 'text/plain');
-      break;
-    }
-    case 'checklist-dl': download(`${fileBase(p)}-preflight.html`, checklistHtml(p), 'text/html'); break;
     case 'bom-unlink': { const r = p.bom[i]; delete r.ref; r.unlinked = true; save(); render(); toast(`${r.name} is now a custom row; library changes no longer reach it.`); break; }
     case 'bat-unlink': delete p.batt.ref; p.batt.unlinked = true; save(); render(); toast('Pack unlinked from the library'); break;
     case 'seg-add': p.mission.segs.push({ type: 'cruise', v: p.type === 'multirotor' ? 1 : 5, dir: 'none' }); save(); render(); break;
